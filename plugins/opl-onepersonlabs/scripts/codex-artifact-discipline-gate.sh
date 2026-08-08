@@ -3,7 +3,8 @@ set -uo pipefail
 
 source "$(dirname "$0")/codex-discipline-policy.sh"
 
-SCAN_TEXT="$NEW_STRING"$'\n'"$CONTENT"
+PATCH_ADDITIONS=$(printf '%s\n' "$PATCH" | sed -n '/^+/ { /^+++/d; s/^+//; p; }')
+SCAN_TEXT="$NEW_STRING"$'\n'"$CONTENT"$'\n'"$PATCH_ADDITIONS"
 if [[ -z "${SCAN_TEXT//[[:space:]]/}" ]]; then exit 0; fi
 if has_bypass_sentinel "$SCAN_TEXT"; then exit 0; fi
 if [[ -f "$FILE_PATH" ]] && has_bypass_sentinel "$(cat "$FILE_PATH" 2>/dev/null)"; then exit 0; fi

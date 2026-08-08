@@ -5,20 +5,22 @@ source "$(dirname "$0")/codex-discipline-policy.sh"
 
 MATCHED=0
 CHANGE_NAME=""
-CHANGES_ROOT=""
 while IFS= read -r SEGMENT; do
   SEGMENT="${SEGMENT#"${SEGMENT%%[![:space:]]*}"}"
-  if [[ ! "$SEGMENT" =~ ^mv[[:space:]] ]]; then continue; fi
-  if [[ "$SEGMENT" =~ mv[[:space:]]+([^[:space:]]*openspec/changes/)([a-z][a-z0-9-]+)[[:space:]]+([^[:space:]]*openspec/changes/archive/) ]]; then
-    CHANGE_NAME="${BASH_REMATCH[2]}"
-    CHANGES_ROOT="${BASH_REMATCH[1]}"
-    MATCHED=1
-    break
-  fi
+  if [[ ! "$SEGMENT" =~ ^([^[:space:]]*/)?mv[[:space:]] ]]; then continue; fi
+  if [[ "$SEGMENT" != *"openspec/changes/archive/"* ]]; then continue; fi
+  SOURCE_PATH=$(printf '%s\n' "$SEGMENT" \
+    | grep -oE 'openspec/changes/[a-z][a-z0-9-]*' \
+    | grep -vE 'openspec/changes/archive$' \
+    | head -n 1 || true)
+  [[ -n "$SOURCE_PATH" ]] || continue
+  CHANGE_NAME="${SOURCE_PATH##*/}"
+  MATCHED=1
+  break
 done < <(echo "$CMD" | tr ';|' '\n\n' | sed 's/&&/\n/g' | sed 's/||/\n/g')
 
 if [[ $MATCHED -eq 0 ]]; then exit 0; fi
-CHANGE_DIR="${CHANGES_ROOT}${CHANGE_NAME}"
+CHANGE_DIR="$REPO_ROOT/openspec/changes/$CHANGE_NAME"
 [[ -d "$CHANGE_DIR" ]] || exit 0
 if dir_has_bypass_sentinel "$CHANGE_DIR"; then exit 0; fi
 

@@ -151,6 +151,29 @@ test('response blocks a Linear title mismatch', () => {
   assert.equal(decision.decision, 'block')
 })
 
+test('response rejects matching Linear text outside a tool result', () => {
+  const identifier = 'ONE-7'
+  const title = 'Add photon torpedoes to shuttle'
+  const decision = responseDecision(
+    runResponse(`Deferred to ${identifier}: ${title}`, {
+      priorRecords: [
+        {
+          type: 'function_call',
+          name: 'mcp__codex_apps__linear_get_issue',
+          call_id: 'call-ONE-7',
+          arguments: JSON.stringify({ id: identifier }),
+        },
+        {
+          type: 'assistant_note',
+          call_id: 'call-ONE-7',
+          content: { identifier, title },
+        },
+      ],
+    }),
+  )
+  assert.equal(decision.decision, 'block')
+})
+
 test('response blocks MVP framing even beside a valid sink', () => {
   const title = 'Add photon torpedoes to shuttle'
   const decision = responseDecision(
@@ -167,6 +190,22 @@ test('artifact blocks a newly inserted TODO without a sink', () => {
     tool_input: {
       file_path: '/tmp/example.js',
       new_string: '// TODO: repair the warp core',
+    },
+  })
+  assert.equal(result.status, 2)
+  assert.match(result.stderr, /TODO/)
+})
+
+test('artifact blocks an unresolved TODO introduced by apply_patch', () => {
+  const result = runHookStatus('codex-artifact-discipline-gate.sh', {
+    tool_input: {
+      patch: [
+        '*** Begin Patch',
+        '*** Update File: example.js',
+        '@@',
+        '+// TODO: repair the warp core',
+        '*** End Patch',
+      ].join('\n'),
     },
   })
   assert.equal(result.status, 2)
@@ -208,6 +247,29 @@ test('archive scans every markdown file in the change', () => {
         tool_input: {
           command:
             'mv openspec/changes/current-change openspec/changes/archive/2026-08-08-current-change',
+        },
+      },
+      { CODEX_PROJECT_DIR: project },
+    )
+    assert.equal(result.status, 2)
+    assert.match(result.stderr, /tasks\.md/)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+  }
+})
+
+test('archive recognizes option-bearing commands with quoted paths', () => {
+  const project = makeProject()
+  const change = join(project, 'openspec', 'changes', 'current-change')
+  mkdirSync(change, { recursive: true })
+  writeFileSync(join(change, 'tasks.md'), 'This is deferred with no durable sink.\n')
+  try {
+    const result = runHookStatus(
+      'codex-archive-discipline-gate.sh',
+      {
+        tool_input: {
+          command:
+            'mv -- "openspec/changes/current-change" "openspec/changes/archive/2026-08-08-current-change"',
         },
       },
       { CODEX_PROJECT_DIR: project },

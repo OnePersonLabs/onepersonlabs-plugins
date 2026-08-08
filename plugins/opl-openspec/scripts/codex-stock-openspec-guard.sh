@@ -10,7 +10,6 @@
 #
 # STOCK (blocked):
 #   .agents/skills/openspec-*     -- OpenSpec CLI-generated skills
-#   .agents/skills/openspec-*     -- OpenSpec CLI-generated skills
 #
 # EXTENSIONS (allowed -- your own, namespaced to stay separable):
 #   .agents/skills/openspecx-*    -- project extension skills
@@ -37,9 +36,6 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null |
 [[ -z "$FILE_PATH" ]] && exit 0
 
 KIND=""
-case "$FILE_PATH" in
-  */.agents/skills/openspec-*) KIND="stock openspec-* skill" ;;
-esac
 case "$FILE_PATH" in
   */.agents/skills/openspec-*) KIND="stock openspec-* skill" ;;
 esac

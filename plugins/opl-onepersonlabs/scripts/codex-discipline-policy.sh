@@ -197,6 +197,7 @@ FOLLOWUP_ONLY_INDICATORS='follow-up|follow up|pending |blocked on|awaiting |shou
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null || echo "")
 NEW_STRING=$(echo "$INPUT" | jq -r '.tool_input.new_string // empty' 2>/dev/null || echo "")
 CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // empty' 2>/dev/null || echo "")
+PATCH=$(echo "$INPUT" | jq -r '.tool_input.patch // empty' 2>/dev/null || echo "")
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || echo "")
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
 
@@ -292,6 +293,8 @@ linear_transcript_has_issue() {
           $objects[];
           ((.call_id? // .callId? // empty) as $result_id
             | ($call_ids | index($result_id)) != null)
+          and ((.type? // "") == "function_call_output"
+            or (.type? // "") == "custom_tool_call_output")
           and (.isError? != true)
           and ([
             .. | strings
