@@ -5,10 +5,22 @@
   },
   "plugins": [
     {
-      "name": "awesome-codex-subagents",
+      "name": "opl-agent-spec",
       "source": {
         "source": "local",
-        "path": "./plugins/awesome-codex-subagents"
+        "path": "./plugins/opl-agent-spec"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "opl-awesome-codex-subagents",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-awesome-codex-subagents"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -17,10 +29,10 @@
       "category": "Productivity"
     },
     {
-      "name": "matt-pocock-skills",
+      "name": "opl-docs-mcp-server",
       "source": {
         "source": "local",
-        "path": "./plugins/matt-pocock-skills"
+        "path": "./plugins/opl-docs-mcp-server"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -29,10 +41,70 @@
       "category": "Developer Tools"
     },
     {
-      "name": "ste-writing",
+      "name": "opl-matt-pocock-skills-engineering",
       "source": {
         "source": "local",
-        "path": "./plugins/ste-writing"
+        "path": "./plugins/opl-matt-pocock-skills-engineering"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "opl-matt-pocock-skills-in-progress",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-matt-pocock-skills-in-progress"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "opl-matt-pocock-skills-misc",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-matt-pocock-skills-misc"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "opl-matt-pocock-skills-personal",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-matt-pocock-skills-personal"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "opl-matt-pocock-skills-productivity",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-matt-pocock-skills-productivity"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "opl-nyx-skills",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-nyx-skills"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -41,10 +113,10 @@
       "category": "Productivity"
     },
     {
-      "name": "openspec",
+      "name": "opl-onepersonlabs",
       "source": {
         "source": "local",
-        "path": "./plugins/openspec"
+        "path": "./plugins/opl-onepersonlabs"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -53,16 +125,52 @@
       "category": "Developer Tools"
     },
     {
-      "name": "onepersonlabs",
+      "name": "opl-openai",
       "source": {
         "source": "local",
-        "path": "./plugins/onepersonlabs"
+        "path": "./plugins/opl-openai"
       },
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
+    },
+    {
+      "name": "opl-openspec",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-openspec"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "opl-research-companion",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-research-companion"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "opl-ste-writing",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-ste-writing"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
   ]
 }

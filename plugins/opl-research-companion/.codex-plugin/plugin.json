@@ -18,7 +18,7 @@
   ],
   "skills": "./codex-skills/",
   "interface": {
-    "displayName": "Research Companion",
+    "displayName": "OPL Research Companion",
     "shortDescription": "Brainstorm, stress-test, and triage research directions",
     "longDescription": "Research Companion helps researchers pick better problems before they spend months on them. It combines structured brainstorming, adversarial idea evaluation, and project-level strategy using Carlini-inspired tests for novelty, impact, timing, feasibility, and narrative strength.",
     "developerName": "Andre Huang",

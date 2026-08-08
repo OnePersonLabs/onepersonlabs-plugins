@@ -6,7 +6,7 @@
   "keywords": ["skills", "engineering", "workflow", "tdd", "code-review"],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Matt Pocock Skills - Productivity",
+    "displayName": "OPL Matt Pocock Skills - Productivity",
     "shortDescription": "Engineering workflows from idea to ship",
     "longDescription": "A repository-local bundle of practical skills for shaping work, building it, checking it, and handing it off."
   }
