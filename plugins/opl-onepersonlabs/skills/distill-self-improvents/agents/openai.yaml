@@ -1,0 +1,3 @@
+interface:
+  display_name: "Distill Self Improvements"
+  short_description: "Suggest Skills, subagents, automations for repeated manual work in conversation history."

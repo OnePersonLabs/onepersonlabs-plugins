@@ -1,0 +1,5 @@
+{
+  "name": "research-claim-fidelity-reviewer",
+  "version": "0.1",
+  "description": "Severity-weighted BLOCK, WARN, OK reviewer method for technical and research posts. Use when reviewing X threads, announcements, captions, or launch copy for hook strength, thread arc, generic AI vocabulary, source fidelity, claim support, numeric-claim verification, and thread format before recommending publish."
+}

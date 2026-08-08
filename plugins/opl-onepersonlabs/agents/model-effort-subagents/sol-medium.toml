@@ -1,0 +1,5 @@
+name = "sol-medium"
+description = "Generic agent that uses GPT 5.6 Sol (medium)."
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
+developer_instructions = "Execute instructions"

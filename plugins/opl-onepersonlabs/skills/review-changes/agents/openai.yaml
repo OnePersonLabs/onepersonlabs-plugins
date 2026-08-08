@@ -1,0 +1,3 @@
+interface:
+  display_name: "Review Changes"
+  short_description: "Cold Repository Audit After Large-Scale Changes. Use in a new session when reviewing a large series of completed changes made by another agent."

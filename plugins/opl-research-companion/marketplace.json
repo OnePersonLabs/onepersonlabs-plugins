@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "andrehuang-research-companion",
+  "description": "Strategic research thinking agents for idea evaluation, project triage, and structured brainstorming",
+  "owner": {
+    "name": "Andre Huang",
+    "email": "andre@example.com"
+  },
+  "plugins": [
+    {
+      "name": "research-companion",
+      "description": "Idea critic, research strategist, enhanced brainstormer, and structured brainstorming skill for research ideation",
+      "source": "./",
+      "category": "productivity",
+      "version": "1.1.0",
+      "license": "MIT",
+      "keywords": ["research", "brainstorming", "strategy", "academic", "idea-evaluation"]
+    }
+  ]
+}

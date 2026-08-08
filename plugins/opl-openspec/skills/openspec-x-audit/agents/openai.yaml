@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenSpec X Audit"
+  short_description: "Audit and route OpenSpec drift"
+  default_prompt: "Use $openspec-x-audit to compare implementation with OpenSpec contracts and produce decision-ready remediation routes."

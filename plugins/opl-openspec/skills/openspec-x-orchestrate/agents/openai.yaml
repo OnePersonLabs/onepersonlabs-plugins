@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenSpec X Orchestrate"
+  short_description: "Complete eligible OpenSpec changes in isolated worktrees"
+  default_prompt: "Use $openspec-x-orchestrate to process eligible OpenSpec changes in dependency order."

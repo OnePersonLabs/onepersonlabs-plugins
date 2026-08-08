@@ -1,0 +1,4 @@
+interface:
+  display_name: "Judgment Recovery"
+  short_description: "Recover from agent failures by re-grounding judgment before changing process"
+  default_prompt: "Use $judgment-recovery to re-ground after an agent failure and choose the smallest durable intervention."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Quiz Mode"
+  short_description: "Ask questions when designing / planning."
+  default_prompt: "/plan using $quiz"

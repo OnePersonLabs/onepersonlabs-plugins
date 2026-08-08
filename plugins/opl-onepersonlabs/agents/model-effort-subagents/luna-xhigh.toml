@@ -1,0 +1,5 @@
+name = "luna-xhigh"
+description = "Generic agent that uses GPT 5.6 Luna (xhigh)."
+model = "gpt-5.6-luna"
+model_reasoning_effort = "xhigh"
+developer_instructions = "Execute instructions"

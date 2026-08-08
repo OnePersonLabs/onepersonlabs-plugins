@@ -1,0 +1,13 @@
+{
+  "name": "opl-openai",
+  "version": "0.1.0",
+  "description": "",
+  "license": "MIT",
+  "keywords": ["skills", "openai"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OPL OpenAI",
+    "shortDescription": "",
+    "longDescription": ""
+  }
+}

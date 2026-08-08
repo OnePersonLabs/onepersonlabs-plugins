@@ -1,0 +1,4 @@
+interface:
+  display_name: "Instruction Surface Review"
+  short_description: "Review concise agent guidance"
+  default_prompt: "Use $instruction-surface-review to review or edit agent instruction surfaces."

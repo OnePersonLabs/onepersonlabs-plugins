@@ -1,0 +1,30 @@
+{
+  "name": "opl-onepersonlabs",
+  "version": "0.1.0",
+  "description": "One-Person Labs skills, agents, integrations, and universal Codex guard hooks.",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "mcp",
+    "subagents",
+    "hooks",
+    "engineering",
+    "workflow",
+    "tdd",
+    "code-review",
+    "sdd",
+    "intent-driven-development",
+    "agent-utils",
+    "miscellaneous"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "apps": "./.app.json",
+  "hooks": "./hooks/hooks.json",
+  "agents": "./agents/",
+  "interface": {
+    "displayName": "OPL One-Person Labs",
+    "shortDescription": "Shared agent workflows and universal guard hooks",
+    "longDescription": "One-Person Labs skills, agents, integrations, and repository-independent guard hooks, including durable deferral enforcement."
+  }
+}

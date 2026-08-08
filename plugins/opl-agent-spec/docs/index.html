@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>agent-spec — The Intent Compiler for AI Coding</title>
+<meta name="description" content="An AI-native BDD/spec verification tool. Humans write contracts. Agents implement. Machines verify.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════ */
+/*  Design tokens                                      */
+/* ═══════════════════════════════════════════════════ */
+:root {
+  --bg:        #0a0a0c;
+  --bg-subtle: #111115;
+  --bg-card:   #16161b;
+  --bg-code:   #1c1c24;
+  --border:    #2a2a35;
+  --border-hi: #3a3a48;
+  --text:      #c8c8d0;
+  --text-dim:  #7a7a88;
+  --text-bright: #eeeef2;
+  --accent:    #e8a845;
+  --accent-dim:#b8842a;
+  --green:     #4ade80;
+  --red:       #f87171;
+  --blue:      #60a5fa;
+  --purple:    #a78bfa;
+  --orange:    #fb923c;
+  --cyan:      #22d3ee;
+
+  --font-body: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', monospace;
+  --font-size: 17px;
+  --line-height: 1.7;
+  --max-w: 1080px;
+  --section-gap: 140px;
+}
+
+/* ═══════════════════════════════════════════════════ */
+/*  Reset & base                                       */
+/* ═══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════ */
+/*  Utility                                            */
+/* ═══════════════════════════════════════════════════ */
+.container { max-width: var(--max-w); margin: 0 auto; padding: 0 32px; }
+.mono { font-family: var(--font-mono); }
+.accent { color: var(--accent); }
+.dim { color: var(--text-dim); }
+.bright { color: var(--text-bright); }
+
+/* Scroll-reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════ */
+/*  Navigation                                         */
+/* ═══════════════════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10,10,12,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  transition: box-shadow 0.3s;
+}
+nav.scrolled { box-shadow: 0 2px 24px rgba(0,0,0,0.4); }
+nav .inner {
+  max-width: var(--max-w); margin: 0 auto; padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+nav .logo {
+  font-family: var(--font-mono); font-weight: 700; font-size: 18px;
+  color: var(--accent); text-decoration: none; letter-spacing: -0.5px;
+}
+nav .logo span { color: var(--text-dim); font-weight: 400; }
+nav .links { display: flex; gap: 28px; }
+nav .links a {
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-dim);
+  text-decoration: none; transition: color 0.2s; letter-spacing: 0.3px;
+}
+nav .links a:hover { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Hero                                               */
+/* ═══════════════════════════════════════════════════ */
+.hero {
+  min-height: 100vh; display: flex; align-items: center;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(232,168,69,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 70% 60%, rgba(96,165,250,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero-content { position: relative; z-index: 1; }
+.hero h1 {
+  font-family: var(--font-mono); font-size: clamp(40px, 6vw, 72px);
+  font-weight: 700; color: var(--text-bright); line-height: 1.1;
+  letter-spacing: -2px; margin-bottom: 24px;
+}
+.hero h1 .cursor {
+  display: inline-block; width: 3px; height: 0.85em;
+  background: var(--accent); margin-left: 4px;
+  animation: blink 1s step-end infinite; vertical-align: text-bottom;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.hero .tagline {
+  font-size: clamp(18px, 2.5vw, 24px); color: var(--text);
+  max-width: 640px; margin-bottom: 40px;
+}
+.hero .tagline em {
+  font-style: normal; color: var(--accent); font-weight: 600;
+}
+.hero-badges {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 48px;
+}
+.badge {
+  font-family: var(--font-mono); font-size: 12px; padding: 6px 14px;
+  border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-dim); background: var(--bg-card);
+  letter-spacing: 0.5px;
+}
+.badge.accent { border-color: var(--accent-dim); color: var(--accent); }
+.hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+.btn {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+  padding: 12px 28px; border-radius: 8px; text-decoration: none;
+  transition: all 0.2s; cursor: pointer; border: none; letter-spacing: 0.3px;
+}
+.btn-primary {
+  background: var(--accent); color: var(--bg);
+}
+.btn-primary:hover { background: #f0b555; transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent; color: var(--text); border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Section headings                                   */
+/* ═══════════════════════════════════════════════════ */
+section { padding: var(--section-gap) 0; }
+.section-label {
+  font-family: var(--font-mono); font-size: 12px; color: var(--accent);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+}
+.section-title {
+  font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+  color: var(--text-bright); line-height: 1.2; margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+.section-desc {
+  font-size: 18px; color: var(--text); max-width: 680px; margin-bottom: 48px;
+}
+
+/* ═══════════════════════════════════════════════════ */
+/*  The Core Shift — animated comparison               */
+/* ═══════════════════════════════════════════════════ */
+.shift-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  margin-bottom: 48px;
+}
+@media (max-width: 768px) { .shift-grid { grid-template-columns: 1fr; } }
+.shift-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 32px; position: relative; overflow: hidden;
+}
+.shift-card.old { border-color: rgba(248,113,113,0.2); }
+.shift-card.new { border-color: rgba(232,168,69,0.3); }
+.shift-card h3 {
+  font-family: var(--font-mono); font-size: 14px; margin-bottom: 24px;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.shift-card.old h3 { color: var(--red); }
+.shift-card.new h3 { color: var(--accent); }
+
+/* Animated attention bar */
+.attn-bar {
+  display: flex; height: 36px; border-radius: 6px; overflow: hidden;
+  margin-bottom: 12px; border: 1px solid var(--border);
+}
+.attn-seg {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  transition: width 1.2s ease; white-space: nowrap; overflow: hidden;
+}
+.shift-card .attn-label {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+  margin-top: 6px;
+}
+
+/* ═══════════════════════════════════════════════════ */
+/*  Contract anatomy — interactive spec                */
+/* ═══════════════════════════════════════════════════ */
+.contract-demo {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.contract-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle);
+}
+.contract-tab {
+  font-family: var(--font-mono); font-size: 13px; padding: 12px 20px;
+  color: var(--text-dim); cursor: pointer; border: none; background: none;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.contract-tab:hover { color: var(--text); }
+.contract-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.contract-pane {
+  padding: 28px 32px; display: none; min-height: 200px;
+  animation: fadeIn 0.3s ease;
+}
+.contract-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.contract-pane h4 {
+  font-family: var(--font-mono); font-size: 13px; color: var(--accent);
+  margin-bottom: 16px; letter-spacing: 1px; text-transform: uppercase;
+}
+.contract-pane p, .contract-pane li {
+  font-size: 15px; line-height: 1.6;
+}
+.contract-pane ul { padding-left: 20px; margin-top: 8px; }
+.contract-pane li { margin-bottom: 6px; }
+.contract-pane code {
+  font-family: var(--font-mono); font-size: 13px; background: var(--bg-code);
+  padding: 2px 7px; border-radius: 4px; color: var(--accent);
+}
+.spec-keyword { color: var(--purple); font-weight: 600; }
+.spec-string { color: var(--green); }
+.spec-header { color: var(--accent); font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Seven-step workflow — animated pipeline            */
+/* ═══════════════════════════════════════════════════ */
+.pipeline {
+  display: flex; flex-direction: column; gap: 0;
+  position: relative; padding-left: 40px;
+}
+.pipeline::before {
+  content: ''; position: absolute; left: 15px; top: 24px;
+  bottom: 24px; width: 2px; background: var(--border);
+}
+.pipe-step {
+  position: relative; padding: 20px 0 20px 32px;
+  opacity: 0; transform: translateX(-20px);
+  transition: all 0.5s ease;
+}
+.pipe-step.visible {
+  opacity: 1; transform: translateX(0);
+}
+.pipe-dot {
+  position: absolute; left: -33px; top: 24px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--accent); background: var(--bg);
+  z-index: 1; transition: all 0.3s;
+}
+.pipe-step.visible .pipe-dot {
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(232,168,69,0.4);
+}
+.pipe-num {
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent-dim);
+  letter-spacing: 1px; margin-bottom: 4px;
+}
+.pipe-title {
+  font-family: var(--font-mono); font-size: 16px; font-weight: 600;
+  color: var(--text-bright); margin-bottom: 6px;
+}
+.pipe-desc { font-size: 15px; color: var(--text); max-width: 560px; }
+.pipe-cmd {
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+  background: var(--bg-code); padding: 8px 14px; border-radius: 6px;
+  margin-top: 10px; display: inline-block; border: 1px solid var(--border);
+}
+.pipe-who {
+  display: inline-block; font-family: var(--font-mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 4px; margin-left: 8px;
+  letter-spacing: 0.5px; vertical-align: middle;
+}
+.who-human { background: rgba(96,165,250,0.15); color: var(--blue); }
+.who-agent { background: rgba(167,139,250,0.15); color: var(--purple); }
+.who-machine { background: rgba(74,222,128,0.15); color: var(--green); }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Verification pyramid                               */
+/* ═══════════════════════════════════════════════════ */
+.pyramid {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; margin: 48px 0;
+}
+.pyramid-layer {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; padding: 16px 24px;
+  font-family: var(--font-mono); font-size: 13px;
+  border: 1px solid var(--border); position: relative;
+  transition: all 0.5s ease; cursor: default;
+  opacity: 0; transform: scale(0.9);
+}
+.pyramid-layer.visible { opacity: 1; transform: scale(1); }
+.pyramid-layer:hover {
+  transform: scale(1.02); border-color: var(--accent);
+  box-shadow: 0 4px 20px rgba(232,168,69,0.1);
+}
+.pyramid-layer .layer-name { font-weight: 600; }
+.pyramid-layer .layer-meta {
+  font-size: 11px; color: var(--text-dim); margin-left: 16px;
+}
+.pyr-l1 { width: 90%; background: rgba(74,222,128,0.06); border-color: rgba(74,222,128,0.2); }
+.pyr-l2 { width: 75%; background: rgba(96,165,250,0.06); border-color: rgba(96,165,250,0.2); }
+.pyr-l3 { width: 60%; background: rgba(167,139,250,0.06); border-color: rgba(167,139,250,0.2); }
+.pyr-l4 { width: 45%; background: rgba(232,168,69,0.06); border-color: rgba(232,168,69,0.2); }
+.pyr-l1 .layer-name { color: var(--green); }
+.pyr-l2 .layer-name { color: var(--blue); }
+.pyr-l3 .layer-name { color: var(--purple); }
+.pyr-l4 .layer-name { color: var(--accent); }
+.pyramid-label {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+  margin-top: 12px; letter-spacing: 1px;
+}
+.pyramid-arrows {
+  display: flex; justify-content: space-between; width: 90%; margin-top: -4px;
+}
+.pyramid-arrows span { font-size: 12px; color: var(--text-dim); font-family: var(--font-mono); }
+
+/* ═══════════════════════════════════════════════════ */
+/*  AI Modes — two-path diagram                        */
+/* ═══════════════════════════════════════════════════ */
+.ai-modes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  margin: 48px 0;
+}
+@media (max-width: 768px) { .ai-modes { grid-template-columns: 1fr; } }
+.ai-mode-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 32px; position: relative;
+}
+.ai-mode-card h3 {
+  font-family: var(--font-mono); font-size: 15px; font-weight: 600;
+  color: var(--text-bright); margin-bottom: 8px;
+}
+.ai-mode-card .mode-tag {
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+  background: rgba(232,168,69,0.1); padding: 2px 10px; border-radius: 4px;
+  display: inline-block; margin-bottom: 16px;
+}
+.ai-mode-card p { font-size: 15px; margin-bottom: 16px; }
+.flow-diagram {
+  display: flex; flex-direction: column; gap: 6px;
+  font-family: var(--font-mono); font-size: 12px;
+  padding: 16px; background: var(--bg-code); border-radius: 8px;
+}
+.flow-row {
+  display: flex; align-items: center; gap: 8px; padding: 4px 0;
+}
+.flow-arrow { color: var(--text-dim); }
+.flow-node {
+  padding: 4px 10px; border-radius: 4px; white-space: nowrap;
+}
+.flow-agent { background: rgba(167,139,250,0.15); color: var(--purple); }
+.flow-spec  { background: rgba(232,168,69,0.15); color: var(--accent); }
+.flow-human { background: rgba(96,165,250,0.15); color: var(--blue); }
+.flow-ext   { background: rgba(74,222,128,0.15); color: var(--green); }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Spec hierarchy — three layers                      */
+/* ═══════════════════════════════════════════════════ */
+.hierarchy {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px; margin: 48px 0;
+}
+.hier-layer {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 20px 28px; display: flex; align-items: center;
+  gap: 20px; transition: all 0.3s; background: var(--bg-card);
+}
+.hier-layer:hover { border-color: var(--accent-dim); }
+.hier-l0 { width: 85%; }
+.hier-l1 { width: 70%; }
+.hier-l2 { width: 55%; }
+.hier-tag {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  padding: 4px 12px; border-radius: 4px; white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+.hier-l0 .hier-tag { background: rgba(232,168,69,0.15); color: var(--accent); }
+.hier-l1 .hier-tag { background: rgba(96,165,250,0.15); color: var(--blue); }
+.hier-l2 .hier-tag { background: rgba(74,222,128,0.15); color: var(--green); }
+.hier-desc { font-size: 14px; color: var(--text); }
+.hier-arrow {
+  font-family: var(--font-mono); font-size: 14px; color: var(--text-dim);
+}
+.hier-inherit {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+  text-align: center; margin-top: -8px; margin-bottom: -8px;
+}
+
+/* ═══════════════════════════════════════════════════ */
+/*  Verdict badges                                     */
+/* ═══════════════════════════════════════════════════ */
+.verdict-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin: 32px 0;
+}
+@media (max-width: 640px) { .verdict-grid { grid-template-columns: 1fr 1fr; } }
+.verdict-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px; text-align: center;
+}
+.verdict-icon { font-size: 28px; margin-bottom: 10px; }
+.verdict-name {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+  margin-bottom: 6px;
+}
+.verdict-desc { font-size: 13px; color: var(--text-dim); }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Skills section                                     */
+/* ═══════════════════════════════════════════════════ */
+.skills-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  margin-top: 48px;
+}
+@media (max-width: 1024px) { .skills-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .skills-grid { grid-template-columns: 1fr; } }
+.skill-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px; transition: border-color 0.2s;
+}
+.skill-card:hover { border-color: var(--accent-dim); }
+.skill-card h3 {
+  font-family: var(--font-mono); font-size: 15px; font-weight: 600;
+  color: var(--text-bright); margin-bottom: 6px;
+}
+.skill-card .skill-tag {
+  font-family: var(--font-mono); font-size: 11px; display: inline-block;
+  padding: 2px 10px; border-radius: 4px; margin-bottom: 12px;
+}
+.skill-tag-workflow { background: rgba(167,139,250,0.15); color: var(--purple); }
+.skill-tag-author { background: rgba(74,222,128,0.15); color: var(--green); }
+.skill-tag-estimate { background: rgba(232,168,69,0.15); color: var(--accent); }
+.skill-card p { font-size: 14px; color: var(--text); line-height: 1.6; }
+.skills-install {
+  margin-top: 36px; text-align: center;
+}
+.skills-install-box {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--bg-code); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 28px;
+  font-family: var(--font-mono); font-size: 15px;
+  transition: border-color 0.2s; cursor: pointer;
+}
+.skills-install-box:hover { border-color: var(--accent); }
+.skills-install-box .cmd-prompt { color: var(--text-dim); }
+.skills-install-box .cmd-text { color: var(--green); }
+.skills-install-box .copy-hint {
+  font-size: 11px; color: var(--text-dim); opacity: 0;
+  transition: opacity 0.2s; margin-left: 4px;
+}
+.skills-install-box:hover .copy-hint { opacity: 1; }
+.skills-install-box.copied .copy-hint { opacity: 1; color: var(--accent); }
+.skills-install-note {
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+  margin-top: 12px;
+}
+.skills-agents {
+  display: flex; justify-content: center; gap: 16px; margin-top: 24px;
+  flex-wrap: wrap;
+}
+.agent-badge {
+  font-family: var(--font-mono); font-size: 12px;
+  padding: 6px 16px; border-radius: 6px;
+  border: 1px solid var(--border); color: var(--text-dim);
+  background: var(--bg-card);
+}
+
+/* ═══════════════════════════════════════════════════ */
+/*  Contract language switcher                         */
+/* ═══════════════════════════════════════════════════ */
+.lang-switcher {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--bg-subtle); border-radius: 6px;
+  margin-left: auto;
+}
+.lang-btn {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  padding: 4px 12px; border-radius: 4px; border: none;
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+}
+.lang-btn:hover { color: var(--text); }
+.lang-btn.active { background: var(--bg-card); color: var(--accent); }
+.contract-toolbar {
+  display: flex; align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle); padding: 0 16px;
+}
+.contract-toolbar .contract-tabs {
+  border-bottom: none; flex: 1;
+}
+.lang-content { display: none; }
+.lang-content.active { display: block; }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Install / CLI section                              */
+/* ═══════════════════════════════════════════════════ */
+.install-block {
+  background: var(--bg-code); border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px 28px; margin: 24px 0;
+  font-family: var(--font-mono); font-size: 14px; color: var(--text);
+  line-height: 1.9; overflow-x: auto;
+}
+.install-block .comment { color: var(--text-dim); }
+.install-block .cmd { color: var(--green); }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Footer                                             */
+/* ═══════════════════════════════════════════════════ */
+footer {
+  border-top: 1px solid var(--border); padding: 48px 0;
+  text-align: center; color: var(--text-dim);
+  font-family: var(--font-mono); font-size: 13px;
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════ */
+/*  Responsive                                         */
+/* ═══════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  :root { --section-gap: 80px; }
+  .container { padding: 0 20px; }
+  nav .links { gap: 16px; }
+  nav .links a { font-size: 12px; }
+  .pipeline { padding-left: 28px; }
+  .pipe-step { padding-left: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Navigation                                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<nav id="nav">
+  <div class="inner">
+    <a href="#" class="logo">agent-spec<span> v1.2</span></a>
+    <div class="links">
+      <a href="#shift">Why</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#atlas">Atlas</a>
+      <a href="#skills">Skills</a>
+      <a href="#contract">Contract</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#verify">Verify</a>
+      <a href="#ai-verify">AI</a>
+      <a href="#knowledge">Knowledge</a>
+      <a href="#start">Start</a>
+      <a href="book/" target="_blank">Book</a>
+      <a href="https://github.com/ZhangHanDong/agent-spec" target="_blank">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Hero                                          -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container hero-content">
+    <h1>agent-spec<span class="cursor"></span></h1>
+    <p class="tagline">
+      The <em>intent compiler</em>（意图编译器）for AI coding: intent compiles into
+      requirement IR, Rust source compiles into a queryable code graph, and every
+      <em>contract</em> in between is verified by machines.<br>
+      Humans define intent. Agents implement. Nothing ships unverified.
+    </p>
+    <div class="hero-badges">
+      <span class="badge accent">Rust</span>
+      <span class="badge">BDD / Spec</span>
+      <span class="badge">CLI-first</span>
+      <span class="badge">Knowledge Layer (KLL)</span>
+      <span class="badge">Intent Compiler</span>
+      <span class="badge">Read-only MCP</span>
+      <span class="badge">rust-atlas</span>
+      <span class="badge">中文 + English</span>
+      <span class="badge">Git & jj aware</span>
+      <span class="badge">Agent-agnostic</span>
+    </div>
+    <div class="hero-cta">
+      <a href="#start" class="btn btn-primary">Get Started</a>
+      <a href="book/" class="btn btn-ghost">读官方书（中文）</a>
+      <a href="#shift" class="btn btn-ghost" style="margin-left:12px;">See How It Works</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  The Core Shift                                -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="shift">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">The Core Shift</div>
+      <h2 class="section-title">Review Point Displacement</h2>
+      <p class="section-desc">
+        Traditional code review asks humans to judge <strong>500 lines of code diff</strong>.
+        agent-spec moves the review point: humans define <strong>50 lines of contract</strong>,
+        and machines verify the code against it.
+      </p>
+    </div>
+
+    <div class="shift-grid reveal">
+      <div class="shift-card old">
+        <h3>❌ Traditional Flow</h3>
+        <p style="font-size:14px; color:var(--text-dim); margin-bottom:18px;">
+          Issue → Branch → Code → PR → <strong style="color:var(--red)">Read Diff (80%)</strong> → Approve
+        </p>
+        <div class="attn-bar" id="bar-old">
+          <div class="attn-seg" style="width:10%; background:rgba(96,165,250,0.25); color:var(--blue);">10%</div>
+          <div class="attn-seg" style="width:80%; background:rgba(248,113,113,0.25); color:var(--red);">80%</div>
+          <div class="attn-seg" style="width:10%; background:rgba(167,139,250,0.2); color:var(--purple);">10%</div>
+        </div>
+        <div class="attn-label">Write Issue → <strong style="color:var(--red)">Read Code Diff</strong> → Approve</div>
+      </div>
+
+      <div class="shift-card new">
+        <h3>✓ agent-spec Flow</h3>
+        <p style="font-size:14px; color:var(--text-dim); margin-bottom:18px;">
+          <strong style="color:var(--accent)">Contract (60%)</strong> → Agent Codes → Explain → Approve
+        </p>
+        <div class="attn-bar" id="bar-new">
+          <div class="attn-seg" style="width:60%; background:rgba(232,168,69,0.25); color:var(--accent);">60%</div>
+          <div class="attn-seg" style="width:30%; background:rgba(96,165,250,0.2); color:var(--blue);">30%</div>
+          <div class="attn-seg" style="width:10%; background:rgba(167,139,250,0.2); color:var(--purple);">10%</div>
+        </div>
+        <div class="attn-label"><strong style="color:var(--accent)">Write Contract</strong> → Read Explain → Approve</div>
+      </div>
+    </div>
+
+    <p class="reveal" style="font-size:15px; color:var(--text-dim); text-align:center; max-width:600px; margin:0 auto;">
+      Human time shifts from <em>"reading code"</em> to <em>"defining intent"</em> — a higher-value activity.
+      Quality assurance shifts from <em>"human judgment"</em> to <em>"machine verification"</em>.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Intent Compiler Architecture                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="architecture">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Architecture</div>
+      <h2 class="section-title">The Intent Compiler Pipeline</h2>
+      <p class="section-desc">
+        Two independent IRs: human intent compiles into the <em>Requirement IR</em> (human-owned
+        KLL truth) while Rust source compiles into the <em>Code Graph IR</em> (derived, stale-aware,
+        via Rust Atlas). The Intent-Code Linker joins them into a verifiable plan DAG — derived
+        code facts never rewrite accepted requirements, and liveness feeds verdicts back to the
+        knowledge that produced them. AI works only at the edges; every gate is deterministic.
+      </p>
+    </div>
+
+    <div class="reveal" style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:8px; padding:24px; overflow-x:auto;">
+      <svg viewBox="0 0 1080 608" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dual-IR intent compiler: human intent compiles into Requirement IR, Rust source compiles into Code Graph IR via Rust Atlas, the Intent-Code Linker joins both into a verifiable plan DAG, agents implement, lifecycle verifies, and liveness feeds back to the Requirement IR" style="min-width:920px; width:100%; height:auto; display:block;">
+        <defs>
+          <marker id="ac-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#7a7a88"/>
+          </marker>
+          <marker id="ac-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#e8a845"/>
+          </marker>
+        </defs>
+
+        <!-- arrows first, boxes above -->
+        <line x1="216" y1="76" x2="244" y2="76" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <line x1="456" y1="76" x2="484" y2="76" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <line x1="216" y1="300" x2="244" y2="300" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <!-- Requirement IR down into the Linker -->
+        <path d="M 604 120 L 604 168 L 756 168" fill="none" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <!-- Code Graph IR up into the Linker -->
+        <path d="M 556 256 L 556 208 L 756 208" fill="none" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <!-- Linker down to the plan row -->
+        <path d="M 868 232 L 868 396" fill="none" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <line x1="756" y1="444" x2="716" y2="444" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <line x1="440" y1="444" x2="404" y2="444" stroke="#7a7a88" stroke-width="1.2" marker-end="url(#ac-arrow)"/>
+        <!-- liveness feedback: lifecycle/trace back up to the Requirement IR -->
+        <path d="M 232 400 L 232 16 L 604 16 L 604 28" fill="none" stroke="#e8a845" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#ac-arrow-accent)"/>
+        <rect x="316" y="8" width="180" height="16" rx="2" fill="#111115"/>
+        <text x="406" y="20" fill="#e8a845" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LIVENESS · NEVER STORED</text>
+
+        <!-- lane 1: human intent -->
+        <g>
+          <rect x="24" y="36" width="192" height="80" rx="6" fill="#111115"/>
+          <rect x="24" y="36" width="192" height="80" rx="6" fill="#16161b" stroke="#3a3a48" stroke-width="1"/>
+          <text x="36" y="56" fill="#7a7a88" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">SOURCE</text>
+          <text x="120" y="80" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">意图 · Intent</text>
+          <text x="120" y="102" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">PRD · issues · 对话</text>
+        </g>
+        <g>
+          <rect x="248" y="36" width="208" height="80" rx="6" fill="#111115"/>
+          <rect x="248" y="36" width="208" height="80" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="260" y="56" fill="#a78bfa" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">AI + HUMAN REVIEW</text>
+          <text x="352" y="80" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">Intake</text>
+          <text x="352" y="102" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">import · transition · accept</text>
+        </g>
+        <g>
+          <rect x="488" y="28" width="232" height="92" rx="6" fill="#111115"/>
+          <rect x="488" y="28" width="232" height="92" rx="6" fill="rgba(232,168,69,0.08)" stroke="#e8a845" stroke-width="1.2"/>
+          <text x="500" y="48" fill="#e8a845" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">REQUIREMENT IR</text>
+          <text x="604" y="72" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">需求 IR · KLL 真相</text>
+          <text x="604" y="94" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">human-owned · REQ-* · gates</text>
+          <text x="604" y="110" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">lint-knowledge · graph · status</text>
+        </g>
+
+        <!-- lane 2: rust source -->
+        <g>
+          <rect x="24" y="260" width="192" height="80" rx="6" fill="#111115"/>
+          <rect x="24" y="260" width="192" height="80" rx="6" fill="#16161b" stroke="#3a3a48" stroke-width="1"/>
+          <text x="36" y="280" fill="#7a7a88" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">SOURCE</text>
+          <text x="120" y="304" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">Rust Source</text>
+          <text x="120" y="326" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">src/** · optional SCIP</text>
+        </g>
+        <g>
+          <rect x="248" y="256" width="352" height="88" rx="6" fill="#111115"/>
+          <rect x="248" y="256" width="352" height="88" rx="6" fill="rgba(122,122,136,0.06)" stroke="#7a7a88" stroke-width="1" stroke-dasharray="6,3"/>
+          <text x="260" y="276" fill="#7a7a88" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">CODE GRAPH IR · DERIVED</text>
+          <text x="424" y="300" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">代码 IR · Rust Atlas</text>
+          <text x="424" y="322" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">atlas build · blake3 staleness · provenance</text>
+        </g>
+
+        <!-- the join -->
+        <g>
+          <rect x="760" y="144" width="216" height="88" rx="6" fill="#111115"/>
+          <rect x="760" y="144" width="216" height="88" rx="6" fill="rgba(232,168,69,0.08)" stroke="#e8a845" stroke-width="1.2"/>
+          <text x="772" y="164" fill="#e8a845" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">THE JOIN</text>
+          <text x="868" y="188" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">Intent-Code Linker</text>
+          <text x="868" y="210" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">derived bindings · never</text>
+          <text x="868" y="224" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">rewrites KLL truth</text>
+        </g>
+
+        <!-- plan row -->
+        <g>
+          <rect x="760" y="400" width="216" height="88" rx="6" fill="#111115"/>
+          <rect x="760" y="400" width="216" height="88" rx="6" fill="#16161b" stroke="#3a3a48" stroke-width="1"/>
+          <text x="772" y="420" fill="#7a7a88" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">VERIFIABLE TARGET</text>
+          <text x="868" y="444" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">Plan DAG · Contracts</text>
+          <text x="868" y="466" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">REQ × work unit × spec × code</text>
+        </g>
+        <g>
+          <rect x="444" y="400" width="272" height="88" rx="6" fill="#111115"/>
+          <rect x="444" y="400" width="272" height="88" rx="6" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="456" y="420" fill="#a78bfa" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">AI</text>
+          <text x="580" y="444" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">Agent Implements</text>
+          <text x="580" y="466" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">within Boundaries · Symbols</text>
+        </g>
+        <g>
+          <rect x="120" y="400" width="284" height="88" rx="6" fill="#111115"/>
+          <rect x="120" y="400" width="284" height="88" rx="6" fill="#16161b" stroke="#3a3a48" stroke-width="1"/>
+          <text x="132" y="420" fill="#7a7a88" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.12em">VERIFY · LIVENESS</text>
+          <text x="262" y="444" fill="#eeeef2" font-size="16" font-weight="600" font-family="'Source Serif 4', Georgia, serif" text-anchor="middle">lifecycle · trace</text>
+          <text x="262" y="466" fill="#7a7a88" font-size="11" font-family="'JetBrains Mono', monospace" text-anchor="middle">honored · violated · unproven</text>
+        </g>
+
+        <!-- legend -->
+        <line x1="24" y1="536" x2="1056" y2="536" stroke="#2a2a35" stroke-width="0.8"/>
+        <text x="24" y="564" fill="#7a7a88" font-size="10" font-family="'JetBrains Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+        <rect x="120" y="552" width="16" height="16" rx="3" fill="rgba(232,168,69,0.08)" stroke="#e8a845" stroke-width="1.2"/>
+        <text x="144" y="564" fill="#c8c8d0" font-size="11" font-family="'JetBrains Mono', monospace">human-owned IR / the join</text>
+        <rect x="384" y="552" width="16" height="16" rx="3" fill="rgba(122,122,136,0.06)" stroke="#7a7a88" stroke-width="1" stroke-dasharray="6,3"/>
+        <text x="408" y="564" fill="#c8c8d0" font-size="11" font-family="'JetBrains Mono', monospace">derived code facts, stale-aware</text>
+        <rect x="672" y="552" width="16" height="16" rx="3" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="696" y="564" fill="#c8c8d0" font-size="11" font-family="'JetBrains Mono', monospace">AI, human-reviewed</text>
+        <line x1="912" y1="560" x2="952" y2="560" stroke="#e8a845" stroke-width="1.2" stroke-dasharray="5,4"/>
+        <text x="960" y="564" fill="#c8c8d0" font-size="11" font-family="'JetBrains Mono', monospace">recomputed liveness</text>
+      </svg>
+      <p style="margin:16px 0 0; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--text-dim); text-align:center;">
+        0.6.0: every box above is shipped — dual IRs, governance / status / liveness gates, the orchestrator machine surface, and the Intent-Code Linker (contract symbols · typed trace targets · execution bundles)
+        (<a href="https://github.com/ZhangHanDong/agent-spec/blob/main/docs/intent-compiler/architecture.md" style="color:var(--text-dim); text-decoration:underline;">architecture</a>)
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Rust Atlas                                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="atlas">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">New in 0.4.0 · Code Graph Provider</div>
+      <h2 class="section-title">Rust Atlas — Query Structure, Not Text</h2>
+      <p class="section-desc">
+        Agents stop grepping and start querying. <code>rust-atlas</code> (a standalone crate,
+        embedded as <code>agent-spec atlas</code>) compiles Rust source into the Code Graph IR:
+        modules, types, traits, impls, calls — extracted with <code>syn</code> on stable,
+        stored as per-file shards with blake3 hashes, optionally sharpened by a SCIP index.
+        Every edge carries provenance; every read can demand freshness.
+      </p>
+    </div>
+
+    <div class="install-block reveal">
+      <span class="comment"># Build or incrementally refresh the graph (per-file shards + blake3)</span><br>
+      <span class="cmd">agent-spec atlas build --code .</span><br><br>
+      <span class="comment"># Node facts + adjacent edges for one symbol</span><br>
+      <span class="cmd">agent-spec atlas query spec_verify::Verifier --format json</span><br><br>
+      <span class="comment"># Who calls / references this? Which impls touch this trait?</span><br>
+      <span class="cmd">agent-spec atlas refs Verifier &nbsp;·&nbsp; agent-spec atlas impls Verifier</span><br><br>
+      <span class="comment"># Freshness is a gate: exits non-zero when any shard is stale</span><br>
+      <span class="cmd">agent-spec atlas check --code .</span>
+    </div>
+
+    <div class="skills-grid reveal">
+      <div class="skill-card">
+        <h3>A graph, on disk, incremental</h3>
+        <div class="skill-tag skill-tag-workflow">build · tree</div>
+        <p>
+          Deterministic module outlines and symbol adjacency from <code>syn</code> —
+          no nightly, no <code>rustc</code> plugin. Shards rebuild only when their
+          file hash changes, so re-indexing a large repo costs one file, not the world.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>Staleness you can gate on</h3>
+        <div class="skill-tag skill-tag-author">check · --frozen</div>
+        <p>
+          Every shard records the blake3 of the source it came from.
+          <code>atlas check</code> fails CI when the graph lags the code, and
+          <code>--frozen</code> makes reads refuse silently-stale answers.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>Same graph over MCP</h3>
+        <div class="skill-tag skill-tag-estimate">atlas_query · atlas_refs</div>
+        <p>
+          <code>agent-spec mcp</code> exposes <code>atlas_tree</code>, <code>atlas_query</code>,
+          <code>atlas_refs</code>, <code>atlas_impls</code>, <code>atlas_status</code> —
+          any MCP client asks "who calls this?" and gets provenance-stamped edges, not grep hits.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Skills                                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="skills">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Agent Integration</div>
+      <h2 class="section-title">Skills for Every AI Agent</h2>
+      <p class="section-desc">
+        agent-spec ships project-local Skills that teach AI agents the contract-driven
+        workflow. One install command — works with Claude Code, Codex, Cursor, Aider, and any agent that reads workspace conventions.
+      </p>
+    </div>
+
+    <div class="skills-install reveal">
+      <div class="skills-install-box" id="skills-copy" title="Click to copy">
+        <span class="cmd-prompt">$</span>
+        <span class="cmd-text">./install-skills.sh</span>
+        <span class="copy-hint">click to copy</span>
+      </div>
+      <div class="skills-install-note">Installs agent-spec CLI + all 5 skills into ~/.claude/skills/ with one command</div>
+    </div>
+
+    <div class="skills-grid reveal">
+      <div class="skill-card">
+        <h3>agent-spec-tool-first</h3>
+        <div class="skill-tag skill-tag-workflow">workflow</div>
+        <p>
+          The default integration path. Teaches the Agent the seven-step workflow:
+          read the Contract, implement within Boundaries, run lifecycle for verification,
+          retry on failure, generate explain for review. CLI commands are the primary interface.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>agent-spec-authoring</h3>
+        <div class="skill-tag skill-tag-author">authoring</div>
+        <p>
+          The spec writing path. Teaches the Agent how to draft and revise Task Contracts
+          in the DSL — four elements structure, bilingual keywords, test selectors,
+          step tables, and the "exception paths ≥ happy paths" principle.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>agent-spec-estimate</h3>
+        <div class="skill-tag skill-tag-estimate">estimation</div>
+        <p>
+          The estimation path. Maps Task Contract elements — scenarios, decisions,
+          boundaries — to round-based effort estimates with risk coefficients.
+          Produces breakdown tables, wallclock projections, and confidence levels.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>agent-spec-intent-compiler</h3>
+        <div class="skill-tag skill-tag-author">intent compiler</div>
+        <p>
+          The intake path. Turns unstructured PRDs and issues into human-reviewed
+          Candidate Requirement Blocks — with source excerpts, confidence, scenarios,
+          and open questions — that the deterministic Intent Compiler then imports.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>agent-spec-wiki</h3>
+        <div class="skill-tag skill-tag-workflow">live wiki</div>
+        <p>
+          The working-memory path. Maintains the repo-local code live wiki:
+          stale-article detection, source-traced module and concept pages,
+          architecture inventories, and cross-project maps.
+        </p>
+      </div>
+    </div>
+
+    <div class="skills-agents reveal">
+      <span class="agent-badge">Claude Code</span>
+      <span class="agent-badge">Codex CLI</span>
+      <span class="agent-badge">Cursor</span>
+      <span class="agent-badge">Aider</span>
+      <span class="agent-badge">AGENTS.md</span>
+      <span class="agent-badge">.cursorrules</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Contract Anatomy                              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="contract">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Task Contract</div>
+      <h2 class="section-title">Four Elements of a Contract</h2>
+      <p class="section-desc">
+        A Contract is not a vague Issue. It's a precise specification with four parts that
+        constrain the Agent's behavior and define deterministic acceptance criteria.
+      </p>
+    </div>
+
+    <div class="contract-demo reveal">
+      <div class="contract-toolbar">
+        <div class="contract-tabs">
+          <button class="contract-tab active" data-pane="intent">Intent</button>
+          <button class="contract-tab" data-pane="decisions">Decisions</button>
+          <button class="contract-tab" data-pane="boundaries">Boundaries</button>
+          <button class="contract-tab" data-pane="criteria">Completion Criteria</button>
+        </div>
+        <div class="lang-switcher">
+          <button class="lang-btn active" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="zh">中文</button>
+          <button class="lang-btn" data-lang="ja">日本語</button>
+        </div>
+      </div>
+
+      <!-- ── Intent ─────────────────────────────── -->
+      <div class="contract-pane active" id="pane-intent">
+        <h4>## Intent — What and Why</h4>
+        <p style="margin-bottom:12px;">A focused statement of purpose. Not a feature list — a clear direction that gives the Agent context.</p>
+        <div class="install-block" style="margin:0;">
+          <div class="lang-content active" data-lang="en">
+            <span class="spec-header">## Intent</span><br><br>
+            Add a user registration endpoint to the existing auth module.<br>
+            New users register with email + password; a verification email is sent<br>
+            on success. This is the first step of the user system — login and<br>
+            password reset will be built on top of it later.
+          </div>
+          <div class="lang-content" data-lang="zh">
+            <span class="spec-header">## 意图</span><br><br>
+            为现有的认证模块添加用户注册 endpoint。新用户通过邮箱+密码注册，<br>
+            注册成功后发送验证邮件。这是用户体系的第一步，后续会在此基础上<br>
+            添加登录和密码重置。
+          </div>
+          <div class="lang-content" data-lang="ja">
+            <span class="spec-header">## 意図</span><br><br>
+            既存の認証モジュールにユーザー登録エンドポイントを追加する。<br>
+            新規ユーザーはメールアドレスとパスワードで登録し、成功時に確認<br>
+            メールを送信する。これはユーザーシステムの第一歩であり、今後<br>
+            ログインとパスワードリセットをこの基盤の上に構築する。
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Decisions ──────────────────────────── -->
+      <div class="contract-pane" id="pane-decisions">
+        <h4>## Decisions — Fixed Technical Choices</h4>
+        <p style="margin-bottom:12px;">Already-decided choices that remove the Agent's decision space. The Agent follows these without questioning.</p>
+        <div class="install-block" style="margin:0;">
+          <div class="lang-content active" data-lang="en">
+            <span class="spec-header">## Decisions</span><br><br>
+            - Route: <span class="spec-string">POST /api/v1/auth/register</span><br>
+            - Password hash: <span class="spec-string">bcrypt, cost factor = 12</span><br>
+            - Verification token: <span class="spec-string">crypto.randomUUID(), stored in DB, 24h expiry</span><br>
+            - Email: use existing EmailService, do not create a new one
+          </div>
+          <div class="lang-content" data-lang="zh">
+            <span class="spec-header">## 已定决策</span><br><br>
+            - 路由: <span class="spec-string">POST /api/v1/auth/register</span><br>
+            - 密码哈希: <span class="spec-string">bcrypt, cost factor = 12</span><br>
+            - 验证 Token: <span class="spec-string">crypto.randomUUID(), 存数据库, 24h 过期</span><br>
+            - 邮件: 使用现有 EmailService，不新建
+          </div>
+          <div class="lang-content" data-lang="ja">
+            <span class="spec-header">## 決定事項</span><br><br>
+            - ルーティング: <span class="spec-string">POST /api/v1/auth/register</span><br>
+            - パスワードハッシュ: <span class="spec-string">bcrypt, コストファクター = 12</span><br>
+            - 検証トークン: <span class="spec-string">crypto.randomUUID(), DB保存, 24時間有効</span><br>
+            - メール: 既存のEmailServiceを使用、新規作成しない
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Boundaries ─────────────────────────── -->
+      <div class="contract-pane" id="pane-boundaries">
+        <h4>## Boundaries — What to Touch, What Not to Touch</h4>
+        <p style="margin-bottom:12px;">Path globs are <strong>mechanically enforced</strong> by the BoundariesVerifier. Natural language prohibitions are checked by lint.</p>
+        <div class="install-block" style="margin:0;">
+          <div class="lang-content active" data-lang="en">
+            <span class="spec-header">## Boundaries</span><br><br>
+            <span class="spec-keyword">### Allowed Changes</span><br>
+            - crates/api/src/auth/**<br>
+            - crates/api/tests/auth/**<br><br>
+            <span class="spec-keyword">### Forbidden</span><br>
+            - Do not add new dependencies<br>
+            - Do not modify the existing login endpoint
+          </div>
+          <div class="lang-content" data-lang="zh">
+            <span class="spec-header">## 边界</span><br><br>
+            <span class="spec-keyword">### 允许修改</span><br>
+            - crates/api/src/auth/**<br>
+            - crates/api/tests/auth/**<br><br>
+            <span class="spec-keyword">### 禁止做</span><br>
+            - 不要添加新的依赖<br>
+            - 不要修改现有的登录 endpoint
+          </div>
+          <div class="lang-content" data-lang="ja">
+            <span class="spec-header">## 境界</span><br><br>
+            <span class="spec-keyword">### 変更許可</span><br>
+            - crates/api/src/auth/**<br>
+            - crates/api/tests/auth/**<br><br>
+            <span class="spec-keyword">### 禁止事項</span><br>
+            - 新しい依存関係を追加しない<br>
+            - 既存のログインエンドポイントを変更しない
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Completion Criteria ─────────────────── -->
+      <div class="contract-pane" id="pane-criteria">
+        <h4>## Completion Criteria — Deterministic Pass/Fail</h4>
+        <p style="margin-bottom:12px;">BDD scenarios with explicit test bindings. Key rule: <strong>exception paths ≥ happy paths</strong>.</p>
+        <div class="install-block" style="margin:0;">
+          <div class="lang-content active" data-lang="en">
+            <span class="spec-header">## Completion Criteria</span><br><br>
+            <span class="spec-keyword">Scenario:</span> Successful registration<br>
+            &nbsp;&nbsp;<span class="spec-keyword">Test:</span> <span class="spec-string">test_register_returns_201</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">Given</span> no user with email <span class="spec-string">"alice@example.com"</span> exists<br>
+            &nbsp;&nbsp;<span class="spec-keyword">When</span> client submits the registration request<br>
+            &nbsp;&nbsp;<span class="spec-keyword">Then</span> response status should be <span class="spec-string">201</span><br><br>
+            <span class="spec-keyword">Scenario:</span> Duplicate email rejected <span class="dim">← exception path</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">Test:</span> <span class="spec-string">test_register_rejects_duplicate</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">Given</span> a user with email <span class="spec-string">"alice@example.com"</span> already exists<br>
+            &nbsp;&nbsp;<span class="spec-keyword">When</span> client submits the same email for registration<br>
+            &nbsp;&nbsp;<span class="spec-keyword">Then</span> response status should be <span class="spec-string">409</span>
+          </div>
+          <div class="lang-content" data-lang="zh">
+            <span class="spec-header">## 完成条件</span><br><br>
+            <span class="spec-keyword">场景:</span> 注册成功<br>
+            &nbsp;&nbsp;<span class="spec-keyword">测试:</span> <span class="spec-string">test_register_returns_201</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">假设</span> 不存在邮箱为 <span class="spec-string">"alice@example.com"</span> 的用户<br>
+            &nbsp;&nbsp;<span class="spec-keyword">当</span> 客户端提交注册请求<br>
+            &nbsp;&nbsp;<span class="spec-keyword">那么</span> 响应状态码为 <span class="spec-string">201</span><br><br>
+            <span class="spec-keyword">场景:</span> 重复邮箱被拒绝 <span class="dim">← 异常路径</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">测试:</span> <span class="spec-string">test_register_rejects_duplicate</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">假设</span> 已存在邮箱为 <span class="spec-string">"alice@example.com"</span> 的用户<br>
+            &nbsp;&nbsp;<span class="spec-keyword">当</span> 客户端提交相同邮箱的注册请求<br>
+            &nbsp;&nbsp;<span class="spec-keyword">那么</span> 响应状态码为 <span class="spec-string">409</span>
+          </div>
+          <div class="lang-content" data-lang="ja">
+            <span class="spec-header">## 完了条件</span><br><br>
+            <span class="spec-keyword">シナリオ:</span> 登録成功<br>
+            &nbsp;&nbsp;<span class="spec-keyword">テスト:</span> <span class="spec-string">test_register_returns_201</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">前提</span> メール <span class="spec-string">"alice@example.com"</span> のユーザーが存在しない<br>
+            &nbsp;&nbsp;<span class="spec-keyword">もし</span> クライアントが登録リクエストを送信する<br>
+            &nbsp;&nbsp;<span class="spec-keyword">ならば</span> レスポンスステータスは <span class="spec-string">201</span> である<br><br>
+            <span class="spec-keyword">シナリオ:</span> 重複メール拒否 <span class="dim">← 例外パス</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">テスト:</span> <span class="spec-string">test_register_rejects_duplicate</span><br>
+            &nbsp;&nbsp;<span class="spec-keyword">前提</span> メール <span class="spec-string">"alice@example.com"</span> のユーザーが既に存在する<br>
+            &nbsp;&nbsp;<span class="spec-keyword">もし</span> クライアントが同じメールで登録リクエストを送信する<br>
+            &nbsp;&nbsp;<span class="spec-keyword">ならば</span> レスポンスステータスは <span class="spec-string">409</span> である
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Seven-Step Workflow                           -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="workflow">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Workflow</div>
+      <h2 class="section-title">Seven Steps, Three Actors</h2>
+      <p class="section-desc">
+        Human writes intent. Agent implements code. Machine verifies correctness.
+        Each step has a clear owner and a specific agent-spec command.
+      </p>
+    </div>
+
+    <div class="pipeline" id="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-dot"></div>
+        <div class="pipe-num">STEP 01</div>
+        <div class="pipe-title">Write Contract <span class="pipe-who who-human">HUMAN</span></div>
+        <div class="pipe-desc">Define Intent, Decisions, Boundaries, and Completion Criteria. Exception scenarios ≥ happy path scenarios.</div>
+        <div class="pipe-cmd">agent-spec init --level task --name "User Registration"</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-dot"></div>
+        <div class="pipe-num">STEP 02</div>
+        <div class="pipe-title">Quality Gate <span class="pipe-who who-machine">MACHINE</span></div>
+        <div class="pipe-desc">Check Contract quality before handing to Agent. Catches vague verbs, unquantified constraints, sycophancy bias.</div>
+        <div class="pipe-cmd">agent-spec lint specs/task.spec --min-score 0.7</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-dot"></div>
+        <div class="pipe-num">STEP 03</div>
+        <div class="pipe-title">Agent Implements <span class="pipe-who who-agent">AGENT</span></div>
+        <div class="pipe-desc">Agent reads the Contract and codes within its constraints. Decisions are fixed, boundaries are enforced, criteria are the stop condition.</div>
+        <div class="pipe-cmd">agent-spec contract specs/task.spec</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-dot"></div>
+        <div class="pipe-num">STEP 04</div>
+        <div class="pipe-title">Lifecycle Verification <span class="pipe-who who-machine">MACHINE</span></div>
+        <div class="pipe-desc">Four-layer verification pipeline: lint → structural → boundaries → tests. Agent retries on failure — no human needed.</div>
+        <div class="pipe-cmd">agent-spec lifecycle specs/task.spec --code . --format json</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-dot"></div>
+        <div class="pipe-num">STEP 05</div>
+        <div class="pipe-title">Guard Gate <span class="pipe-who who-machine">MACHINE</span></div>
+        <div class="pipe-desc">Pre-commit or CI check. All specs in the repo are verified against the current change set.</div>
+        <div class="pipe-cmd">agent-spec guard --spec-dir specs --code .</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-dot"></div>
+        <div class="pipe-num">STEP 06</div>
+        <div class="pipe-title">Contract Acceptance <span class="pipe-who who-human">HUMAN</span></div>
+        <div class="pipe-desc">Reviewer reads a Contract-level summary — not a code diff. Two questions: Is the Contract correct? Did all verifications pass?</div>
+        <div class="pipe-cmd">agent-spec explain specs/task.spec --format markdown</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-dot"></div>
+        <div class="pipe-num">STEP 07</div>
+        <div class="pipe-title">Stamp & Archive <span class="pipe-who who-machine">MACHINE</span></div>
+        <div class="pipe-desc">Record Contract-to-Commit traceability via Git trailers. Every commit traces back to intent.</div>
+        <div class="pipe-cmd">agent-spec stamp specs/task.spec --dry-run</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Verification Pyramid                          -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="verify">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Verification</div>
+      <h2 class="section-title">Four-Layer Verification Pyramid</h2>
+      <p class="section-desc">
+        Deterministic layers run first — zero token cost, no false negatives.
+        AI layers handle the residual — probabilistic, with structured evidence.
+      </p>
+    </div>
+
+    <div class="pyramid reveal">
+      <div class="pyramid-layer pyr-l4">
+        <span class="layer-name">L4 · AI Verifier</span>
+        <span class="layer-meta">probabilistic · ~$0.01-0.05 · uncertain verdict</span>
+      </div>
+      <div class="pyramid-layer pyr-l3">
+        <span class="layer-name">L3 · Test Verifier</span>
+        <span class="layer-meta">deterministic · 0 tokens · runs bound tests</span>
+      </div>
+      <div class="pyramid-layer pyr-l2">
+        <span class="layer-name">L2 · Boundaries Verifier</span>
+        <span class="layer-meta">deterministic · 0 tokens · path glob matching</span>
+      </div>
+      <div class="pyramid-layer pyr-l1">
+        <span class="layer-name">L1 · Structural Verifier</span>
+        <span class="layer-meta">deterministic · 0 tokens · pattern matching on Must-Not</span>
+      </div>
+      <div class="pyramid-arrows">
+        <span>← cheaper, faster, deterministic</span>
+        <span>richer, costly, probabilistic →</span>
+      </div>
+    </div>
+
+    <div class="verdict-grid reveal">
+      <div class="verdict-card">
+        <div class="verdict-icon">✅</div>
+        <div class="verdict-name" style="color:var(--green);">pass</div>
+        <div class="verdict-desc">Verified by a deterministic or AI verifier</div>
+      </div>
+      <div class="verdict-card">
+        <div class="verdict-icon">❌</div>
+        <div class="verdict-name" style="color:var(--red);">fail</div>
+        <div class="verdict-desc">Verification found a concrete violation</div>
+      </div>
+      <div class="verdict-card">
+        <div class="verdict-icon">⏭️</div>
+        <div class="verdict-name" style="color:var(--text-dim);">skip</div>
+        <div class="verdict-desc">No verifier covered this scenario</div>
+      </div>
+      <div class="verdict-card">
+        <div class="verdict-icon">❓</div>
+        <div class="verdict-name" style="color:var(--orange);">uncertain</div>
+        <div class="verdict-desc">AI reviewed but needs human judgment</div>
+      </div>
+    </div>
+
+    <p class="reveal" style="font-size:15px; color:var(--text-dim); text-align:center;">
+      Key rule: <code style="font-family:var(--font-mono); background:var(--bg-code); padding:2px 8px; border-radius:4px; color:var(--red);">skip ≠ pass</code>
+      &nbsp;—&nbsp; all four verdicts are semantically distinct.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  AI Verification Modes                         -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="ai-verify">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">AI Verification</div>
+      <h2 class="section-title">Two Modes of AI Verification</h2>
+      <p class="section-desc">
+        Mechanical verifiers handle deterministic checks. For the rest, agent-spec
+        supports two modes: the calling Agent does the review, or an injected backend does it.
+      </p>
+    </div>
+
+    <div class="ai-modes reveal">
+      <div class="ai-mode-card">
+        <h3>Caller Mode</h3>
+        <div class="mode-tag">--ai-mode caller</div>
+        <p>The calling Agent (Claude Code, Codex…) performs AI verification itself. agent-spec emits structured requests; the Agent returns structured decisions.</p>
+        <div class="flow-diagram">
+          <div class="flow-row"><span class="flow-node flow-agent">Agent</span> <span class="flow-arrow">→</span> <span class="flow-node flow-spec">lifecycle</span></div>
+          <div class="flow-row"><span class="flow-node flow-spec">agent-spec</span> <span class="flow-arrow">→</span> runs L1–L3 mechanical</div>
+          <div class="flow-row"><span class="flow-node flow-spec">agent-spec</span> <span class="flow-arrow">→</span> emits <code>AiRequest[]</code></div>
+          <div class="flow-row"><span class="flow-node flow-agent">Agent</span> <span class="flow-arrow">→</span> analyzes code, returns <code>AiDecision[]</code></div>
+          <div class="flow-row"><span class="flow-node flow-spec">agent-spec</span> <span class="flow-arrow">→</span> merges into final report</div>
+          <div class="flow-row"><span class="flow-node flow-human">Human</span> <span class="flow-arrow">→</span> reviews <code>uncertain</code> findings</div>
+        </div>
+      </div>
+
+      <div class="ai-mode-card">
+        <h3>Backend Mode</h3>
+        <div class="mode-tag">Rust API: AiBackend trait</div>
+        <p>An independent AI backend is injected via the Rust API. Ideal for orchestrator systems (Symphony-like) using a different model for verification.</p>
+        <div class="flow-diagram">
+          <div class="flow-row"><span class="flow-node flow-ext">Orchestrator</span> <span class="flow-arrow">→</span> injects <code>AiBackend</code></div>
+          <div class="flow-row"><span class="flow-node flow-spec">agent-spec</span> <span class="flow-arrow">→</span> runs L1–L3 mechanical</div>
+          <div class="flow-row"><span class="flow-node flow-spec">agent-spec</span> <span class="flow-arrow">→</span> calls <code>backend.analyze()</code></div>
+          <div class="flow-row"><span class="flow-node flow-ext">AI Backend</span> <span class="flow-arrow">→</span> returns <code>AiDecision</code></div>
+          <div class="flow-row"><span class="flow-node flow-spec">agent-spec</span> <span class="flow-arrow">→</span> complete report, no human loop</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="reveal" style="font-size:15px; color:var(--text-dim); text-align:center; max-width:600px; margin:0 auto;">
+      Both modes share the same data structures: <code style="font-family:var(--font-mono); background:var(--bg-code); padding:2px 8px; border-radius:4px; color:var(--accent);">AiRequest</code> and
+      <code style="font-family:var(--font-mono); background:var(--bg-code); padding:2px 8px; border-radius:4px; color:var(--accent);">AiDecision</code>.
+      agent-spec stays provider-agnostic.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Spec Hierarchy                                -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="hierarchy">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Governance</div>
+      <h2 class="section-title">Three-Layer Spec Hierarchy</h2>
+      <p class="section-desc">
+        Constraints and decisions inherit downward. Organization rules flow through
+        project conventions into every task contract. Write once, enforce everywhere.
+      </p>
+    </div>
+
+    <div class="hierarchy reveal">
+      <div class="hier-layer hier-l0">
+        <span class="hier-tag">L0 · org.spec</span>
+        <span class="hier-desc">Security policies, coding standards, forbidden patterns — organization-wide</span>
+      </div>
+      <div class="hier-inherit">↓ inherits</div>
+      <div class="hier-layer hier-l1">
+        <span class="hier-tag">L1 · project.spec</span>
+        <span class="hier-desc">Tech stack decisions, API conventions, test requirements — project-wide</span>
+      </div>
+      <div class="hier-inherit">↓ inherits</div>
+      <div class="hier-layer hier-l2">
+        <span class="hier-tag">L2 · task.spec</span>
+        <span class="hier-desc">Intent, boundaries, BDD completion criteria — one per task</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Knowledge & Liveness Layer                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="knowledge">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">0.4.0 · Knowledge & Liveness Layer</div>
+      <h2 class="section-title">Knowledge That Stays Honest</h2>
+      <p class="section-desc">
+        Contracts verify tasks. KLL makes the knowledge <em>around</em> them durable:
+        decisions and requirements live under <code>knowledge/</code>, specs link back with
+        <code>satisfies:</code>, and 0.4.0 adds real governance — explicit human transitions,
+        a three-axis status query, a YAML projection that round-trips, and provenance manifests
+        for every compilation. Liveness stays recomputed — never stored, never stale.
+      </p>
+    </div>
+
+    <div class="skills-grid reveal">
+      <div class="skill-card">
+        <h3>Requirement governance</h3>
+        <div class="skill-tag skill-tag-author">transition · supersede</div>
+        <p>
+          Status is a real state machine: <code>proposed → accepted | rejected</code>,
+          <code>accepted → deprecated</code>, supersession atomic across both documents.
+          Missing status <em>fails</em> <code>plan --gate</code>. Transitions are explicit
+          human commands with line-precise rewrites — compilation never mutates governance.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>Three-axis status</h3>
+        <div class="skill-tag skill-tag-workflow">requirements status</div>
+        <p>
+          One query, three independent axes: governance (persisted), execution ladder
+          (<code>unplanned → … → verified → archived</code>), and liveness recomputed from
+          current verdicts — honored, violated, or unproven.
+          <code>agent-spec requirements status REQ-001</code> answers all three.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>YAML dialect, both directions</h3>
+        <div class="skill-tag skill-tag-author">import · export</div>
+        <p>
+          A side entrance in, a projection out. <code>requirements import --from</code> reads a
+          YAML requirement tree; <code>export --out</code> writes one back, with
+          <code>--check</code> as a drift gate. Round-trip is a fixpoint — and the hand-written
+          Markdown under <code>knowledge/requirements/</code> stays the only source of truth.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>Compilation provenance</h3>
+        <div class="skill-tag skill-tag-estimate">blake3 manifests</div>
+        <p>
+          Every import/export can emit a manifest: blake3 digests of inputs and outputs plus
+          tool identity. Re-run the compilation, compare manifests, and drift has nowhere to
+          hide — requirement compilation becomes reproducible, auditable work.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>Code live wiki</h3>
+        <div class="skill-tag skill-tag-workflow">working memory</div>
+        <p>
+          A tracked, source-traced wiki under <code>.agent-spec/wiki</code>: module and concept
+          pages, staleness detection, architecture inventory, cross-project maps —
+          agent working memory that lint keeps honest.
+        </p>
+      </div>
+      <div class="skill-card">
+        <h3>Read-only MCP server</h3>
+        <div class="skill-tag skill-tag-estimate">11 tools</div>
+        <p>
+          <code>agent-spec mcp</code> serves knowledge, liveness, contracts, guidance, and the
+          Rust Atlas graph over JSON-RPC — deterministic tools, no RAG, so any MCP client
+          queries project truth live instead of re-reading files.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Getting Started                               -->
+<!-- ═══════════════════════════════════════════════ -->
+<section id="start">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Get Started</div>
+      <h2 class="section-title">From Zero to Verified — Two Loops</h2>
+      <p class="section-desc">
+        The contract loop verifies one task. The intent compiler loop governs the requirements
+        above it. Both are plain CLI — no server, no lock-in.
+      </p>
+    </div>
+
+    <div class="install-block reveal">
+      <span class="comment"># Install CLI + Skills (one command)</span><br>
+      <span class="cmd">git clone https://github.com/ZhangHanDong/agent-spec && cd agent-spec && ./install-skills.sh</span><br><br>
+      <span class="comment"># Or install CLI only</span><br>
+      <span class="cmd">cargo install agent-spec</span><br><br>
+      <span class="comment"># Create a task contract</span><br>
+      <span class="cmd">agent-spec init --level task --name "User Registration"</span><br><br>
+      <span class="comment"># Check contract quality</span><br>
+      <span class="cmd">agent-spec lint specs/user-registration.spec --min-score 0.7</span><br><br>
+      <span class="comment"># Verify code against contract</span><br>
+      <span class="cmd">agent-spec lifecycle specs/user-registration.spec --code . --format json</span><br><br>
+      <span class="comment"># Generate review summary for PR</span><br>
+      <span class="cmd">agent-spec explain specs/user-registration.spec --format markdown</span>
+    </div>
+
+    <div class="install-block reveal" style="margin-top:24px;">
+      <span class="comment"># The intent compiler loop (0.4.0) — from PRD to governed, verified requirements</span><br>
+      <span class="cmd">agent-spec requirements import --from docs/prd.md</span><br><br>
+      <span class="comment"># Governance is an explicit human action, never a side effect</span><br>
+      <span class="cmd">agent-spec requirements transition REQ-001 --to accepted</span><br><br>
+      <span class="comment"># One plan DAG joining requirements × work units × specs — gated</span><br>
+      <span class="cmd">agent-spec requirements plan --gate</span><br><br>
+      <span class="comment"># Three axes in one answer: governance / execution / liveness</span><br>
+      <span class="cmd">agent-spec requirements status REQ-001</span><br><br>
+      <span class="comment"># Project the IR out as YAML, with a provenance manifest</span><br>
+      <span class="cmd">agent-spec requirements export --out requirements.yaml --provenance requirements.arc.json</span>
+    </div>
+
+    <div class="reveal" style="margin-top:48px; text-align:center;">
+      <a href="https://github.com/ZhangHanDong/agent-spec" class="btn btn-primary" target="_blank">View on GitHub</a>
+      <a href="https://github.com/ZhangHanDong/agent-spec/tree/main/examples" class="btn btn-ghost" target="_blank" style="margin-left:12px;">See Examples</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Footer                                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <p>agent-spec 1.2.0 — the intent compiler for AI coding · MIT License</p>
+    <p style="margin-top:8px;">
+      <a href="https://github.com/ZhangHanDong/agent-spec">GitHub</a> ·
+      <a href="https://crates.io/crates/agent-spec">crates.io</a> ·
+      <a href="https://crates.io/crates/rust-atlas">rust-atlas</a> ·
+      <a href="https://github.com/ZhangHanDong/agent-spec/blob/main/CHANGELOG.md">Changelog</a> ·
+      <a href="https://github.com/ZhangHanDong/agent-spec/tree/main/skills">Skills</a>
+    </p>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  Scripts                                       -->
+<!-- ═══════════════════════════════════════════════ -->
+<script>
+// ── Scroll reveal ───────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+document.querySelectorAll('.reveal, .pipe-step, .pyramid-layer').forEach(el => {
+  observer.observe(el);
+});
+
+// ── Nav scroll effect ───────────────────────────
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// ── Contract tabs ───────────────────────────────
+document.querySelectorAll('.contract-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.contract-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.contract-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('pane-' + tab.dataset.pane).classList.add('active');
+  });
+});
+
+// ── Contract language switcher ──────────────────
+let currentLang = 'en';
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentLang = btn.dataset.lang;
+    // Update button states
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Update all language content blocks across all panes
+    document.querySelectorAll('.lang-content').forEach(el => {
+      el.classList.toggle('active', el.dataset.lang === currentLang);
+    });
+  });
+});
+
+// ── Skills install copy button ──────────────────
+const skillsCopy = document.getElementById('skills-copy');
+if (skillsCopy) {
+  skillsCopy.addEventListener('click', () => {
+    const cmd = './install-skills.sh';
+    navigator.clipboard.writeText(cmd).then(() => {
+      skillsCopy.classList.add('copied');
+      const hint = skillsCopy.querySelector('.copy-hint');
+      if (hint) hint.textContent = 'copied!';
+      setTimeout(() => {
+        skillsCopy.classList.remove('copied');
+        if (hint) hint.textContent = 'click to copy';
+      }, 2000);
+    });
+  });
+}
+
+// ── Pipeline stagger ────────────────────────────
+const pipeSteps = document.querySelectorAll('.pipe-step');
+const pipeObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, i * 120);
+    }
+  });
+}, { threshold: 0.2 });
+pipeSteps.forEach(s => pipeObserver.observe(s));
+
+// ── Pyramid stagger ────────────────────────────
+const pyrLayers = document.querySelectorAll('.pyramid-layer');
+const pyrObserver = new IntersectionObserver((entries) => {
+  if (entries.some(e => e.isIntersecting)) {
+    pyrLayers.forEach((layer, i) => {
+      setTimeout(() => layer.classList.add('visible'), (pyrLayers.length - 1 - i) * 200);
+    });
+  }
+}, { threshold: 0.3 });
+pyrLayers.forEach(l => pyrObserver.observe(l));
+</script>
+</body>
+</html>

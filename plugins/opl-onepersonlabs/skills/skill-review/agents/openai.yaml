@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Review"
+  short_description: "Audit Codex Agent Skills for correctness and readiness."
+  default_prompt: "Use $skill-review to audit this skill package."

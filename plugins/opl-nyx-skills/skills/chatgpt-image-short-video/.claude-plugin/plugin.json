@@ -1,0 +1,5 @@
+{
+  "name": "chatgpt-image-short-video",
+  "version": "0.1",
+  "description": "Method for producing short vertical videos from ChatGPT image generation through a fixed browser tab, local TTS narration, timed subtitle burn-in, cover exports, and a manifest. Use when an operator needs a reproducible image-to-short workflow with pinned session consistency, per-beat visual prompts, 1080x1920 safe-area rules, local ffmpeg/PIL assembly, and private access kept outside the skill."
+}

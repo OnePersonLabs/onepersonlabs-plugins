@@ -1,0 +1,5 @@
+name = "spark-medium"
+description = "Generic agent that uses GPT 5.3 Spark (medium)."
+model = "gpt-5.3-codex-spark"
+model_reasoning_effort = "medium"
+developer_instructions = "Execute instructions"

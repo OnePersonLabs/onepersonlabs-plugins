@@ -1,0 +1,5 @@
+name = "sol-xhigh"
+description = "Generic agent that uses GPT 5.6 Sol (xhigh)."
+model = "gpt-5.6-sol"
+model_reasoning_effort = "xhigh"
+developer_instructions = "Execute instructions"
