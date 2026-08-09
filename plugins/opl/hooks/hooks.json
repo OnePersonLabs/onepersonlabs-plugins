@@ -49,6 +49,29 @@
           }
         ]
       }
+    ],
+    "Start": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-skill-judge-gate.sh\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-agents-bootstrap-hook.sh\"",
+            "timeout": 20
+          }
+        ]
+      }
     ]
   }
 }

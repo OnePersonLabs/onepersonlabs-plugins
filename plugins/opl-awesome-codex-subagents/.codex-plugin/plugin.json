@@ -1,9 +1,11 @@
 {
   "name": "opl-awesome-codex-subagents",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260809023056",
   "description": "Variety of subagents.",
   "license": "MIT",
-  "keywords": ["subagents"],
+  "keywords": [
+    "subagents"
+  ],
   "agents": "./agents/",
   "interface": {
     "displayName": "OPL Awesome Codex Subagents",

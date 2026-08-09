@@ -1,6 +1,6 @@
 {
   "name": "opl-research-companion",
-  "version": "1.1.0",
+  "version": "1.1.0+codex.20260809023056",
   "description": "Strategic research thinking agents for brainstorming, idea evaluation, and project triage.",
   "author": {
     "name": "Andre Huang",
@@ -23,7 +23,11 @@
     "longDescription": "Research Companion helps researchers pick better problems before they spend months on them. It combines structured brainstorming, adversarial idea evaluation, and project-level strategy using Carlini-inspired tests for novelty, impact, timing, feasibility, and narrative strength.",
     "developerName": "Andre Huang",
     "category": "Productivity",
-    "capabilities": ["Interactive", "Read", "Write"],
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://github.com/andrehuang/research-companion",
     "defaultPrompt": [
       "Use $research-companion to brainstorm and pressure-test a new research direction.",

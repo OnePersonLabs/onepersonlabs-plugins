@@ -1,9 +1,15 @@
 {
   "name": "opl-matt-pocock-skills-engineering",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260809023056",
   "description": "Engineering workflow skills for discovery, design, implementation, testing, review, and delivery.",
   "license": "MIT",
-  "keywords": ["skills", "engineering", "workflow", "tdd", "code-review"],
+  "keywords": [
+    "skills",
+    "engineering",
+    "workflow",
+    "tdd",
+    "code-review"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "OPL Matt Pocock Skills - Engineering",

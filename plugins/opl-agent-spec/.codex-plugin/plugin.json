@@ -1,6 +1,6 @@
 {
   "name": "opl-agent-spec",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260809023056",
   "description": "Intent compiler and contract verification skills for AI agent coding.",
   "author": {
     "name": "One-Person Labs"
@@ -12,7 +12,10 @@
     "longDescription": "Agent Spec provides skills for requirements, task contracts, planning, and deterministic verification.",
     "developerName": "One-Person Labs",
     "category": "Developer Tools",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "defaultPrompt": "Help me turn this intent into a verifiable agent contract."
   }
 }

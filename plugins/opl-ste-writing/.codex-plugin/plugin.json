@@ -1,6 +1,6 @@
 {
   "name": "opl-ste-writing",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260809023056",
   "description": "Simplified Technical English guidance with opt-out-aware prose linting.",
   "license": "MIT",
   "keywords": [

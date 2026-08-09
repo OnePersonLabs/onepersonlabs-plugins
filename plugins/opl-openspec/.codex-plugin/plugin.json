@@ -1,6 +1,6 @@
 {
   "name": "opl-openspec",
-  "version": "0.8.0",
+  "version": "0.8.0+codex.20260809023056",
   "description": "OpenSpec workflow skills, dependency tooling, orchestration helpers, and Codex guard hooks.",
   "license": "MIT",
   "keywords": [

@@ -1,6 +1,6 @@
 {
   "name": "opl-nyx-skills",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260809023056",
   "description": "Creative and research communication skills for image, video, promotion, and source-grounded copy.",
   "author": {
     "name": "One-Person Labs"
@@ -12,7 +12,10 @@
     "longDescription": "Nyx Skills supports creative media prompts, promotion scouting, copy review, and source-grounded announcements.",
     "developerName": "One-Person Labs",
     "category": "Productivity",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "defaultPrompt": "Review this announcement for source fidelity."
   }
 }
