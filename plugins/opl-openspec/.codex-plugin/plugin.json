@@ -15,6 +15,6 @@
   "interface": {
     "displayName": "OPL OpenSpec",
     "shortDescription": "Plan, implement, verify, and archive OpenSpec changes",
-    "longDescription": "OpenSpec workflow skills with dependency-aware extensions and structural hooks for archive order, archive quality, stock artifacts, and change dependencies."
+    "longDescription": "OpenSpec workflow skills with a durable deferral handler and hooks for archive discipline, order, quality, stock artifacts, and change dependencies."
   }
 }

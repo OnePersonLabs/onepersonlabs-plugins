@@ -2,6 +2,6 @@
 
 Shared skills, agents, integrations, and universal Codex guard hooks created or adapted by One-Person Labs.
 
-This plugin owns repository-independent discipline enforcement. It blocks ephemeral deferrals and TODO-shaped placeholders unless they resolve to a durable work item. OpenSpec changes are verified from the repository; Linear issues are verified from successful calls to the installed Linear connector in the current session transcript.
+This plugin owns the repository-independent, last-resort rejection of unhandled ephemeral deferrals and TODO-shaped placeholders. Before rejecting a line, it asks enabled domain plugins whether one of them recognizes and verifies the line through a durable work-item sink. The core policy contains no OpenSpec, Linear, or other workflow-specific resolution logic.
 
-Workflow-specific structural rules remain in their workflow plugins. In particular, `opl-openspec` owns OpenSpec archive ordering, quality, stock-artifact, and dependency validation.
+Workflow-specific handlers and lifecycle rules remain in their workflow plugins. In particular, `opl-openspec` owns OpenSpec deferral resolution and archive-time discipline, ordering, quality, stock-artifact, and dependency validation.

@@ -8,11 +8,6 @@
             "type": "command",
             "command": "bash \"${PLUGIN_ROOT}/scripts/codex-dangerous-shell-gate.sh\"",
             "timeout": 20
-          },
-          {
-            "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-archive-discipline-gate.sh\"",
-            "timeout": 20
           }
         ]
       }

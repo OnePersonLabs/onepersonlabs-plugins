@@ -1,7 +1,8 @@
 #!/bin/bash
 # codex-discipline-policy.sh
 #
-# Shared policy primitives for the three event-specific discipline hooks.
+# Shared policy primitives for OPL's response/artifact catch-all hooks and
+# domain-plugin lifecycle integrations.
 # This file is sourced by those hooks and is not configured as a hook itself.
 #
 # Bypass sentinel: <!-- discipline-bypass --> anywhere in the scanned text
@@ -67,9 +68,9 @@
 
 set -uo pipefail
 
-INPUT=$(cat)
+if [[ -z "${INPUT+x}" ]]; then INPUT=$(cat); fi
 REPO_ROOT="${CODEX_PROJECT_DIR:-$(pwd)}"
-PLUGIN_ROOT="${PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+DISCIPLINE_PLUGIN_ROOT="${OPL_DISCIPLINE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 # Persistent false-positive allowlist. Phrases here are PERMANENTLY exempt
 # from the checks below -- unlike the one-shot bypass sentinel, which dies
@@ -79,7 +80,7 @@ PLUGIN_ROOT="${PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # committed and code-reviewed, so an over-broad entry is itself an auditable
 # defect. See is_excepted() for match semantics and emit_block_report() for the
 # agent-facing instructions.
-EXCEPTIONS_FILE="$PLUGIN_ROOT/scripts/codex-discipline-gate.exceptions.txt"
+EXCEPTIONS_FILE="$DISCIPLINE_PLUGIN_ROOT/scripts/codex-discipline-gate.exceptions.txt"
 [[ -f "$EXCEPTIONS_FILE" ]] || EXCEPTIONS_FILE="$REPO_ROOT/scripts/codex-discipline-gate.exceptions.txt"
 declare -a DISCIPLINE_EXCEPTIONS=()
 
@@ -186,9 +187,6 @@ CANONICAL_SENTINEL='<!-- discipline-bypass -->'
 LEGACY_SENTINEL_MVP='<!-- mvp-meta -->'
 LEGACY_SENTINEL_DEFERRAL='<!-- deferral-meta -->'
 
-# Follow-up indicator phrases. A kebab-3+ token on a line matching any of
-# these gets treated as a follow-up reference and must resolve.
-FOLLOWUP_INDICATORS='follow-up|follow up|pending |blocked on|deferred to|awaiting |TODO:[[:space:]]*file|should[[:space:]]+file|future work'
 FOLLOWUP_ONLY_INDICATORS='follow-up|follow up|pending |blocked on|awaiting |should[[:space:]]+file|future work'
 
 # ============================================================================
@@ -200,15 +198,6 @@ CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // empty' 2>/dev/null || ec
 PATCH=$(echo "$INPUT" | jq -r '.tool_input.patch // empty' 2>/dev/null || echo "")
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || echo "")
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || echo "")
-
-# Bounded transcript input used only as proof that a connected tracker tool
-# successfully returned the work item claimed by a deferral. The shell hooks
-# never authenticate to or call tracker APIs themselves.
-DISCIPLINE_TRANSCRIPT_TAIL_LINES="${DISCIPLINE_TRANSCRIPT_TAIL_LINES:-200}"
-TRANSCRIPT_SLICE=""
-if [[ -n "$TRANSCRIPT" && -f "$TRANSCRIPT" ]]; then
-  TRANSCRIPT_SLICE=$(tail -n "$DISCIPLINE_TRANSCRIPT_TAIL_LINES" "$TRANSCRIPT" 2>/dev/null || true)
-fi
 
 # ============================================================================
 # Helpers.
@@ -232,115 +221,63 @@ dir_has_bypass_sentinel() {
   return 1
 }
 
-# Return 0 when an OpenSpec change name resolves to an active change or a
-# date-prefixed archived change in the current repository.
-resolve_openspec_change() {
-  local name="$1"
-  [[ "$name" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)+$ ]] || return 1
-  [[ -d "$REPO_ROOT/openspec/changes/$name" ]] && return 0
-  compgen -G "$REPO_ROOT/openspec/changes/archive/????-??-??-$name" >/dev/null 2>&1
-}
+declare -a DISCIPLINE_DEFERRAL_HANDLER_PATHS=()
 
-# Print explicit OpenSpec change names and eligible follow-up tokens from a
-# content line, one candidate per line.
-extract_openspec_reference() {
-  local content="$1"
-  local token
-  while IFS= read -r token; do
-    [[ -n "$token" ]] && basename "$token"
-  done < <(printf '%s\n' "$content" | grep -oE 'openspec/changes/[a-z][a-z0-9]*(-[a-z0-9]+)+' 2>/dev/null || true)
-
-  if printf '%s\n' "$content" | grep -qiE "$FOLLOWUP_INDICATORS"; then
-    printf '%s\n' "$content" \
-      | grep -oE '[a-z][a-z0-9]+(-[a-z0-9]+){2,}' 2>/dev/null \
-      | sort -u || true
+# Load domain-owned deferral handlers once per hook invocation. Tests and
+# controlled hosts may provide an explicit newline-separated list. Otherwise
+# enabled Codex plugins opt in by shipping scripts/codex-*-deferral-handler.sh.
+load_deferral_handlers() {
+  local handler root plugin_json
+  if [[ -n "${DISCIPLINE_DEFERRAL_HANDLERS+x}" ]]; then
+    while IFS= read -r handler; do
+      [[ -n "$handler" && -f "$handler" ]] && DISCIPLINE_DEFERRAL_HANDLER_PATHS+=("$handler")
+    done <<< "$DISCIPLINE_DEFERRAL_HANDLERS"
+    return 0
   fi
-}
 
-# Print Linear references as "<identifier><TAB><claimed exact title>". Team
-# keys are customizable and issue numbers are not fixed-width.
-extract_linear_reference() {
-  local content="$1"
-  local match identifier title
-  match=$(printf '%s\n' "$content" | grep -oE '[A-Z][A-Z0-9]*-[1-9][0-9]*:[[:space:]]*[^[:space:]].*$' | head -n 1 || true)
-  [[ -n "$match" ]] || return 0
-  identifier="${match%%:*}"
-  title="${match#*:}"
-  title="${title#"${title%%[![:space:]]*}"}"
-  title="${title%"${title##*[![:space:]]}"}"
-  [[ -n "$title" ]] && printf '%s\t%s\n' "$identifier" "$title"
-}
-
-# Return 0 only when a successful connected Linear get/save tool result in the
-# bounded transcript contains both the canonical issue identifier and exact
-# title claimed by the deferral. Assistant prose and call arguments alone do
-# not count as proof.
-linear_transcript_has_issue() {
-  local identifier="$1"
-  local title="$2"
-  [[ -n "$TRANSCRIPT_SLICE" ]] || return 1
-
-  printf '%s\n' "$TRANSCRIPT_SLICE" | jq -es \
-    --arg identifier "$identifier" \
-    --arg title "$title" '
-      [ .[] | .. | objects ] as $objects
-      | [
-          $objects[]
-          | select(((.name? // "") | test("linear_(get|save)_issue$")))
-          | (.call_id? // .callId? // empty)
-        ] as $call_ids
-      | any(
-          $objects[];
-          ((.call_id? // .callId? // empty) as $result_id
-            | ($call_ids | index($result_id)) != null)
-          and ((.type? // "") == "function_call_output"
-            or (.type? // "") == "custom_tool_call_output")
-          and (.isError? != true)
-          and ([
-            .. | strings
-            | ., (try (fromjson | .. | strings) catch empty)
-          ] | index($identifier) != null)
-          and ([
-            .. | strings
-            | ., (try (fromjson | .. | strings) catch empty)
-          ] | index($title) != null)
-        )
-    ' >/dev/null 2>&1
+  plugin_json=$("${CODEX_BIN:-codex}" plugin list --json 2>/dev/null || true)
+  [[ -n "$plugin_json" ]] || return 0
+  while IFS= read -r root; do
+    [[ -d "$root/scripts" ]] || continue
+    while IFS= read -r handler; do
+      [[ -f "$handler" ]] && DISCIPLINE_DEFERRAL_HANDLER_PATHS+=("$handler")
+    done < <(find "$root/scripts" -maxdepth 1 -type f -name 'codex-*-deferral-handler.sh' -print 2>/dev/null | sort -u)
+  done < <(printf '%s\n' "$plugin_json" | jq -r '.installed[] | select(.installed == true and .enabled == true) | .source.path // empty' 2>/dev/null | sort -u || true)
 }
 
 DEFERRAL_RESOLUTION_DETAIL=""
 
-# Resolve one deferral/placeholder line through a durable sink. One verified
-# reference is sufficient; unsupported syntax and unverified claims fail.
+# Give each enabled domain plugin the first chance to consume a deferral.
+# OPL is deliberately the unhandled-deferral catch-all: it knows only the
+# provider protocol and never embeds OpenSpec, Linear, or other sink logic.
 resolve_deferral_line() {
   local content="$1"
-  local candidate identifier title saw_openspec=0 saw_linear=0
+  local handler handler_input output handled recognized reason
+  DEFERRAL_RESOLUTION_DETAIL="no installed deferral handler accepted this line"
+  handler_input=$(jq -n \
+    --arg content "$content" \
+    --arg repository_root "$REPO_ROOT" \
+    --arg transcript_path "$TRANSCRIPT" \
+    '{protocol_version:1, content:$content, repository_root:$repository_root, transcript_path:$transcript_path}')
 
-  while IFS= read -r candidate; do
-    [[ -n "$candidate" ]] || continue
-    saw_openspec=1
-    if resolve_openspec_change "$candidate"; then
+  for handler in "${DISCIPLINE_DEFERRAL_HANDLER_PATHS[@]}"; do
+    if command -v timeout >/dev/null 2>&1; then
+      output=$(printf '%s\n' "$handler_input" | timeout "${DISCIPLINE_HANDLER_TIMEOUT_SECONDS:-5}" bash "$handler" 2>/dev/null || true)
+    else
+      output=$(printf '%s\n' "$handler_input" | bash "$handler" 2>/dev/null || true)
+    fi
+    [[ -n "$output" ]] || continue
+    handled=$(printf '%s\n' "$output" | jq -r '.handled // false' 2>/dev/null || echo false)
+    if [[ "$handled" == "true" ]]; then
       DEFERRAL_RESOLUTION_DETAIL=""
       return 0
     fi
-  done < <(extract_openspec_reference "$content")
-
-  while IFS=$'\t' read -r identifier title; do
-    [[ -n "$identifier" && -n "$title" ]] || continue
-    saw_linear=1
-    if linear_transcript_has_issue "$identifier" "$title"; then
-      DEFERRAL_RESOLUTION_DETAIL=""
-      return 0
+    recognized=$(printf '%s\n' "$output" | jq -r '.recognized // false' 2>/dev/null || echo false)
+    reason=$(printf '%s\n' "$output" | jq -r '.reason // empty' 2>/dev/null || true)
+    if [[ "$recognized" == "true" && -n "$reason" ]]; then
+      DEFERRAL_RESOLUTION_DETAIL="$reason"
     fi
-  done < <(extract_linear_reference "$content")
-
-  if [[ $saw_linear -eq 1 ]]; then
-    DEFERRAL_RESOLUTION_DETAIL="missing matching Linear proof"
-  elif [[ $saw_openspec -eq 1 ]]; then
-    DEFERRAL_RESOLUTION_DETAIL="OpenSpec change does not exist"
-  else
-    DEFERRAL_RESOLUTION_DETAIL="no durable sink reference"
-  fi
+  done
   return 1
 }
 
@@ -540,9 +477,9 @@ emit_block_report() {
       done
       echo ""
       echo "  Rule: every deferral or TODO-shaped placeholder must resolve to a"
-      echo "  durable tracked work item. Supported proof is an active/archived"
-      echo "  OpenSpec change, or an exact Linear ID/title returned by the"
-      echo "  installed Linear get_issue/save_issue tools in this session."
+      echo "  durable tracked work item accepted by an installed domain handler."
+      echo "  OPL is the final catch-all; OpenSpec, Linear, and other workflow"
+      echo "  plugins own recognition and proof for their respective sinks."
       echo "  If no durable sink exists, complete the work or remove the claim."
     fi
 
@@ -615,3 +552,4 @@ emit_block_report() {
 
 # Load the persistent allowlist once; every event-specific hook honors it.
 load_exceptions
+load_deferral_handlers

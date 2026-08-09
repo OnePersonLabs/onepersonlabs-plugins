@@ -22,7 +22,7 @@ function commandPaths(value, output = []) {
   return output
 }
 
-for (const pluginName of ['opl-onepersonlabs', 'opl-openspec']) {
+for (const pluginName of ['opl', 'opl-openspec']) {
   test(`${pluginName} hook commands resolve inside the plugin`, () => {
     const pluginRoot = join(repositoryRoot, 'plugins', pluginName)
     const hooks = readJson(join(pluginRoot, 'hooks', 'hooks.json'))
@@ -34,19 +34,21 @@ for (const pluginName of ['opl-onepersonlabs', 'opl-openspec']) {
   })
 }
 
-test('OpenSpec contains no general discipline or skill-governance scripts', () => {
+test('OpenSpec owns only its domain-specific discipline integrations', () => {
   const scripts = readdirSync(join(repositoryRoot, 'plugins', 'opl-openspec', 'scripts'))
   const forbidden = scripts.filter((name) =>
-    /discipline|dangerous-shell|skill-judge|skill-reference-sigil/u.test(name),
+    /dangerous-shell|skill-judge|skill-reference-sigil/u.test(name),
   )
   assert.deepEqual(forbidden, [])
+  assert.ok(scripts.includes('codex-openspec-deferral-handler.sh'))
+  assert.ok(scripts.includes('codex-openspec-archive-discipline-gate.sh'))
 })
 
 test('OnePersonLabs manifest exports its hooks', () => {
   const manifest = readJson(
-    join(repositoryRoot, 'plugins', 'opl-onepersonlabs', '.codex-plugin', 'plugin.json'),
+    join(repositoryRoot, 'plugins', 'opl', '.codex-plugin', 'plugin.json'),
   )
-  assert.equal(manifest.name, 'opl-onepersonlabs')
+  assert.equal(manifest.name, 'opl')
   assert.equal(manifest.hooks, './hooks/hooks.json')
 })
 
@@ -54,4 +56,11 @@ test('OpenSpec hook manifest contains only OpenSpec workflow hooks', () => {
   const hooksPath = join(repositoryRoot, 'plugins', 'opl-openspec', 'hooks', 'hooks.json')
   const commands = commandPaths(readJson(hooksPath))
   assert.ok(commands.every((path) => /codex-(openspec|stock-openspec)/u.test(path)))
+  assert.ok(commands.some((path) => /codex-openspec-archive-discipline-gate/u.test(path)))
+})
+
+test('OPL hook manifest contains no OpenSpec lifecycle hook', () => {
+  const hooksPath = join(repositoryRoot, 'plugins', 'opl', 'hooks', 'hooks.json')
+  const commands = commandPaths(readJson(hooksPath))
+  assert.ok(commands.every((path) => !/openspec|archive-discipline/u.test(path)))
 })
