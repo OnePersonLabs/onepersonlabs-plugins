@@ -13,7 +13,11 @@ import { join, resolve } from 'node:path'
 
 const pluginRoot = resolve(new URL('..', import.meta.url).pathname)
 const hookPath = join(pluginRoot, 'scripts', 'codex-agents-bootstrap-hook.sh')
-const reference = '@plugins/cache/onepersonlabs-plugins/opl/AGENTS.md'
+const currentVersion = '0.1.0+codex.current'
+
+function referenceFor(version) {
+  return `@plugins/cache/onepersonlabs-plugins/opl/${version}/AGENTS.md`
+}
 
 function withCodexHome(run) {
   const root = mkdtempSync(join(tmpdir(), 'opl-agents-bootstrap-'))
@@ -25,9 +29,27 @@ function withCodexHome(run) {
   }
 }
 
-function runHook(codexHome) {
+function installPluginFixture(codexHome, version = currentVersion) {
+  const installedRoot = join(
+    codexHome,
+    'plugins',
+    'cache',
+    'onepersonlabs-plugins',
+    'opl',
+    version,
+  )
+  mkdirSync(installedRoot, { recursive: true })
+  writeFileSync(join(installedRoot, 'AGENTS.md'), '# OPL instructions\n')
+  return installedRoot
+}
+
+function runHook(codexHome, installedRoot = installPluginFixture(codexHome)) {
   return spawnSync('bash', [hookPath], {
-    env: { ...process.env, CODEX_HOME: codexHome },
+    env: {
+      ...process.env,
+      CODEX_HOME: codexHome,
+      PLUGIN_ROOT: installedRoot,
+    },
     encoding: 'utf8',
   })
 }
@@ -35,6 +57,7 @@ function runHook(codexHome) {
 test('startup hook creates AGENTS.md and requests a new session', () => {
   withCodexHome((codexHome) => {
     const result = runHook(codexHome)
+    const reference = referenceFor(currentVersion)
 
     assert.equal(result.status, 0, result.stderr)
     assert.equal(readFileSync(join(codexHome, 'AGENTS.md'), 'utf8'), `${reference}\n`)
@@ -51,6 +74,7 @@ test('startup hook preserves existing instructions when adding the reference', (
   withCodexHome((codexHome) => {
     mkdirSync(codexHome, { recursive: true })
     writeFileSync(join(codexHome, 'AGENTS.md'), 'existing instruction')
+    const reference = referenceFor(currentVersion)
 
     const result = runHook(codexHome)
 
@@ -63,9 +87,32 @@ test('startup hook preserves existing instructions when adding the reference', (
   })
 })
 
-test('startup hook is silent and makes no change when the reference exists', () => {
+test('startup hook updates stale OPL references to its installed version', () => {
   withCodexHome((codexHome) => {
     mkdirSync(codexHome, { recursive: true })
+    const staleVersioned = referenceFor('0.1.0+codex.previous')
+    const staleUnversioned = '@plugins/cache/onepersonlabs-plugins/opl/AGENTS.md'
+    const agentsPath = join(codexHome, 'AGENTS.md')
+    writeFileSync(
+      agentsPath,
+      `before\n${staleVersioned}\nmiddle\n${staleUnversioned}\nafter\n`,
+    )
+
+    const result = runHook(codexHome)
+
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(
+      readFileSync(agentsPath, 'utf8'),
+      `before\n${referenceFor(currentVersion)}\nmiddle\nafter\n`,
+    )
+    assert.match(JSON.parse(result.stdout).systemMessage, /OPL updated/u)
+  })
+})
+
+test('startup hook is silent and makes no change when its versioned reference exists', () => {
+  withCodexHome((codexHome) => {
+    mkdirSync(codexHome, { recursive: true })
+    const reference = referenceFor(currentVersion)
     const original = `before\n${reference}\nafter\n`
     const agentsPath = join(codexHome, 'AGENTS.md')
     writeFileSync(agentsPath, original)
