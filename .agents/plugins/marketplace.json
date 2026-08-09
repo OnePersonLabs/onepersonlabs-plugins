@@ -113,10 +113,10 @@
       "category": "Productivity"
     },
     {
-      "name": "opl-onepersonlabs",
+      "name": "opl",
       "source": {
         "source": "local",
-        "path": "./plugins/opl-onepersonlabs"
+        "path": "./plugins/opl"
       },
       "policy": {
         "installation": "AVAILABLE",

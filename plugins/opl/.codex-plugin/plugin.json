@@ -1,7 +1,7 @@
 {
-  "name": "opl-onepersonlabs",
+  "name": "opl",
   "version": "0.1.0",
-  "description": "One-Person Labs skills, agents, integrations, and universal Codex guard hooks.",
+  "description": "One-Person Labs shared developer tooling.",
   "license": "MIT",
   "keywords": [
     "skills",
@@ -23,8 +23,8 @@
   "hooks": "./hooks/hooks.json",
   "agents": "./agents/",
   "interface": {
-    "displayName": "OPL One-Person Labs",
-    "shortDescription": "Shared agent workflows and universal guard hooks",
+    "displayName": "OPL",
+    "shortDescription": "One-Person Labs shared developer tooling",
     "longDescription": "One-Person Labs skills, agents, integrations, and repository-independent guard hooks, including durable deferral enforcement."
   }
 }
