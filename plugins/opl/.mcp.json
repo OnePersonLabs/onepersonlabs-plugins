@@ -1,1 +1,53 @@
-{}
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "exa": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "env_vars": ["PLAYWRIGHT_MCP_EXTENSION_TOKEN"]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "gitmcp": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://gitmcp.io/docs"]
+    },
+    "kapture": {
+      "command": "npx",
+      "args": ["-y", "kapture-mcp@latest", "bridge"]
+    },
+    "magicuidesign": {
+      "command": "npx",
+      "args": ["-y", "@magicuidesign/mcp@latest"]
+    },
+    "mobile": {
+      "command": "npx",
+      "args": ["-y", "@mobilenext/mobile-mcp@latest"]
+    },
+    "perplexity": {
+      "command": "npx",
+      "args": ["-y", "perplexity-mcp"],
+      "env_vars": ["PERPLEXITY_API_KEY"]
+    },
+    "reddit": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/adhikasp/mcp-reddit.git",
+        "mcp-reddit"
+      ]
+    },
+    "notebooklm-mcp": {
+      "command": "notebooklm-mcp"
+    }
+  }
+}
