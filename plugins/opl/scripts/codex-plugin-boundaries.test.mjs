@@ -44,6 +44,11 @@ test('OpenSpec owns only its domain-specific discipline integrations', () => {
   assert.ok(scripts.includes('codex-openspec-archive-discipline-gate.sh'))
 })
 
+test('OPL owns the repository-independent GitHub Issues deferral provider', () => {
+  const scripts = readdirSync(join(repositoryRoot, 'plugins', 'opl', 'scripts'))
+  assert.ok(scripts.includes('codex-github-issues-deferral-handler.sh'))
+})
+
 test('OnePersonLabs manifest exports its hooks', () => {
   const manifest = readJson(
     join(repositoryRoot, 'plugins', 'opl', '.codex-plugin', 'plugin.json'),
@@ -57,6 +62,7 @@ test('OpenSpec hook manifest contains only OpenSpec workflow hooks', () => {
   const commands = commandPaths(readJson(hooksPath))
   assert.ok(commands.every((path) => /codex-(openspec|stock-openspec)/u.test(path)))
   assert.ok(commands.some((path) => /codex-openspec-archive-discipline-gate/u.test(path)))
+  assert.ok(commands.some((path) => /codex-openspec-workflow-gate/u.test(path)))
 })
 
 test('OPL hook manifest contains no OpenSpec lifecycle hook', () => {

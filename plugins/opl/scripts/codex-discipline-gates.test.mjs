@@ -14,6 +14,11 @@ import { join, resolve } from 'node:path'
 const pluginRoot = resolve(new URL('..', import.meta.url).pathname)
 const repositoryRoot = resolve(pluginRoot, '..', '..')
 const openspecPluginRoot = join(repositoryRoot, 'plugins', 'opl-openspec')
+const githubIssueHandler = join(
+  pluginRoot,
+  'scripts',
+  'codex-github-issues-deferral-handler.sh',
+)
 function runHookStatus(name, input, env = {}, root = pluginRoot) {
   try {
     const stdout = execFileSync('bash', [join(root, 'scripts', name)], {
@@ -50,6 +55,23 @@ function fakeCodexWithEnabledPlugin(pluginPath) {
     ],
   })
   writeFileSync(file, `#!/bin/bash\nprintf '%s\\n' '${payload}'\n`)
+  chmodSync(file, 0o755)
+  return { dir, file }
+}
+
+function fakeGhIssue({ number = 42, state = 'OPEN' } = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'opl-gh-cli-'))
+  const file = join(dir, 'gh')
+  writeFileSync(
+    file,
+    [
+      '#!/bin/bash',
+      '[[ "$1" == "issue" && "$2" == "view" ]] || exit 64',
+      `[[ "$3" == "${number}" || "$3" == */issues/${number} ]] || exit 1`,
+      `printf '%s\\n' '{"number":${number},"state":"${state}","url":"https://github.com/acme/example/issues/${number}"}'`,
+      '',
+    ].join('\n'),
+  )
   chmodSync(file, 0o755)
   return { dir, file }
 }
@@ -199,6 +221,114 @@ test('core discovers deferral handlers from enabled Codex plugins', () => {
   } finally {
     rmSync(project, { recursive: true, force: true })
     rmSync(fakeCodex.dir, { recursive: true, force: true })
+  }
+})
+
+test('GitHub Issues provider handles an existing open issue', () => {
+  const project = makeProject()
+  const fakeGh = fakeGhIssue()
+  try {
+    const result = runHookStatus(
+      'codex-github-issues-deferral-handler.sh',
+      {
+        protocol_version: 1,
+        content: 'Deferred to #42.',
+        repository_root: project,
+      },
+      { CODEX_PROJECT_DIR: project, PATH: `${fakeGh.dir}:${process.env.PATH}` },
+    )
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(JSON.parse(result.stdout), {
+      handled: true,
+      handler: 'github-issues',
+    })
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+    rmSync(fakeGh.dir, { recursive: true, force: true })
+  }
+})
+
+test('core discovers the GitHub Issues provider from the enabled OPL plugin', () => {
+  const project = makeProject()
+  const fakeGh = fakeGhIssue()
+  const fakeCodex = fakeCodexWithEnabledPlugin(pluginRoot)
+  try {
+    const decision = responseDecision(
+      runResponse('Deferred to #42.', {
+        project,
+        env: {
+          CODEX_BIN: fakeCodex.file,
+          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+        },
+      }),
+    )
+    assert.equal(decision.continue, true)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+    rmSync(fakeGh.dir, { recursive: true, force: true })
+    rmSync(fakeCodex.dir, { recursive: true, force: true })
+  }
+})
+
+test('core response accepts a deferral backed by an existing GitHub issue', () => {
+  const project = makeProject()
+  const fakeGh = fakeGhIssue()
+  try {
+    const decision = responseDecision(
+      runResponse('Deferred to #42.', {
+        project,
+        env: {
+          DISCIPLINE_DEFERRAL_HANDLERS: githubIssueHandler,
+          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+        },
+      }),
+    )
+    assert.equal(decision.continue, true)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+    rmSync(fakeGh.dir, { recursive: true, force: true })
+  }
+})
+
+test('GitHub Issues provider leaves a missing issue for the catch-all to reject', () => {
+  const project = makeProject()
+  const fakeGh = fakeGhIssue()
+  try {
+    const decision = responseDecision(
+      runResponse('Deferred to #404.', {
+        project,
+        env: {
+          DISCIPLINE_DEFERRAL_HANDLERS: githubIssueHandler,
+          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+        },
+      }),
+    )
+    assert.equal(decision.decision, 'block')
+    assert.match(decision.reason, /GitHub issue #404 could not be verified/u)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+    rmSync(fakeGh.dir, { recursive: true, force: true })
+  }
+})
+
+test('GitHub Issues provider rejects a closed issue as a deferral sink', () => {
+  const project = makeProject()
+  const fakeGh = fakeGhIssue({ state: 'CLOSED' })
+  try {
+    const decision = responseDecision(
+      runResponse('Deferred to https://github.com/acme/example/issues/42.', {
+        project,
+        env: {
+          DISCIPLINE_DEFERRAL_HANDLERS: githubIssueHandler,
+          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+        },
+      }),
+    )
+    assert.equal(decision.decision, 'block')
+    assert.match(decision.reason, /GitHub issue .* is CLOSED/u)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+    rmSync(fakeGh.dir, { recursive: true, force: true })
   }
 })
 
