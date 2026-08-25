@@ -42,6 +42,41 @@ test('OpenSpec owns only its domain-specific discipline integrations', () => {
   assert.deepEqual(forbidden, [])
   assert.ok(scripts.includes('codex-openspec-deferral-handler.sh'))
   assert.ok(scripts.includes('codex-openspec-archive-discipline-gate.sh'))
+  assert.ok(!scripts.includes('codex-openspec-dependency-gate.sh'))
+  assert.ok(!scripts.includes('codex-openspec-archive-order-gate.sh'))
+})
+
+test('OpenSpec does not distribute backlog scheduling skills', () => {
+  const skillsRoot = join(repositoryRoot, 'plugins', 'opl-openspec', 'skills')
+  const retired = [
+    'openspec-x-advance',
+    'openspec-x-dependency-audit',
+    'openspec-x-implementation-order',
+    'openspec-x-orchestrate',
+  ]
+  assert.deepEqual(
+    retired.filter((name) => existsSync(join(skillsRoot, name, 'SKILL.md'))),
+    [],
+  )
+})
+
+test('public plugin ownership docs do not advertise retired OpenSpec scheduling', () => {
+  const documents = [
+    join(repositoryRoot, 'plugins', 'opl', 'README.md'),
+    join(repositoryRoot, 'plugins', 'opl-openspec', 'README.md'),
+    join(
+      repositoryRoot,
+      'docs',
+      'superpowers',
+      'specs',
+      '2026-08-08-discipline-plugin-separation-design.md',
+    ),
+  ]
+  for (const document of documents) {
+    const content = readFileSync(document, 'utf8')
+    assert.doesNotMatch(content, /archive order|dependency validation|dependency tooling/iu)
+    assert.doesNotMatch(content, /openspec-x-(?:advance|dependency-audit|implementation-order|orchestrate)/u)
+  }
 })
 
 test('OPL owns the repository-independent GitHub Issues deferral provider', () => {

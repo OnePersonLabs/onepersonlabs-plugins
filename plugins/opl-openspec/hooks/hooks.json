@@ -6,11 +6,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-order-gate.sh\"",
-            "timeout": 25
-          },
-          {
-            "type": "command",
             "command": "bash \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-quality-gate.sh\"",
             "timeout": 600
           },
@@ -27,18 +22,6 @@
           {
             "type": "command",
             "command": "bash \"${PLUGIN_ROOT}/scripts/codex-stock-openspec-guard.sh\"",
-            "timeout": 20
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|ApplyPatch|apply_patch",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-openspec-dependency-gate.sh\"",
             "timeout": 20
           }
         ]

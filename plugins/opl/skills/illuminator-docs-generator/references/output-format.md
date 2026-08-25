@@ -2,12 +2,14 @@
 
 The synthesis subagents (Phase 4) and the polish pass (Phase 5) produce content in this shape. Read this file in full before writing any constellation document.
 
-## Entry Point: `.illuminator/README.md`
+## Entry Point: `<output-directory>/README.md`
 
 ````markdown
 # 🔭 [Project Name] -- Illuminate
 
 > One-sentence: what this project IS and why you'd care.
+
+> Generated snapshot of `[source revision]` at `[generation time]` from a `[clean|dirty]` worktree; evidence for exploration, not current project authority.
 
 ## 🗺️ Capability Map
 

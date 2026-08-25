@@ -11,7 +11,13 @@ This is NOT technical documentation. Not architecture diagrams. Not API referenc
 
 ## Output
 
-Default: `docs/illuminator/` in the current project root. If the user specifies a different path, use that instead.
+If the user specifies a path, use it. Otherwise resolve a disposable output directory before scouting:
+
+1. Test the `.temp/illuminator/` directory itself with `git check-ignore --quiet --no-index` from the project root. A match for one child file is insufficient because every generated descendant must be ignored.
+2. If Git confirms that path is ignored, use `.temp/illuminator/`.
+3. If it is not ignored or the project is not a Git worktree, create an external directory with `mktemp -d -t illuminator.XXXXXXXX` and use the returned path.
+
+The default output is a disposable snapshot, not project documentation or architectural authority. Record the source revision, generation time, and whether the worktree was clean or dirty in its entry point. After the user or owning task has extracted the useful evidence, delete the snapshot. Preserve it only when the user explicitly chooses a durable destination and accepts responsibility for keeping it current.
 
 ---
 
@@ -23,7 +29,7 @@ Dispatch 2-3 code-explorer subagents in parallel to rapidly map the codebase fro
 2. **Depth scout** -- Entry points, main modules, exports. What are the actual capabilities? What's the most powerful code?
 3. **Usage scout** -- Tests, examples, CLI help, commands. How do people actually USE this? What workflows exist?
 
-Each scout writes findings to `docs/illuminator/_scratch/scout-{n}.md`.
+Each scout writes findings to `<output-directory>/_scratch/scout-{n}.md`.
 
 Use scratch files liberally. Your context window is for orchestrating, not holding every detail you discover.
 
@@ -63,7 +69,7 @@ Drop the weakest. Pick up a new direction if something better emerges. **Never e
 
 Dispatch subagents (model: opus) to write the final constellation documents. Each subagent gets:
 
-- Relevant scout data from `docs/illuminator/_scratch/`
+- Relevant scout data from the output directory's `_scratch/`
 - The generalization direction it's responsible for
 - The output format guidelines
 
@@ -78,7 +84,7 @@ Review the constellation as a whole:
 - All documents interlinked (every doc links to 2-4 related docs)
 - Entry point (README.md) provides a complete visual map
 - Progressive disclosure works (skim high-level → drill into detail)
-- Delete `docs/illuminator/_scratch/` directory
+- Delete the output directory's `_scratch/` directory
 - One adversarial pass: "Would someone opening this actually find value in under 60 seconds?"
 
 ---
