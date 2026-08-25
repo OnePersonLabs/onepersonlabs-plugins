@@ -1,6 +1,6 @@
 {
   "name": "opl",
-  "version": "0.1.0+codex.20260825171631",
+  "version": "0.1.0+codex.20260825171859",
   "description": "One-Person Labs shared developer tooling.",
   "license": "MIT",
   "keywords": [
@@ -19,7 +19,6 @@
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
-  "apps": "./.app.json",
   "hooks": "./hooks/hooks.json",
   "agents": "./agents/",
   "interface": {
