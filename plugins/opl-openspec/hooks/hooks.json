@@ -43,6 +43,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-openspec-workflow-gate.sh\"",
+            "timeout": 20
+          }
+        ]
+      }
     ]
   }
 }

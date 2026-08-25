@@ -1,6 +1,6 @@
 {
   "name": "opl",
-  "version": "0.1.0+codex.20260809023541",
+  "version": "0.1.0+codex.20260825155547",
   "description": "One-Person Labs shared developer tooling.",
   "license": "MIT",
   "keywords": [
@@ -25,6 +25,6 @@
   "interface": {
     "displayName": "OPL",
     "shortDescription": "One-Person Labs shared developer tooling",
-    "longDescription": "One-Person Labs skills, agents, integrations, and repository-independent guard hooks, including last-resort rejection of unhandled deferrals."
+    "longDescription": "One-Person Labs skills, agents, integrations, and repository-independent guard hooks, including verified GitHub Issues deferrals and last-resort rejection of unhandled deferrals."
   }
 }
