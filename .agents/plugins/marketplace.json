@@ -125,18 +125,6 @@
       "category": "Developer Tools"
     },
     {
-      "name": "opl-openai",
-      "source": {
-        "source": "local",
-        "path": "./plugins/opl-openai"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
       "name": "opl-openspec",
       "source": {
         "source": "local",

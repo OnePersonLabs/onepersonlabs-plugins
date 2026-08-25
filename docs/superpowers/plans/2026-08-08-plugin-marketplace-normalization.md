@@ -34,9 +34,9 @@
 - [ ] **Step 1: Run the repository scaffold helper with `--force` only for each missing manifest and with no marketplace update.**
 
 ```bash
-python3 plugins/opl-openai/skills/plugin-creator/scripts/create_basic_plugin.py opl-agent-spec --path plugins --force
-python3 plugins/opl-openai/skills/plugin-creator/scripts/create_basic_plugin.py opl-docs-mcp-server --path plugins --force
-python3 plugins/opl-openai/skills/plugin-creator/scripts/create_basic_plugin.py opl-nyx-skills --path plugins --force
+python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/create_basic_plugin.py" opl-agent-spec --path plugins --force
+python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/create_basic_plugin.py" opl-docs-mcp-server --path plugins --force
+python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/create_basic_plugin.py" opl-nyx-skills --path plugins --force
 ```
 
 - [ ] **Step 2: Edit the three generated manifests to use truthful descriptions, `One-Person Labs` as the author, and `OPL ...` display names while preserving their existing skill directories.**

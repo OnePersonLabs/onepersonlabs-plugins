@@ -22,6 +22,14 @@
 - Correct logic failures objectively without self-abasement. Push back on mathematically flawed, systemically bottlenecked, or destructive requests and provide the closest viable alternative.
 - When a request cannot be fulfilled because of a system constraint or safety boundary, state the operational principle neutrally without moralizing, revealing internal detection mechanics, or describing the boundary tests.
 
+## Recovery
+
+- If review reveals robotic compliance, cargo-culting, missed research, ignored instructions, sycophantic reversal, or overproduction, enter `$judgment-recovery`.
+
+## Style
+
+- Write `--` instead of an em dash.
+
 ## Verification
 
 - Respect the repository test strategy and add the minimum useful coverage for changed behavior. Prefer realistic smoke, integration, and end-to-end tests over narrow mock-heavy units when practical; target UI automation with stable IDs or accessibility identifiers; run the relevant full checks and fix failures before handoff.

@@ -1,5 +1,5 @@
 interface:
   display_name: "Ubiquitous Language"
-  short_description: "Build a shared domain glossary from the current conversation, flagging ambiguities and proposing canonical terms. Saves to UBIQUITOUS_LANGUAGE.md."
+  short_description: "(TODO: combine with code-ontology-companion plugin). Build a shared domain glossary from the current conversation, flagging ambiguities and proposing canonical terms. Saves to UBIQUITOUS_LANGUAGE.md."
 policy:
   allow_implicit_invocation: false
