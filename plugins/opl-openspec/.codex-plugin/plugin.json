@@ -1,20 +1,20 @@
 {
   "name": "opl-openspec",
-  "version": "0.8.0+codex.20260825155547",
-  "description": "OpenSpec workflow skills, dependency tooling, orchestration helpers, and Codex guard hooks.",
+  "version": "0.8.0+codex.20260825164157",
+  "description": "OpenSpec workflow skills and Codex guard hooks for selected implementation changes.",
   "license": "MIT",
   "keywords": [
     "openspec",
     "skills",
     "workflow",
     "specifications",
-    "orchestration"
+    "change-management"
   ],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "OPL OpenSpec",
     "shortDescription": "Plan, implement, verify, and archive OpenSpec changes",
-    "longDescription": "OpenSpec workflow skills with durable deferral handling and hooks for active-artifact workflow entry, archive discipline, order, quality, stock artifacts, and change dependencies."
+    "longDescription": "OpenSpec workflow skills with durable deferral handling and hooks for active-artifact workflow entry, archive discipline, archive quality, and stock artifacts."
   }
 }

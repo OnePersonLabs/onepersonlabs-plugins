@@ -33,8 +33,12 @@ Owns:
 
 - recognition and verification of OpenSpec-backed deferrals;
 - archive-time scanning of complete OpenSpec change artifacts;
-- archive command parsing, archive order, and archive quality;
-- OpenSpec dependency, stock-artifact, skill, and orchestration behavior.
+- archive command parsing, discipline, and archive quality;
+- active-artifact workflow entry and stock-artifact protection.
+
+It does not own a work queue, cross-change dependency graph, implementation
+order, or multi-change scheduler. Those concerns belong to the repository's
+external work tracker and explicit issue-selection workflow.
 
 It requires `opl` because its archive lifecycle hook reuses the universal text
 classifier. The dependency is resolved from Codex's enabled-plugin catalog,
@@ -68,8 +72,8 @@ corresponding active change or date-prefixed archived change directory exists.
 
 The OpenSpec archive discipline gate is registered only in
 `opl-openspec/hooks/hooks.json`. It parses the archive command with the same
-OpenSpec-owned parser as the order and quality gates, scans all Markdown in the
-change, and uses the universal classifier plus installed domain handlers.
+OpenSpec-owned parser as the quality gate, scans all Markdown in the change,
+and uses the universal classifier plus installed domain handlers.
 
 ## Failure Behavior
 
