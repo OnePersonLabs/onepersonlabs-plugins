@@ -22,7 +22,8 @@ Run:
 ```bash
 openspec validate --specs --strict --no-interactive
 openspec doctor --json
-node .agents/skills/openspec-x-audit/scripts/spec_inventory.mjs --markdown
+AUDIT_SKILL_DIR="<absolute path of the directory containing this SKILL.md>"
+node "${AUDIT_SKILL_DIR}/scripts/spec_inventory.mjs" --markdown
 ```
 
 Use `--capability <slug>` for a focused inventory and `--json` for machine-readable output. Structural validation does not replace the semantic audit.
