@@ -18,7 +18,7 @@ OPENSPEC_WORKFLOW_TRANSCRIPT_TAIL_LINES="${OPENSPEC_WORKFLOW_TRANSCRIPT_TAIL_LIN
 SLUG_RE='[a-z0-9][a-z0-9-]*'
 CAPABILITY_RE="${SLUG_RE}(/${SLUG_RE})*"
 ARTIFACT_RE="openspec/changes/${SLUG_RE}/(proposal|design|tasks)\\.md|openspec/changes/${SLUG_RE}/specs/${CAPABILITY_RE}/spec\\.md"
-SKILL_READ_RE='"name"[[:space:]]*:[[:space:]]*"exec_command".*/skills/(openspec-[^/]+|openspec-x-[^/]+)/SKILL\.md'
+SKILL_READ_RE='"name"[[:space:]]*:[[:space:]]*"(exec_command|exec)".*/skills/(openspec-[^/]+|openspec-x-[^/]+)/SKILL\.md'
 
 extract_edit_targets() {
   local source_file=$1
@@ -57,13 +57,24 @@ extract_commands() {
         else $arguments
         end;
 
+    def orchestrated_exec_commands:
+      (.payload.input? // .input? // empty)
+      | select(type == "string")
+      | capture(
+          "tools\\.exec_command\\(\\s*\\{\\s*(?:\\\"cmd\\\"|\\\"command\\\"|cmd|command)\\s*:\\s*(?<encoded>\\\"[^\\\"]*\\\")";
+          "s"
+        )?
+      | .encoded?
+      | fromjson?;
+
     [
       .tool_input.command?,
       .tool_input.cmd?,
       .payload.tool_input.command?,
       .payload.tool_input.cmd?,
       (decoded_arguments | .command?),
-      (decoded_arguments | .cmd?)
+      (decoded_arguments | .cmd?),
+      orchestrated_exec_commands
     ]
     | .[]?
     | select(type == "string" and length > 0)

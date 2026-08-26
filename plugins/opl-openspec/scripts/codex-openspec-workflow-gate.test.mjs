@@ -56,6 +56,22 @@ function skillRead(path) {
   }
 }
 
+function orchestratedExec(command) {
+  return {
+    payload: {
+      type: 'custom_tool_call',
+      name: 'exec',
+      input: [
+        'const result = await tools.exec_command({',
+        `  "cmd": ${JSON.stringify(command)},`,
+        '  "yield_time_ms": 10000',
+        '});',
+        'text(result.output);',
+      ].join('\n'),
+    },
+  }
+}
+
 test('workflow gate blocks an active artifact edit without workflow entry', () => {
   const decision = runGate([
     patch('openspec/changes/add-example/proposal.md'),
@@ -113,6 +129,16 @@ for (const [label, path] of [
   })
 }
 
+test('workflow gate accepts OpenSpec skill entry through the orchestrated exec tool', () => {
+  const decision = runGate([
+    orchestratedExec(
+      "sed -n '1,240p' /work/plugins/opl-openspec/skills/openspec-x-finish/SKILL.md",
+    ),
+    patch('openspec/changes/add-example/tasks.md'),
+  ])
+  assert.equal(decision.continue, true)
+})
+
 test('workflow gate accepts the documented repair sequence', () => {
   const decision = runGate([
     patch('openspec/changes/add-example/design.md'),
@@ -134,6 +160,17 @@ test('workflow gate accepts the documented repair sequence', () => {
         }),
       },
     },
+  ])
+  assert.equal(decision.continue, true)
+})
+
+test('workflow gate accepts the documented repair sequence through orchestrated exec', () => {
+  const decision = runGate([
+    patch('openspec/changes/add-example/design.md'),
+    orchestratedExec(
+      'openspec instructions design --change add-example --json',
+    ),
+    orchestratedExec('openspec validate add-example --strict'),
   ])
   assert.equal(decision.continue, true)
 })
