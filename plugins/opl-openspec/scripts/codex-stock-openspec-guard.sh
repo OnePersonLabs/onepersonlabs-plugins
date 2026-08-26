@@ -12,11 +12,9 @@
 #   .agents/skills/openspec-*     -- OpenSpec CLI-generated skills
 #
 # EXTENSIONS (allowed -- your own, namespaced to stay separable):
-#   .agents/skills/openspecx-*    -- project extension skills
 #   .agents/skills/openspec-x-*    -- project extension skills
 #
 # The extra `x` disambiguates extension skills from stock skills:
-# `openspecx-` never matches the stock `openspec-*` pattern.
 # `openspec-x-` never matches the stock `openspec-*` pattern.
 #
 # SCOPE: only fires on the assistant's Edit/Write tool calls. It does NOT

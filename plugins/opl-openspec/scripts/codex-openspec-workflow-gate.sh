@@ -18,7 +18,7 @@ OPENSPEC_WORKFLOW_TRANSCRIPT_TAIL_LINES="${OPENSPEC_WORKFLOW_TRANSCRIPT_TAIL_LIN
 SLUG_RE='[a-z0-9][a-z0-9-]*'
 CAPABILITY_RE="${SLUG_RE}(/${SLUG_RE})*"
 ARTIFACT_RE="openspec/changes/${SLUG_RE}/(proposal|design|tasks)\\.md|openspec/changes/${SLUG_RE}/specs/${CAPABILITY_RE}/spec\\.md"
-SKILL_READ_RE='"name"[[:space:]]*:[[:space:]]*"exec_command".*/skills/(openspec-[^/]+|openspecx-[^/]+)/SKILL\.md'
+SKILL_READ_RE='"name"[[:space:]]*:[[:space:]]*"exec_command".*/skills/(openspec-[^/]+|openspec-x-[^/]+)/SKILL\.md'
 
 extract_edit_targets() {
   local source_file=$1
