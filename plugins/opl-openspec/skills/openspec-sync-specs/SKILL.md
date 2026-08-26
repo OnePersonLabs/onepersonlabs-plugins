@@ -3,9 +3,9 @@ name: openspec-sync-specs
 description: Sync delta specs from a change to main specs. Use when the user wants to update main specs with changes from a delta spec, without archiving the change.
 allowed-tools: Bash(openspec:*)
 license: MIT
-compatibility: Requires openspec CLI.
 metadata:
   author: openspec
+  compatibility: Requires openspec CLI.
   version: "1.0"
   generatedBy: "1.8.0"
 ---
@@ -119,9 +119,10 @@ This is an **agent-driven** operation - you will read delta specs and directly e
      2. the rest of the spec is well-formed (it still has a `## Purpose`);
      3. the main spec was not already empty before this sync - if you removed
         nothing, change nothing;
-     4. every other nonblank line in the whole file is accounted for as the
-        title, Purpose, Requirements header, or a canonical requirement's
-        statement, scenarios, or fenced examples;
+     4. every other nonblank line in the whole file is accounted for as a
+        complete leading YAML frontmatter block (from opening `---` through
+        closing `---`), the title, Purpose, Requirements header, or a canonical
+        requirement's statement, scenarios, or fenced examples;
      5. the change's `.openspec.yaml` declares `retire_capabilities: true`;
      6. the `spec.md` resolves inside the real specs root (do not follow a
         capability-directory symlink to delete an external file).
