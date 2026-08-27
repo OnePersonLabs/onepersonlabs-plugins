@@ -20,7 +20,8 @@ Total: 120 points.
 
 ## Evaluation Protocol
 
-1. Apply the shared workflow in `SKILL.md`.
+1. Apply the shared workflow in `SKILL.md` and the package review in
+   `skill-packages.md`.
 2. Classify each major body section:
    - **Expert**: non-obvious domain judgment or workflow.
    - **Activation**: a brief reminder that usefully changes behavior.

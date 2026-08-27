@@ -161,20 +161,20 @@ test('response blocks an ephemeral deferral without a durable sink', () => {
 test('skill review blocks stop after an unreviewed skill edit', () => {
   const decision = skillReviewDecision([skillEdit()])
   assert.equal(decision.decision, 'block')
-  assert.match(decision.reason, /\$skill-review/u)
+  assert.match(decision.reason, /\$agent-instructions/u)
 })
 
-test('skill review releases stop when skill-review follows the latest edit', () => {
+test('skill review releases stop when agent-instructions follows the latest edit', () => {
   const decision = skillReviewDecision([
     skillEdit(),
-    skillInvocation('skill-review'),
+    skillInvocation('agent-instructions'),
   ])
   assert.equal(decision.continue, true)
 })
 
 test('skill review re-arms when an edit follows a review', () => {
   const decision = skillReviewDecision([
-    skillInvocation('skill-review'),
+    skillInvocation('agent-instructions'),
     skillEdit(),
   ])
   assert.equal(decision.decision, 'block')

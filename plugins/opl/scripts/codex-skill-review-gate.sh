@@ -2,9 +2,9 @@
 # codex-skill-review-gate.sh
 #
 # Stop hook. When this session created or modified one or more Agent
-# Skills (any */SKILL.md file) and no skill-review pass has run
+# Skills (any */SKILL.md file) and no agent-instructions review pass has run
 # against the most recent skill edit, block the stop once and tell the
-# agent to run $skill-review.
+# agent to run $agent-instructions.
 #
 # WHY a Stop hook and not PostToolUse on Edit|Write: skill authoring is
 # many small edits. Nudging after each Write would fire mid-draft and
@@ -37,8 +37,8 @@ TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null || ec
 [[ -z "$TRANSCRIPT" || ! -f "$TRANSCRIPT" ]] && allow_stop
 
 # Plain prose mentioning the skill does not count as running it.
-REVIEW_RE='"skill"[[:space:]]*:[[:space:]]*"skill-review"|command-name>/?skill-review<'
-REVIEW_SKILL_READ_RE='"name"[[:space:]]*:[[:space:]]*"exec_command".*/skills/skill-review/SKILL\.md'
+REVIEW_RE='"skill"[[:space:]]*:[[:space:]]*"agent-instructions"|command-name>/?agent-instructions<'
+REVIEW_SKILL_READ_RE='"name"[[:space:]]*:[[:space:]]*"exec_command".*/skills/agent-instructions/SKILL\.md'
 EDIT_RE='"name"[[:space:]]*:[[:space:]]*"(Edit|Write|MultiEdit|NotebookEdit)"'
 
 # Line number of the last edit/write that targeted a */SKILL.md.
@@ -67,11 +67,11 @@ skills=$(grep -hoE '"file_path"[[:space:]]*:[[:space:]]*"[^"]*/SKILL\.md"' "$TRA
   | grep -oE '/[^"]*/SKILL\.md' | sort -u | sed 's/^/  - /')
 [[ -z "$skills" ]] && skills="  (see the SKILL.md edited above)"
 
-reason="A skill was created or modified this session but has not yet been evaluated with \$skill-review:
+reason="A skill was created or modified this session but has not yet been evaluated with \$agent-instructions:
 ${skills}
 
-Before finishing: run \$skill-review on the modified skill(s).
-This gate releases once \$skill-review runs after the latest skill edit."
+Before finishing: run \$agent-instructions on the modified skill(s).
+This gate releases once \$agent-instructions runs after the latest skill edit."
 
 jq -n --arg r "$reason" '{decision:"block", reason:$r}'
 exit 0
