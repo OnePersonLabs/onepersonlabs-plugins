@@ -1,7 +1,6 @@
 ---
 name: skill-review
 description: Audit Codex Agent Skills for correctness, current API claims, structure, bundled-resource consistency, and validation readiness. Use when reviewing or updating `.agents/skills/**`, `~/.codex/skills/**`, imported skill packages, skill metadata, examples, scripts, references, or before publishing/sharing a skill.
-disable-model-invocation: true
 ---
 
 # Skill Review

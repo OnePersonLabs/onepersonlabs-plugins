@@ -1,0 +1,4 @@
+interface:
+  display_name: "ChatGPT Image Short Video"
+  short_description: "Create reproducible image-led vertical videos"
+  default_prompt: "Use $chatgpt-image-short-video to turn this script into a reproducible vertical video with narration, subtitles, covers, and a manifest."

@@ -8,7 +8,6 @@ homepage: https://github.com/mvanhorn/last30days-skill
 repository: https://github.com/mvanhorn/last30days-skill
 author: mvanhorn
 license: MIT
-disable-model-invocation: true
 user-invocable: true
 metadata:
   openclaw:

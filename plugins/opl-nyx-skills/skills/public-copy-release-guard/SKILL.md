@@ -1,6 +1,7 @@
 ---
 name: public-copy-release-guard
 description: Portable checklist for gating public-facing copy before release. Use when captions, posts, manifests, topics, titles, or launch copy must be checked for generic AI wording, leaked internal labels, forbidden experiment or tool names, platform topic allowlists, CTA spam, and unsupported overclaims.
+disable-model-invocation: true
 version: "0.2"
 license: MIT
 metadata:

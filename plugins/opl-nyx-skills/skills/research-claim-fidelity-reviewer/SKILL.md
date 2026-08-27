@@ -1,6 +1,7 @@
 ---
 name: research-claim-fidelity-reviewer
 description: Severity-weighted BLOCK, WARN, OK reviewer method for technical and research posts. Use when reviewing X threads, announcements, captions, or launch copy for hook strength, thread arc, generic AI vocabulary, source fidelity, claim support, numeric-claim verification, and thread format before recommending publish.
+disable-model-invocation: true
 version: "0.1"
 license: MIT
 metadata:

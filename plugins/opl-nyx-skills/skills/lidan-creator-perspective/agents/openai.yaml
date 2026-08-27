@@ -1,0 +1,6 @@
+interface:
+  display_name: "Li Dan Creator Perspective"
+  short_description: "Review creator decisions through Li Dan's lens"
+  default_prompt: "Use $lidan-creator-perspective to evaluate this content decision through Li Dan's creator mindset and expression style."
+policy:
+  allow_implicit_invocation: false

@@ -2,3 +2,6 @@ interface:
   display_name: "OpenSpec X Finish"
   short_description: "Finish an OpenSpec change end to end"
   default_prompt: "Use $openspec-x-finish to complete, verify, sync, and archive an OpenSpec change."
+
+policy:
+  allow_implicit_invocation: false

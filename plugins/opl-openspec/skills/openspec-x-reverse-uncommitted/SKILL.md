@@ -1,15 +1,12 @@
 ---
 name: openspec-x-reverse-uncommitted
-description: Create a new OpenSpec change from existing uncommitted repository changes for historical archive purposes. Use when the user asks to reverse-engineer dirty worktree drift, bridge already-made implementation changes into OpenSpec history, or file a patch change from `git status`/`git diff`; rejects ghost deltas and delegates artifact creation to `$openspec-propose`.
+description: Reverse-engineer an OpenSpec change from the uncommitted changes that occurred outside of the OpenSpec workflow skills and fix drift between OpenSpec files and the code they describe.
+disable-model-invocation: true
 ---
-
-# openspec-x-reverse
-
-Use this skill to turn already-present uncommitted repo changes into a proposed OpenSpec patch change without mutating those dirty files.
 
 ## Workflow
 
-1. **Establish complete dirty worktree evidence**
+1. **Establish evidence**
 
    Run:
 
@@ -35,10 +32,8 @@ Use this skill to turn already-present uncommitted repo changes into a proposed 
    Identify:
    - files that clearly belong to one coherent historical patch,
    - surviving behavior or instruction changes that need a real OpenSpec delta,
-   - ghost deltas whose only purpose would be to describe cleanup, archival hygiene, reference closure, or
-     the reverse process itself,
-   - stale references, renamed paths, dangling labels, or residue that must be repaired as part of the
-     patch,
+   - ghost deltas whose only purpose would be to describe cleanup, archival hygiene, reference closure, or the reverse process itself,
+   - stale references, renamed paths, dangling labels, or residue that must be repaired as part of the patch,
    - files that appear unrelated,
    - files whose ownership or purpose is ambiguous.
 

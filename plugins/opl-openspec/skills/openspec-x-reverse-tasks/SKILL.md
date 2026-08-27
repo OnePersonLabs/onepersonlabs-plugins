@@ -1,10 +1,11 @@
 ---
-name: openspec-x-reverse-apply
-description: Audit an OpenSpec change's tasks.md against the actual codebase state. Reports which tasks are completed-but-unchecked (silent landing), stale (referencing dead code or moved paths), and genuinely pending. Use when a change's task list is suspected of lagging code reality, before running openspec-apply-change or openspec-verify-change, or as part of close-down hygiene to catch silent completion drift.
+name: openspec-x-reverse-tasks
+description: Audit an OpenSpec change's tasks.md against the actual codebase state. Reports which tasks are completed-but-unchecked (silent landing), stale (referencing dead code or moved paths), and genuinely pending. Use when running `openspec-apply-change` or  `openspec-verify-change` skills, if the change's `tasks.md` task list is suspected of lagging code reality, to catch silent completion drift.
 license: MIT
 metadata:
   author: openspec
   version: "1.0"
+disable-model-invocation: true
 ---
 
 Reverse-audit a tasks.md file against the current codebase. Cross-check each task's references (files, symbols, type names, exports) against what exists today. Produce a report classifying every task into one of four buckets, then optionally edit tasks.md to mark verified-completed tasks `[x]` with a "(landed silently)" parenthetical.

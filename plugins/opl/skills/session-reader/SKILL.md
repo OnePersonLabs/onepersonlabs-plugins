@@ -1,7 +1,6 @@
 ---
 name: session-reader
 description: Safely index, search, inspect, and extract bounded message ranges from large Codex rollout JSONL session logs. Use when Codex needs to find prior user or agent messages, browse recent sessions, search across active or archived session history, inspect rollout metadata, or read a focused transcript without loading raw session files into context.
-disable-model-invocation: true
 ---
 
 # Session Reader

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Promo Scout"
+  short_description: "Find evidence-backed promotion opportunities"
+  default_prompt: "Use $promo-scout to identify what is genuinely promotable across these repositories, how the work connects, and which claims lack evidence."
+policy:
+  allow_implicit_invocation: false

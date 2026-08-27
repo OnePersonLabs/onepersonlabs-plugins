@@ -1,4 +1,5 @@
 interface:
-  display_name: "OpenSpec X Reverse Uncommitted"
-  short_description: "Create a clean OpenSpec proposal from dirty worktree drift"
-  default_prompt: "Use $openspec-x-reverse-uncommitted to inspect staged and unstaged changes, reject ghost deltas, audit stale residue, and propose a reverse-engineered OpenSpec change."
+  display_name: "OpenSpec X New Change from Uncommitted"
+  short_description: "Reverse-engineer an OpenSpec change from the uncommitted changes that occurred outside of the OpenSpec workflow skills and fix drift between OpenSpec files and the code they describe."
+policy:
+  allow_implicit_invocation: false

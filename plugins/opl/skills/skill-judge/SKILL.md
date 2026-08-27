@@ -1,7 +1,6 @@
 ---
 name: skill-judge
 description: Score Codex Agent Skill design quality with a structured rubric. Use when evaluating SKILL.md files, skill packages, migrated skills, skill trigger descriptions, progressive disclosure, knowledge delta, anti-patterns, and whether a skill is production-ready.
-disable-model-invocation: true
 ---
 
 # Skill Judge

@@ -2,3 +2,6 @@ interface:
   display_name: "Illuminator Docs Generator"
   short_description: "Map a codebase into a leverage-focused knowledge atlas"
   default_prompt: "Use $illuminator-docs-generator to explore this codebase and build a temporary practical knowledge map."
+
+policy:
+  allow_implicit_invocation: false

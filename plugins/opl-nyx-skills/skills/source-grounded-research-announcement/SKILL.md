@@ -1,6 +1,7 @@
 ---
 name: source-grounded-research-announcement
 description: Method for drafting and reviewing source-anchored research or technical announcements, especially X threads or short posts. Use when public copy must distinguish claimed from not claimed, attach every technical claim to an artifact anchor, avoid overclaiming, remove generic AI phrasing, and require dry-run plus human approval before live publishing.
+disable-model-invocation: true
 version: "0.1"
 license: MIT
 metadata:

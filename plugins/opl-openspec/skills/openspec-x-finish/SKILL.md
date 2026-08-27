@@ -1,11 +1,12 @@
 ---
 name: "openspec-x-finish"
-description: "Finishes a new or active OpenSpec change. Use when the user asks to finish a change end to end."
+description: "Completes the OpenSpec workflow for an existing change or a described change to one-shot. Use when asked to complete a named change matching an active change folder name."
+disable-model-invocation: true
 ---
 
 Run the complete finish pipeline for an OpenSpec change. Execute the steps in sequence, stopping if any step surfaces unresolvable issues.
 
-**Input**: Optionally specify a change folder name (e.g., `$openspec-x-finish add-auth`). If omitted, infer from conversation context or prompt the user to select.
+**Input**: Optionally specify a change folder name (e.g., `$openspec-x-finish add-auth`) and/or one-shot a described change (if the user doesn't name it, name it yourself), otherwise prompt the user to specify a change name or describe the change to one-shot.
 
 **Steps**
 

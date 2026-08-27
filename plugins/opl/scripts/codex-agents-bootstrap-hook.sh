@@ -7,7 +7,7 @@ CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
 GLOBAL_AGENTS_FILE="$CODEX_HOME_DIR/AGENTS.md"
 LOCK_DIR="$CODEX_HOME_DIR/.opl-agents-bootstrap.lock"
 PLUGIN_ROOT_DIR="${PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-OPL_AGENTS_REFERENCE_RE='^@plugins/cache/onepersonlabs-plugins/opl(/[^/]+)?/AGENTS[.]md$'
+OPL_AGENTS_REFERENCE_RE='^@~/.codex/plugins/cache/onepersonlabs-plugins/opl(/[^/]+)?/AGENTS[.]md$'
 
 mkdir -p "$CODEX_HOME_DIR"
 CODEX_HOME_DIR="$(cd "$CODEX_HOME_DIR" && pwd -P)"
