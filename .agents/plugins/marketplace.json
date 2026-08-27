@@ -159,6 +159,18 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
+    },
+    {
+      "name": "opl-superpowers-lite",
+      "source": {
+        "source": "local",
+        "path": "./plugins/opl-superpowers-lite"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
     }
   ]
 }

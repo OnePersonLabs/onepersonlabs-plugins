@@ -142,12 +142,17 @@ test("hook manifest runs the bootstrap only for initial startup", () => {
     readFileSync(join(pluginRoot, "hooks", "hooks.json"), "utf8"),
   );
   const startupGroups = manifest.hooks.SessionStart;
+  const bootstrapGroup = startupGroups.find((group) =>
+    group.hooks.some((hook) =>
+      /scripts\/codex-agents-bootstrap-hook[.]sh/u.test(hook.command),
+    ),
+  );
 
-  assert.equal(startupGroups.length, 1);
-  assert.equal(startupGroups[0].matcher, "startup");
-  assert.equal(startupGroups[0].hooks.length, 1);
+  assert.ok(bootstrapGroup);
+  assert.equal(bootstrapGroup.matcher, "startup");
+  assert.equal(bootstrapGroup.hooks.length, 1);
   assert.match(
-    startupGroups[0].hooks[0].command,
+    bootstrapGroup.hooks[0].command,
     /scripts\/codex-agents-bootstrap-hook\.sh/u,
   );
 });

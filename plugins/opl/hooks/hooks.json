@@ -66,6 +66,16 @@
             "timeout": 20
           }
         ]
+      },
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/codex-tdd-skill-conflict-warning-hook.py\"",
+            "timeout": 20
+          }
+        ]
       }
     ]
   }

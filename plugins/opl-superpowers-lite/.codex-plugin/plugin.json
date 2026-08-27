@@ -1,0 +1,34 @@
+{
+  "name": "opl-superpowers-lite",
+  "version": "0.1.0+codex.20260827061239",
+  "description": "A focused bundle of systematic debugging and evidence-first verification skills.",
+  "author": {
+    "name": "One-Person Labs",
+    "url": "https://github.com/OnePersonLabs"
+  },
+  "repository": "https://github.com/OnePersonLabs/onepersonlabs-plugins",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "debugging",
+    "verification",
+    "engineering",
+    "lightweight"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OPL Superpowers Lite",
+    "shortDescription": "Focused debugging and verification discipline",
+    "longDescription": "Two focused skills: systematic root-cause debugging and evidence-first verification before completion claims.",
+    "developerName": "One-Person Labs",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Diagnose this failure systematically before proposing a fix.",
+      "Verify this work before claiming it is complete."
+    ]
+  }
+}
