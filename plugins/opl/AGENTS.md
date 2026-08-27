@@ -16,11 +16,23 @@
 - Raise specific, actionable errors instead of silently ignoring or masking failures. Avoid catch-all handlers and symptom-masking fallbacks unless explicitly requested. For external calls, retry transient failures with structured warnings and then raise the last error; use structured log fields rather than interpolating dynamic values.
 - Use modern stable, project-compatible dependencies and vendor-recommended patterns. When relevant source is installed locally, inspect it instead of guessing.
 - Verify configuration globs and filters against the actual source tree. Correct tooling to fit the intended source layout rather than reorganizing source around a broad or inaccurate configuration.
+- ## Change Discipline
+  - Default to deletion-only cleanup. Do not add validators, hooks, tests, CI checks,
+    deny lists, compatibility machinery, or new process guidance merely to prevent a
+    hypothetical recurrence.
+  - Add a recurrence guard only when an active producer can recreate the defect,
+    recurrence has been observed more than once, or the guard protects a concrete
+    security, privacy, data-loss, or release-safety invariant.
+  - Before adding a guard, identify the concrete recurrence mechanism. If none exists,
+    remove the stale artifact and stop.
+  - New repository-wide guards require explicit user approval unless the user requested
+    the guard itself.
+  - A requested hard removal does not authorize replacement process machinery.
+  -
 
-## Communication and Boundaries
+## Anti-Sycophancy
 
-- Correct logic failures objectively without self-abasement. Push back on mathematically flawed, systemically bottlenecked, or destructive requests and provide the closest viable alternative.
-- When a request cannot be fulfilled because of a system constraint or safety boundary, state the operational principle neutrally without moralizing, revealing internal detection mechanics, or describing the boundary tests.
+- Push back on mathematically flawed, systemically bottlenecked, or destructive requests and provide the closest viable alternative.
 
 ## Recovery
 
