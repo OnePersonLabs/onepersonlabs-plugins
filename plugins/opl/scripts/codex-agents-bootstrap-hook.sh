@@ -7,7 +7,7 @@ CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
 GLOBAL_AGENTS_FILE="$CODEX_HOME_DIR/AGENTS.md"
 LOCK_DIR="$CODEX_HOME_DIR/.opl-agents-bootstrap.lock"
 PLUGIN_ROOT_DIR="${PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-OPL_AGENTS_REFERENCE_RE='^@~/.codex/plugins/cache/onepersonlabs-plugins/opl(/[^/]+)?/AGENTS[.]md$'
+OPL_AGENTS_REFERENCE_RE='^@(~/[.]codex/)?plugins/cache/onepersonlabs-plugins/opl(/[^/]+)?/AGENTS[.]md$'
 
 mkdir -p "$CODEX_HOME_DIR"
 CODEX_HOME_DIR="$(cd "$CODEX_HOME_DIR" && pwd -P)"
@@ -23,7 +23,7 @@ fi
 
 case "$PLUGIN_AGENTS_FILE" in
   "$CODEX_HOME_DIR"/plugins/cache/onepersonlabs-plugins/opl/*/AGENTS.md)
-    OPL_AGENTS_REFERENCE="@${PLUGIN_AGENTS_FILE#"$CODEX_HOME_DIR"/}"
+    OPL_AGENTS_REFERENCE="@~/.codex/${PLUGIN_AGENTS_FILE#"$CODEX_HOME_DIR"/}"
     ;;
   *)
     printf 'codex-agents-bootstrap-hook: plugin AGENTS.md is outside the expected OPL cache: %s\n' "$PLUGIN_AGENTS_FILE" >&2
@@ -66,9 +66,9 @@ else
   temp_file=$(mktemp "$CODEX_HOME_DIR/.AGENTS.md.opl.XXXXXX")
   trap 'rm -f "${temp_file:-}"; rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
   cp -p "$GLOBAL_AGENTS_FILE" "$temp_file"
-  awk -v expected="$OPL_AGENTS_REFERENCE" '
+  awk -v expected="$OPL_AGENTS_REFERENCE" -v reference_re="$OPL_AGENTS_REFERENCE_RE" '
     BEGIN { wrote_reference = 0 }
-    /^@plugins\/cache\/onepersonlabs-plugins\/opl(\/[^/]+)?\/AGENTS[.]md$/ {
+    $0 ~ reference_re {
       if (!wrote_reference) {
         print expected
         wrote_reference = 1

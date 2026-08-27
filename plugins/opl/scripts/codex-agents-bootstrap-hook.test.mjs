@@ -102,10 +102,12 @@ test("startup hook updates stale OPL references to its installed version", () =>
     const staleVersioned = referenceFor("0.1.0+codex.previous");
     const staleUnversioned =
       "@~/.codex/plugins/cache/onepersonlabs-plugins/opl/AGENTS.md";
+    const staleRepoRelative =
+      "@plugins/cache/onepersonlabs-plugins/opl/0.1.0+codex.previous/AGENTS.md";
     const agentsPath = join(codexHome, "AGENTS.md");
     writeFileSync(
       agentsPath,
-      `before\n${staleVersioned}\nmiddle\n${staleUnversioned}\nafter\n`,
+      `before\n${staleVersioned}\nmiddle\n${staleUnversioned}\n${staleRepoRelative}\nafter\n`,
     );
 
     const result = runHook(codexHome);
