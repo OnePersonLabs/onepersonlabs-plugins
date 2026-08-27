@@ -23,20 +23,22 @@ than every function involved in producing it.
 ## Discover the Test Surface
 
 Before the first test, inspect repository instructions, manifests, neighboring
-tests, and CI configuration. Establish:
+tests, CI configuration, project domain vocabulary such as `CONTEXT.md`, and
+applicable architecture decisions. Establish:
 
 - the framework and local test conventions;
 - the command for one focused test;
 - the broader command that covers the affected behavior; and
-- the narrowest boundary that provides meaningful confidence.
+- the caller-visible interface, domain language, and narrowest boundary that
+  provide meaningful confidence.
 
 Prefer checked-in wrappers and repository scripts. Do not substitute a familiar
 command for the repository's actual workflow.
 
 ## The Loop
 
-1. **Specify** -- Name the next observable behavior and the realistic production
-   break the test must catch.
+1. **Specify** -- Name the next caller-visible capability through its public
+   interface and the realistic production break the test must catch.
 2. **RED** -- Write the smallest test that demonstrates that behavior. Run the
    focused command and confirm an assertion fails because the behavior is absent
    or wrong. A syntax, import, fixture, or environment error is not RED; correct
@@ -47,7 +49,9 @@ command for the repository's actual workflow.
    was wrong, not to accommodate an incorrect implementation.
 4. **REFACTOR** -- Improve names, seams, duplication, and test clarity while the
    focused test remains green. Add no new behavior during this step.
-5. Repeat with the next behavioral slice.
+5. Repeat with the next behavioral slice. Keep each cycle a vertical
+   tracer-bullet through the relevant layers so the result of one cycle informs
+   the next; do not batch all tests before all implementation.
 
 After the last change that can affect results, run the affected broader suite
 and the repository's required gates. Repeating an unchanged command adds no
@@ -78,7 +82,8 @@ read [references/test-quality.md](references/test-quality.md).
 
 For ordinary tests, keep these invariants:
 
-- assert observable behavior rather than private structure;
+- name scenarios as capabilities a caller or user cares about and exercise them
+  through public interfaces;
 - derive expected values independently of the code under test;
 - use real collaborators when practical and mock the narrow slow, external, or
   nondeterministic boundary;
@@ -89,7 +94,7 @@ For ordinary tests, keep these invariants:
 
 | Signal | Response |
 | --- | --- |
-| The test is hard to arrange | Reconsider the public seam or choose a more natural boundary. |
+| The test is hard to arrange | Treat the friction as interface-design feedback; simplify the public seam or choose a more natural boundary. |
 | Everything must be mocked | Move the test outward or introduce a real dependency boundary. |
 | The test passes first | Confirm the behavior already exists, then select the missing behavior or report tests-after honestly. |
 | There is no test harness | Add the smallest project-compatible harness if in scope; otherwise report the blocker before implementation. |

@@ -62,8 +62,10 @@ behavior. An assertion that merely proves a mock was rendered or called does
 not protect production behavior.
 
 When mock setup dominates the scenario, move to a test with real components or
-improve the production seam. Test-only cleanup belongs in test support unless
-the production component genuinely owns that resource lifecycle.
+improve the production seam. When a production boundary is warranted, prefer
+specific typed operations over a generic fetch or execute interface that forces
+conditional logic into test doubles. Test-only cleanup belongs in test support
+unless the production component genuinely owns that resource lifecycle.
 
 ## Keep Tests Legible and Stable
 

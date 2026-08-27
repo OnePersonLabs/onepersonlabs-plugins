@@ -44,6 +44,28 @@ Before broad `rg`, `find`, `tree`, `ls -R`, or multi-file reads, list files firs
 
 Write skill references and invocations as `$skill-name` instead of `skill-name` or `/skill-name`.
 
+## Cross-Agent Skill Invocation
+
+For skills in this repository, treat Claude's `SKILL.md`
+`disable-model-invocation` and Codex's `agents/openai.yaml`
+`policy.allow_implicit_invocation` as one explicit inverse pair:
+
+| Invocation mode | `disable-model-invocation` | `policy.allow_implicit_invocation` |
+| --- | --- | --- |
+| User-invoked only | `true` | `false` |
+| Model-invoked | `false` | `true` |
+
+Always set both values explicitly. The intended invocation mode is the source of
+truth. When either value is added or changed, resolve the intended mode once and
+write both values in the same change; do not treat that synchronization edit as
+a new invocation-mode change.
+
+The skill-creator `quick_validate.py` validator does not recognize Claude's
+`disable-model-invocation` frontmatter key. Ignore only its
+`disable-model-invocation` unexpected-key diagnostic when the inverse pair above
+is present and correct. Retain the Claude field, and act on every other validator
+diagnostic.
+
 ## MCP API Keys
 
 Store MCP API keys in Windows user environment variables; they pass through to WSL.
