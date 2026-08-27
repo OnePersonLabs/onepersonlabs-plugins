@@ -16,19 +16,13 @@
 - Raise specific, actionable errors instead of silently ignoring or masking failures. Avoid catch-all handlers and symptom-masking fallbacks unless explicitly requested. For external calls, retry transient failures with structured warnings and then raise the last error; use structured log fields rather than interpolating dynamic values.
 - Use modern stable, project-compatible dependencies and vendor-recommended patterns. When relevant source is installed locally, inspect it instead of guessing.
 - Verify configuration globs and filters against the actual source tree. Correct tooling to fit the intended source layout rather than reorganizing source around a broad or inaccurate configuration.
-- ## Change Discipline
-  - Default to deletion-only cleanup. Do not add validators, hooks, tests, CI checks,
-    deny lists, compatibility machinery, or new process guidance merely to prevent a
-    hypothetical recurrence.
-  - Add a recurrence guard only when an active producer can recreate the defect,
-    recurrence has been observed more than once, or the guard protects a concrete
-    security, privacy, data-loss, or release-safety invariant.
-  - Before adding a guard, identify the concrete recurrence mechanism. If none exists,
-    remove the stale artifact and stop.
-  - New repository-wide guards require explicit user approval unless the user requested
-    the guard itself.
-  - A requested hard removal does not authorize replacement process machinery.
-  -
+
+## Change Discipline
+
+- For stale or explicitly removed material, perform deletion-only cleanup: delete the target and its direct references without wrappers, shims, compatibility flags, replacement behavior, or replacement process machinery unless explicitly requested.
+- Deletion-only cleanup does not by itself require TDD, an absence test, or a recurrence guard. Verify that the remaining system is valid, then stop.
+- Add a test, hook, validator, CI check, deny list, or other recurrence guard only when an active producer can recreate the defect, recurrence has been observed more than once, or the guard protects a concrete security, privacy, data-loss, or release-safety invariant.
+- Identify the concrete recurrence mechanism before adding a guard. New repository-wide guards require explicit user approval unless the user requested the guard itself.
 
 ## Anti-Sycophancy
 
