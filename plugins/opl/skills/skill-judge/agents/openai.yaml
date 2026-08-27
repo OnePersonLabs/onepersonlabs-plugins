@@ -1,4 +1,0 @@
-interface:
-  display_name: "Skill Judge"
-  short_description: "Score Codex Agent Skill design quality."
-  default_prompt: "Use $skill-judge to evaluate this skill."

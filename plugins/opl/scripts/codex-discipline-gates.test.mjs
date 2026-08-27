@@ -83,6 +83,31 @@ function writeTranscript(records) {
   return { dir, file }
 }
 
+function runSkillReviewGate(records) {
+  const transcript = writeTranscript(records)
+  try {
+    return runHookStatus('codex-skill-review-gate.sh', {
+      transcript_path: transcript.file,
+    })
+  } finally {
+    rmSync(transcript.dir, { recursive: true, force: true })
+  }
+}
+
+function skillReviewDecision(records) {
+  const result = runSkillReviewGate(records)
+  assert.equal(result.status, 0, result.stderr)
+  return JSON.parse(result.stdout)
+}
+
+function skillEdit(filePath = '/tmp/example-skill/SKILL.md') {
+  return { name: 'Edit', file_path: filePath }
+}
+
+function skillInvocation(skill) {
+  return { name: 'Skill', skill }
+}
+
 function assistant(text) {
   return { message: { role: 'assistant', content: [{ type: 'text', text }] } }
 }
@@ -131,6 +156,28 @@ test('response blocks an ephemeral deferral without a durable sink', () => {
   const decision = responseDecision(runResponse('We can defer this work.'))
   assert.equal(decision.decision, 'block')
   assert.match(decision.reason, /defer/i)
+})
+
+test('skill review blocks stop after an unreviewed skill edit', () => {
+  const decision = skillReviewDecision([skillEdit()])
+  assert.equal(decision.decision, 'block')
+  assert.match(decision.reason, /\$skill-review/u)
+})
+
+test('skill review releases stop when skill-review follows the latest edit', () => {
+  const decision = skillReviewDecision([
+    skillEdit(),
+    skillInvocation('skill-review'),
+  ])
+  assert.equal(decision.continue, true)
+})
+
+test('skill review re-arms when an edit follows a review', () => {
+  const decision = skillReviewDecision([
+    skillInvocation('skill-review'),
+    skillEdit(),
+  ])
+  assert.equal(decision.decision, 'block')
 })
 
 test('core response rejects an OpenSpec-shaped deferral when no provider handles it', () => {

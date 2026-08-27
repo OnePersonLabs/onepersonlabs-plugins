@@ -37,7 +37,7 @@ for (const pluginName of ['opl', 'opl-openspec']) {
 test('OpenSpec owns only its domain-specific discipline integrations', () => {
   const scripts = readdirSync(join(repositoryRoot, 'plugins', 'opl-openspec', 'scripts'))
   const forbidden = scripts.filter((name) =>
-    /dangerous-shell|skill-judge|skill-reference-sigil/u.test(name),
+    /dangerous-shell|skill-review|skill-reference-sigil/u.test(name),
   )
   assert.deepEqual(forbidden, [])
   assert.ok(scripts.includes('codex-openspec-deferral-handler.sh'))
