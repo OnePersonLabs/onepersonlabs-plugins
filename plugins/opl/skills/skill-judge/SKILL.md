@@ -1,6 +1,7 @@
 ---
 name: skill-judge
 description: Score Codex Agent Skill design quality with a structured rubric. Use when evaluating SKILL.md files, skill packages, migrated skills, skill trigger descriptions, progressive disclosure, knowledge delta, anti-patterns, and whether a skill is production-ready.
+disable-model-invocation: true
 ---
 
 # Skill Judge
@@ -12,16 +13,16 @@ adds durable, non-obvious judgment that future Codex sessions can actually use.
 
 Total: 120 points.
 
-| Dimension | Max | Evaluate |
-| --- | ---: | --- |
-| Knowledge Delta | 20 | Does the skill add expert knowledge beyond what the active Codex model can normally infer? |
-| Mindset And Procedure | 15 | Does it transfer useful thinking patterns and domain-specific workflow, not generic steps? |
-| Anti-Patterns | 15 | Does it name specific failures and why they matter? |
-| Description Quality | 15 | Does frontmatter clearly state what the skill does, when to use it, and trigger keywords? |
-| Progressive Disclosure | 15 | Are references/scripts/assets loaded only when needed, with explicit triggers? |
-| Freedom Calibration | 15 | Is guidance strict where errors are costly and flexible where judgment matters? |
-| Pattern Fit | 10 | Does the skill follow a coherent pattern: mindset, navigation, process, tool, or review rubric? |
-| Practical Usability | 15 | Can Codex act from the instructions without guessing missing state or inventing tools? |
+| Dimension              | Max | Evaluate                                                                                        |
+| ---------------------- | --: | ----------------------------------------------------------------------------------------------- |
+| Knowledge Delta        |  20 | Does the skill add expert knowledge beyond what the active Codex model can normally infer?      |
+| Mindset And Procedure  |  15 | Does it transfer useful thinking patterns and domain-specific workflow, not generic steps?      |
+| Anti-Patterns          |  15 | Does it name specific failures and why they matter?                                             |
+| Description Quality    |  15 | Does frontmatter clearly state what the skill does, when to use it, and trigger keywords?       |
+| Progressive Disclosure |  15 | Are references/scripts/assets loaded only when needed, with explicit triggers?                  |
+| Freedom Calibration    |  15 | Is guidance strict where errors are costly and flexible where judgment matters?                 |
+| Pattern Fit            |  10 | Does the skill follow a coherent pattern: mindset, navigation, process, tool, or review rubric? |
+| Practical Usability    |  15 | Can Codex act from the instructions without guessing missing state or inventing tools?          |
 
 ## Evaluation Protocol
 
@@ -55,6 +56,7 @@ Total: 120 points.
 # Skill Evaluation Report: <skill>
 
 ## Summary
+
 - Score: <n>/120
 - Grade: <A-F>
 - Pattern: <pattern>
@@ -62,18 +64,22 @@ Total: 120 points.
 - Verdict: <one sentence>
 
 ## Dimension Scores
+
 | Dimension | Score | Max | Evidence |
-| --- | ---: | ---: | --- |
+| --------- | ----: | --: | -------- |
 
 ## Critical Issues
+
 - [severity] [file:line] Problem -- consequence -- required fix
 
 ## Top Improvements
+
 1. <highest impact fix>
 2. <next fix>
 3. <next fix>
 
 ## Validation
+
 <commands run or not run, and why>
 ```
 

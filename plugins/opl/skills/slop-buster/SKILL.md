@@ -1,6 +1,7 @@
 ---
 name: slop-buster
 description: Mine Codex JSONL session logs for recurring agent slop with in-process agent workers. Use when the user asks to find, collect, classify, or learn from bad Codex agent behavior across saved sessions, extract user corrections or agent messages that indicate slop, or run slop-busting over Codex session logs.
+disable-model-invocation: true
 ---
 
 # Slop Buster

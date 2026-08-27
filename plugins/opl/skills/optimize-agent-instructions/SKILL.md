@@ -1,6 +1,7 @@
 ---
 name: optimize-agent-instructions
 description: Optimize the instruction text physically present in global and project AGENTS.md files through clean-context paired behavioral tests. Use when a user wants to consolidate global and project agent guidance, remove steering that duplicates default model behavior, preserve operational instructions, or maintain scope-specific AGENTS.excluded.md records with timestamped source backups.
+disable-model-invocation: true
 ---
 
 # Optimize Agent Instructions

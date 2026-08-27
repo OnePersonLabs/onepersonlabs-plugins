@@ -1,6 +1,7 @@
 ---
 name: illuminator-docs-generator
 description: Analyze any codebase and create an interlinked, visual, leverage-focused knowledge constellation. Use when the user says "illuminate this", "illuminate this repo", "what can this project do for me", "help me understand this codebase". Also use when the user drops into an unfamiliar repo and wants to quickly understand what it can do and how to leverage it in their projects. This is NOT technical architecture docs -- it's a leverage atlas.
+disable-model-invocation: true
 ---
 
 # Illuminate

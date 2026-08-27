@@ -1,6 +1,7 @@
 ---
 name: review-changes
 description: Cold Repository Audit After Large-Scale Changes. Use in a new session when reviewing a large series of completed changes made by another agent.
+disable-model-invocation: true
 ---
 
 # Cold Repository Audit After Large-Scale Changes
@@ -21,11 +22,11 @@ The current branch is an untrusted artifact, not an authoritative design.
 
 Determine:
 
-* the appropriate baseline commit before the large change;
-* the current HEAD;
-* the original requirements, plans, specifications, issues, or stated intent;
-* the complete changed-file surface between baseline and HEAD;
-* any relevant repository conventions that clearly predate these changes.
+- the appropriate baseline commit before the large change;
+- the current HEAD;
+- the original requirements, plans, specifications, issues, or stated intent;
+- the complete changed-file surface between baseline and HEAD;
+- any relevant repository conventions that clearly predate these changes.
 
 Use the baseline version of the repository to distinguish preexisting architecture from patterns introduced by this change.
 
@@ -39,16 +40,16 @@ Determine not merely whether the code can work, but whether the change has the s
 
 Look for places where the implementation:
 
-* solved the wrong problem;
-* misunderstood an existing abstraction or framework primitive;
-* created machinery that a conventional implementation would not need;
-* converted a temporary obstacle into permanent architecture;
-* duplicated responsibility across layers;
-* added adapters, wrappers, synchronization, state, flags, configuration, or indirection to compensate for an earlier mistake;
-* preserved a false constraint instead of eliminating it;
-* made later changes necessary only because of an earlier change in the same series;
-* caused tests, types, interfaces, or documentation to conform to the implementation rather than verify the intended behavior;
-* produced locally consistent code that is globally unnecessary or incoherent.
+- solved the wrong problem;
+- misunderstood an existing abstraction or framework primitive;
+- created machinery that a conventional implementation would not need;
+- converted a temporary obstacle into permanent architecture;
+- duplicated responsibility across layers;
+- added adapters, wrappers, synchronization, state, flags, configuration, or indirection to compensate for an earlier mistake;
+- preserved a false constraint instead of eliminating it;
+- made later changes necessary only because of an earlier change in the same series;
+- caused tests, types, interfaces, or documentation to conform to the implementation rather than verify the intended behavior;
+- produced locally consistent code that is globally unnecessary or incoherent.
 
 ## Reconstruct the expected shape first
 
@@ -133,13 +134,13 @@ Cluster findings by shared cause.
 
 For every cluster, identify:
 
-* the originating decision or assumption;
-* the downstream code it forced into existence;
-* why the pattern appears locally reasonable;
-* why the larger pattern is suspect;
-* the conventional alternative;
-* what could be deleted or simplified by correcting the root;
-* the migration or compatibility risk.
+- the originating decision or assumption;
+- the downstream code it forced into existence;
+- why the pattern appears locally reasonable;
+- why the larger pattern is suspect;
+- the conventional alternative;
+- what could be deleted or simplified by correcting the root;
+- the migration or compatibility risk.
 
 Explicitly identify any chain resembling:
 
@@ -151,13 +152,13 @@ These loops are high-priority findings.
 
 Every finding must include:
 
-* severity: critical, high, medium, or low;
-* confidence: high, medium, or speculative;
-* concrete file and symbol references;
-* the relevant behavior or diff evidence;
-* the violated invariant, convention, or architectural expectation;
-* whether it predates this change or was introduced by it;
-* whether it is a root cause or downstream symptom.
+- severity: critical, high, medium, or low;
+- confidence: high, medium, or speculative;
+- concrete file and symbol references;
+- the relevant behavior or diff evidence;
+- the violated invariant, convention, or architectural expectation;
+- whether it predates this change or was introduced by it;
+- whether it is a root cause or downstream symptom.
 
 Do not manufacture findings to fill categories.
 
@@ -171,11 +172,11 @@ Produce:
 
 A direct appraisal of whether the change is:
 
-* fundamentally sound;
-* sound but overcomplicated;
-* locally correct but architecturally misframed;
-* built on one or more faulty premises;
-* too uncertain to integrate safely.
+- fundamentally sound;
+- sound but overcomplicated;
+- locally correct but architecturally misframed;
+- built on one or more faulty premises;
+- too uncertain to integrate safely.
 
 ### 2. Intended-system model
 
@@ -207,11 +208,11 @@ Propose ordered remediation waves that correct premises before symptoms.
 
 For each wave, identify:
 
-* intended architectural correction;
-* affected areas;
-* behavior that must remain stable;
-* tests or observations needed to prove equivalence;
-* code likely to become deletable afterward.
+- intended architectural correction;
+- affected areas;
+- behavior that must remain stable;
+- tests or observations needed to prove equivalence;
+- code likely to become deletable afterward.
 
 ### 9. Open uncertainties
 

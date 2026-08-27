@@ -2,13 +2,14 @@
 name: unslop
 description: >
   Trace ONE specific AI agent failure in the CURRENT live session to its causal depth (the instruction vulnerability, not just the agent behavior), then develop a corrective rule and PROVE it empirically -- by forging a truncated copy of the failure session and replaying it under candidate rules until one passes. Use when a single mistake just happened and you can still reach the session that produced it: your reply begins with acknowledging a mistake like "You're right." "Agreed. (x) is vague and useless. Recommendations: (...)", "You're right. I made the wrong inference. The correct read was: (...)", or the user catches a mistake you made, calls something slop, or after an adversarial review surfaces a mistake, or when the agent catches its own mistake. The replay loop needs the failing session to be reachable and reproducible.
+disable-model-invocation: true
 ---
 
 # Unslop Replay
 
 Trace one AI agent failure to its true causal depth, develop a corrective rule, and **prove the rule works by replaying the failure under it** -- all inline, in this session.
 
-The replay is what separates this skill from `/unslop-session-audit`: an audit reasons its way to a fix; this skill *runs* the fix against the actual failure and measures whether the agent still slops. If you only want the analysis without empirically testing the rule, or you're auditing a whole session at once, use `/unslop-session-audit` instead.
+The replay is what separates this skill from `/unslop-session-audit`: an audit reasons its way to a fix; this skill _runs_ the fix against the actual failure and measures whether the agent still slops. If you only want the analysis without empirically testing the rule, or you're auditing a whole session at once, use `/unslop-session-audit` instead.
 
 Most postmortems stop too shallow. "The agent explored too much" is a symptom. "The agent followed a template without assessing complexity" is a proximate antipattern. "The instruction said 'orient before you act' with no scope boundary, so the agent interpreted it as license to explore the entire filesystem" is the **instruction vulnerability** -- the actual bug. This skill climbs the full causal depth ladder.
 
@@ -23,7 +24,7 @@ This `.agents` skill can be used by any worker that supports the standard skill 
 ## Never
 
 - **Never guess which mistake to capture when there's ambiguity.** Two candidate slops look similar; pick the wrong one and the whole depth analysis is anchored on the wrong failure. Confirm via a direct user question (Step 1).
-- **Never stop at depth 0 or 1.** Naming what the agent did ("it explored too much") feels like a finding but fixes nothing. The leverage is depth 2 -- the instruction that *created the conditions*. A postmortem that ends at the behavior just blames the agent for obeying.
+- **Never stop at depth 0 or 1.** Naming what the agent did ("it explored too much") feels like a finding but fixes nothing. The leverage is depth 2 -- the instruction that _created the conditions_. A postmortem that ends at the behavior just blames the agent for obeying.
 - **Never add a new rule when you can rewrite the vulnerable one.** A new rule that counterweights a bad instruction is a patch; two instructions fighting each other is the next bug. Rewriting the instruction is the cure (Step 6a).
 - **Never tune a rule to the exact failure scenario.** A rule that only fires for "creating SKILL.md files" is overfit -- it won't generalize and it rots. Find the broadest wording that still triggers at the decision point (Step 6d).
 - **Never trust a rule you haven't replayed.** "This wording should work" is a hypothesis, not a result. The replay loop exists because plausible-sounding rules fail at the actual decision point. If you can't replay, say so explicitly rather than presenting an untested rule as validated.
@@ -32,6 +33,7 @@ This `.agents` skill can be used by any worker that supports the standard skill 
 ## Step 1: Identify the Slop
 
 The slop might come from:
+
 - Something the user just fixed in code
 - Something adversarial review just caught
 - Something the user explicitly tells you about
@@ -47,22 +49,23 @@ Do not guess. Do not silently pick one. Confirm.
 ## Step 2: Capture the Instance
 
 Document the concrete facts:
+
 - **What happened**: The specific mistake -- what the agent did or produced
 - **What should have happened**: The correct action or output
 - **Scope**: File path if isolatable, or directory/module scope if broader
 
 ## Step 3: Climb the Causal Depth Ladder
 
-This is the core methodology. Agent failures have layers. Most analysis stops at the surface -- naming what the agent did wrong. The real leverage is deeper: finding the instruction, configuration, or system design that *created the conditions* for the failure.
+This is the core methodology. Agent failures have layers. Most analysis stops at the surface -- naming what the agent did wrong. The real leverage is deeper: finding the instruction, configuration, or system design that _created the conditions_ for the failure.
 
 ### The Four Depths
 
-| Depth | Layer | Question | Example |
-|-------|-------|----------|---------|
-| 0 | **Symptom** | What did the agent do? | "Spawned 2 Explore subagents for a single-file task" |
-| 1 | **Proximate antipattern** | What category of mistake is this? | "Ritual Over Reasoning" -- template execution without assessing complexity |
-| 2 | **Instruction vulnerability** | Which instruction/config enabled this? | AGENTS.md says "Orient before you act. Read the directory structure" with no scope boundary -- agent interprets as unbounded exploration mandate |
-| 3 | **Meta-antipattern** | What class of instruction flaw is this? | "Unbounded Directive" -- an instruction that specifies an action without specifying when to stop |
+| Depth | Layer                         | Question                                | Example                                                                                                                                          |
+| ----- | ----------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0     | **Symptom**                   | What did the agent do?                  | "Spawned 2 Explore subagents for a single-file task"                                                                                             |
+| 1     | **Proximate antipattern**     | What category of mistake is this?       | "Ritual Over Reasoning" -- template execution without assessing complexity                                                                       |
+| 2     | **Instruction vulnerability** | Which instruction/config enabled this?  | AGENTS.md says "Orient before you act. Read the directory structure" with no scope boundary -- agent interprets as unbounded exploration mandate |
+| 3     | **Meta-antipattern**          | What class of instruction flaw is this? | "Unbounded Directive" -- an instruction that specifies an action without specifying when to stop                                                 |
 
 ### Depth 0: The Symptom
 
@@ -78,6 +81,7 @@ Abstract the symptom into a nameable failure category:
 4. Keep abstracting until you reach a **nameable antipattern** -- something that could appear in a taxonomy of agent failures
 
 Examples of well-calibrated antipattern names:
+
 - "Deletion as Error Resolution" -- destroying code to satisfy a linter instead of understanding the code's purpose
 - "Scope Amnesia" -- modifying code the agent didn't create and doesn't understand the contract of
 - "Cosmetic Fix, Structural Break" -- making a surface-level correction that violates a deeper invariant
@@ -94,6 +98,7 @@ Do not proceed until the user confirms or corrects.
 This is where the real leverage lives. The agent was following instructions -- which instruction was the bug?
 
 Search the agent's configuration stack for the enabling condition:
+
 - **AGENTS.md** (global, project, and path-level files involved in the session)
 - **Rules files**
 - **Skill instructions** (if a skill was invoked during the session)
@@ -101,11 +106,13 @@ Search the agent's configuration stack for the enabling condition:
 - **Implicit defaults** (behaviors the agent exhibits when no instruction addresses the situation)
 
 For each candidate instruction, ask:
+
 1. Could the agent reasonably interpret this instruction to produce the observed failure?
 2. Is the instruction missing a scope boundary, termination condition, or exception clause?
 3. Does the instruction conflict with another instruction, creating an ambiguous priority?
 
 The vulnerability might be:
+
 - **An ambiguous directive**: "Explore the codebase" (no boundary → infinite exploration)
 - **A missing exception**: "Always run tests" (even when there are no tests to run → agent creates empty test files)
 - **A conflicting pair**: "Be thorough" + "Be concise" (agent oscillates or picks one arbitrarily)
@@ -118,6 +125,7 @@ The vulnerability might be:
 Generalize the instruction vulnerability into a class of instruction design flaws. This is the highest-leverage artifact -- it prevents entire categories of future instruction bugs.
 
 Examples:
+
 - **"Unbounded Directive"** -- specifies an action without specifying when to stop (explore, read, check, verify -- all need termination conditions)
 - **"Competing Mandates"** -- two instructions that are both reasonable alone but create ambiguity when combined (thoroughness vs. speed, safety vs. autonomy)
 - **"Missing Negative Space"** -- instruction says what TO do but not what NOT to do (the agent fills the gap with training priors)
@@ -134,18 +142,21 @@ Now switch roles for the forensic reconstruction:
 **Role 2 -- The Agent That Sloped**: You are reconstructing your own reasoning at the time of the mistake. You must be honest about what you did and didn't check.
 
 ### What was in context that led here?
+
 - What information was visible to the agent when it made the decision?
 - What signals (error messages, linter output, type errors) was it responding to?
 - Was it following an instruction too literally? Optimizing for the wrong metric?
 - **Which specific instruction(s) was it acting on?** (Quote them.)
 
 ### What was in context that should have prevented this but didn't?
+
 - Were there comments, function signatures, or naming conventions that signaled intent?
 - Was there a AGENTS.md rule or convention that applied but was overlooked?
 - Was there a recent conversation message that contradicted the action taken?
 - **Did another instruction conflict with the one the agent followed?**
 
 ### What due diligence was skipped?
+
 - Did the agent read the full function/file before modifying it?
 - Did it check callers/references before deleting or renaming?
 - Did it understand the purpose of the code, or just its syntax?
@@ -153,6 +164,7 @@ Now switch roles for the forensic reconstruction:
 - Did it ask the user before taking a destructive or ambiguous action?
 
 ### Why did it fail to notice?
+
 - Was it tunnel-visioned on a specific error and lost the bigger picture?
 - Did it treat an error as a problem to eliminate rather than a signal to investigate?
 - Did it assume its own prior output was authoritative without re-reading it?
@@ -161,7 +173,7 @@ Now switch roles for the forensic reconstruction:
 
 **The standard**: An agent should not delete what it did not create. It should not fix bugs in code it did not touch. It should not modify code that changed since it last touched it. When uncertain, it should default to asking. Apply this standard in your interrogation.
 
-Do not accept "I didn't notice" as a root cause. Ask *why* you didn't notice. Trace it to a specific failure in the decision process -- and from there, to the instruction that shaped that process.
+Do not accept "I didn't notice" as a root cause. Ask _why_ you didn't notice. Trace it to a specific failure in the decision process -- and from there, to the instruction that shaped that process.
 
 ## Step 5: Write the Trace
 
@@ -176,6 +188,7 @@ Write the trace to its own file at `.unslop/replay/<timestamp>-<antipattern-slug
 
 ```markdown
 # SLOP: <Antipattern Name>
+
 <YYYY-MM-DD HH:MM>
 
 SYMPTOM: <what the agent did -- observable behavior>
@@ -187,11 +200,11 @@ DEPTH 3 -- META-ANTIPATTERN: <class of instruction design flaw, or "N/A" if dept
 ROOT CAUSE: <the fundamental mistake -- at whichever depth the real leverage is>
 
 CAUSAL CHAIN:
-  CONTEXT PRESENT: <what was in context that led to the mistake>
-  INSTRUCTION FOLLOWED: <the specific instruction the agent was acting on>
-  CONTEXT MISSING: <what should have been noticed but wasn't>
-  DUE DILIGENCE SKIPPED: <what checks weren't performed>
-  WHY: <why the agent steered into this tree -- traced to specific failure>
+CONTEXT PRESENT: <what was in context that led to the mistake>
+INSTRUCTION FOLLOWED: <the specific instruction the agent was acting on>
+CONTEXT MISSING: <what should have been noticed but wasn't>
+DUE DILIGENCE SKIPPED: <what checks weren't performed>
+WHY: <why the agent steered into this tree -- traced to specific failure>
 ```
 
 After writing, confirm to the user: the antipattern name, the instruction vulnerability (if found), and a one-line summary. Keep it brief. The trace file has the details.
@@ -261,6 +274,7 @@ Start with the most general form of the corrective rule. If it fails, make it mo
 **Sweet spot**: "Before exploring, ask: does the user's input already contain everything needed? If yes, start building. Exploration fills gaps in understanding, not confirms what you already know."
 
 Run at least 3 variants:
+
 1. **Broad** -- the general principle
 2. **Sweet spot** -- concrete enough to trigger at the decision point
 3. **Narrow** -- verify it's not overfitting
@@ -282,6 +296,7 @@ For each replay variant, record:
 ```
 
 A rule **passes** when the replayed agent avoids the original failure without introducing regressions:
+
 - Over-caution (asking unnecessary questions, refusing valid actions)
 - New failure modes (the rule causes a different kind of slop)
 - Overfitting (only works for this exact scenario)
@@ -293,6 +308,7 @@ Cap at 8 iterations. If no rule converges, the failure mode may need a PreToolUs
 ### 6f: Present the Rule
 
 Show the user:
+
 - The winning rule text
 - The replay statistics table (variant, pass/fail, tool call count, notes)
 - Whether the fix is a new rule or a rewrite of an existing instruction

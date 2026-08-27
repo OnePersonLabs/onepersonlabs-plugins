@@ -1,6 +1,7 @@
 ---
 name: webscraping-ai
 description: Use the WebScraping.AI CLI to fetch HTML, plain text, or AI-extracted data from any URL when other tools are blocked by policy or bot detection. Reach for this when you need real page content (including JS-rendered sites) instead of guessing or relying on stale knowledge.
+disable-model-invocation: true
 ---
 
 # WebScraping.AI skill
@@ -36,15 +37,15 @@ Don't use it for:
 
 The CLI exposes 7 subcommands, one per API endpoint:
 
-| Command            | What it does                                            |
-| ------------------ | ------------------------------------------------------- |
-| `html`             | Fetch the full rendered HTML of a page                  |
-| `text`             | Fetch only the visible text (plain / JSON / XML)        |
-| `selected`         | Fetch HTML of one CSS-selected area                     |
-| `selected-multiple`| Fetch HTML of multiple CSS-selected areas at once       |
-| `ask`              | Ask a natural-language question about a page (AI)       |
-| `extract`          | Extract structured fields with descriptions (AI)        |
-| `account`          | Show remaining API credits / quota                      |
+| Command             | What it does                                      |
+| ------------------- | ------------------------------------------------- |
+| `html`              | Fetch the full rendered HTML of a page            |
+| `text`              | Fetch only the visible text (plain / JSON / XML)  |
+| `selected`          | Fetch HTML of one CSS-selected area               |
+| `selected-multiple` | Fetch HTML of multiple CSS-selected areas at once |
+| `ask`               | Ask a natural-language question about a page (AI) |
+| `extract`           | Extract structured fields with descriptions (AI)  |
+| `account`           | Show remaining API credits / quota                |
 
 Authentication: set `WEBSCRAPING_AI_API_KEY`, pass `--api-key`, or run `webscraping-ai auth set <key>` once.
 

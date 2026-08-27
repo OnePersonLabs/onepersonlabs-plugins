@@ -1,6 +1,7 @@
 ---
 name: humanize-mbj
 description: Rewrite AI-assisted or overly polished prose into writing that preserves the author's intent, voice, asymmetry, specificity, and natural variation. Use for interview answers, emails, essays, posts, documentation, scripts, and any draft that feels generic, flattened, over-structured, or recognizably machine-shaped.
+disable-model-invocation: true
 ---
 
 # Humanize Prose
@@ -65,12 +66,14 @@ Do not edit until this is clear.
 Inspect the draft for these patterns:
 
 #### Uniformity
+
 - similar sentence lengths
 - every paragraph following the same cadence
 - consistent formality with no local variation
 - every point receiving equal weight
 
 #### Template rhetoric
+
 - "It's not just X, it's Y"
 - "At its core"
 - "In today's rapidly evolving"
@@ -82,6 +85,7 @@ Inspect the draft for these patterns:
 - setup, list of three, summary, repeated until the reader expires of natural causes
 
 #### Nominalized or indirect language
+
 - "the implementation of"
 - "the optimization of"
 - "the facilitation of"
@@ -91,19 +95,23 @@ Inspect the draft for these patterns:
 Prefer actors and verbs when they make the thought clearer.
 
 #### Generic completeness
+
 - covering every reasonable point instead of selecting the important ones
 - explaining obvious implications
 - ending with a recap that adds nothing
 - offering vague benefits without mechanism
 
 #### Synthetic emphasis
+
 - constant intensifiers
 - unnecessary bold claims
 - dramatic framing unsupported by the content
 - aphorisms that could belong to anyone
 
 #### Surface-level tells
+
 These are weak evidence individually, but repeated use flattens voice:
+
 - em dashes
 - semicolon-heavy cadence
 - excessive colons
@@ -164,22 +172,29 @@ Never add typos, fake uncertainty, random slang, or grammatical errors merely to
 Run these checks:
 
 #### Voice test
+
 Could this plausibly have been written by the specified author, or only by "a competent person"?
 
 #### Specificity test
+
 Does the passage contain at least one concrete mechanism, consequence, example, observation, or choice where the original idea supports one?
 
 #### Compression test
+
 Can any sentence be removed without loss? Remove it.
 
 #### Rhythm test
+
 Read it aloud. If every sentence lands with the same weight or shape, revise.
 
 #### Intent test
+
 Did the rewrite make the author more generic, more polite, more formal, or more certain than intended? Undo that drift.
 
 #### Skeleton test
+
 Look only at paragraph functions. If the structure is repeatedly:
+
 1. topic sentence
 2. three supporting points
 3. summary sentence
@@ -187,9 +202,11 @@ Look only at paragraph functions. If the structure is repeatedly:
 break the pattern.
 
 #### Cliche test
+
 Replace phrases that could be pasted into 500 unrelated answers.
 
 #### Truth test
+
 Do not introduce experiences, opinions, facts, or emotional states the author did not supply.
 
 ## Output rules
@@ -207,6 +224,7 @@ Unless the user asks for analysis:
 - do not use em dashes when the author does not use them
 
 When useful, provide one alternate version with a distinct posture, such as:
+
 - sharper
 - warmer
 - more technical
@@ -234,28 +252,33 @@ Conventional polish is last because it is the easiest thing for a model to overp
 ### Fake casualization
 
 Bad:
+
 > Honestly, this is super important because, like, systems can totally break in unexpected ways.
 
 Why it fails:
 It swaps generic formal prose for generic casual prose.
 
 Better:
+
 > By "break," I do not just mean a bug reaching production. I mean discovering that rollback is impossible after both server and client data have already migrated.
 
 ### Synonym roulette
 
 Bad:
+
 > I prioritize crafting systems that remain comprehensible, adaptable, and resilient.
 
 Why it fails:
 It changes words without changing the statistical shape.
 
 Better:
+
 > I want the system easy to understand, easy to change, and hard to accidentally destroy.
 
 ### Decorative specificity
 
 Bad:
+
 > At 2:17 a.m., under the pale glow of a monitor...
 
 Why it fails:
@@ -267,6 +290,7 @@ Use real detail supplied by the author, or stay direct.
 ### Forced sentence chaos
 
 Bad:
+
 > Systems fail. Often. Weirdly. And then? Trouble.
 
 Why it fails:
@@ -289,9 +313,11 @@ Honor the author's observed habits. For authors who do not use em dashes, remove
 ### Corporate deodorizing
 
 Bad:
+
 > I leverage proactive architectural strategies to facilitate scalable outcomes.
 
 Better:
+
 > I design around the parts most likely to change, then isolate them so they can change without dragging the whole system with them.
 
 ## Example

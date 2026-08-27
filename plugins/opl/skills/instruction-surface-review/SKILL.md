@@ -1,6 +1,7 @@
 ---
 name: instruction-surface-review
 description: Review or author agent instruction surfaces. Use when creating, editing, or reviewing AGENTS.md, AGENTS.override.md, .agents/references/*.md, .agents/skills/**/SKILL.md, agents/openai.yaml, Codex hooks/rules/config guidance, or any durable instruction meant to change agent behavior.
+disable-model-invocation: true
 ---
 
 # Instruction Surface Review

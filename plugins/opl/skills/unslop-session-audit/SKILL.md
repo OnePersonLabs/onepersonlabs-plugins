@@ -1,6 +1,7 @@
 ---
 name: unslop-session-audit
 description: "Whole-session behavioral audit that traces AI agent failures to their systemic origins -- instruction vulnerabilities, training priors, architectural mistakes -- using iterative depth climbing and cross-domain root cause analysis, and proves each fix by REASONING (no replay). Use when the user says '/unslop-session-audit', 'audit this session', 'what went wrong', 'find all the slop', 'session postmortem', 'what could be better', or wants to analyze any session's quality. Also use when they want ALL slop in a session found at once rather than one at a time, or the session is old/unreachable so replay isn't practical."
+disable-model-invocation: true
 ---
 
 # Unslop Audit -- Whole-Session Behavioral Audit
@@ -92,7 +93,7 @@ The observations come FROM the session. Categories come from the observations, n
 
 For each finding from Phase A, climb the causal depth ladder. This is an iterative process, not a fixed number of steps.
 
-**The engine**: At each depth, ask: *"Why does the thing at the previous depth exist? What system dynamic, instruction design flaw, cognitive bias, testing methodology gap, or governance failure creates the conditions for this pattern?"*
+**The engine**: At each depth, ask: _"Why does the thing at the previous depth exist? What system dynamic, instruction design flaw, cognitive bias, testing methodology gap, or governance failure creates the conditions for this pattern?"_
 
 **The naming discipline**: At each depth, produce a **taxonomy-grade name** -- a concise, precise name that could appear in a reference on agent failure modes. The act of naming forces crystallization. A vague description can hide shallow thinking. A name can't. Examples of well-calibrated names from prior analyses:
 
@@ -125,12 +126,14 @@ Most agent slop is default model behavior (training priors, RLHF patterns). But 
 7. Model default behavior (no instruction -- training prior)
 
 For each candidate instruction, ask:
+
 - Could the agent reasonably interpret this instruction to produce the observed failure?
 - Is it missing a scope boundary, termination condition, or exception clause?
 - Does it conflict with another instruction, creating ambiguity?
 - Was it an overcorrection for a different failure that now causes this one?
 
 The vulnerability types:
+
 - **Unbounded directive**: specifies an action without specifying when to stop
 - **Competing mandates**: two instructions that are reasonable alone but ambiguous together
 - **Missing negative space**: says what TO do but not what NOT to do
@@ -147,12 +150,32 @@ For each finding, produce:
   "the_question": "Why does this param exist?",
   "the_answer": "The agent created it as part of a method that implements an interface, but put the method on implementations without adding it to the interface",
   "depth_ladder": [
-    {"depth": 0, "name": "Symptom Swatting", "description": "Fixed linter error by deleting what the linter flagged"},
-    {"depth": 1, "name": "Implementation Without Contract", "description": "Added method to implementors without defining it on the interface"},
-    {"depth": 2, "name": "Unbounded Directive", "description": "Instruction says 'implement the interface' but no instruction says 'check the interface first'"},
-    {"depth": 3, "name": "Action-Biased Instruction Design", "description": "Instructions specify what to build, never what to verify before building"},
-    {"depth": 4, "name": "Verification as Afterthought", "description": "The instruction ecosystem treats checking as a post-hoc step, not an integral part of the action"},
-    {"depth": 5, "name": "(attempted -- no further leverage found)"}
+    {
+      "depth": 0,
+      "name": "Symptom Swatting",
+      "description": "Fixed linter error by deleting what the linter flagged"
+    },
+    {
+      "depth": 1,
+      "name": "Implementation Without Contract",
+      "description": "Added method to implementors without defining it on the interface"
+    },
+    {
+      "depth": 2,
+      "name": "Unbounded Directive",
+      "description": "Instruction says 'implement the interface' but no instruction says 'check the interface first'"
+    },
+    {
+      "depth": 3,
+      "name": "Action-Biased Instruction Design",
+      "description": "Instructions specify what to build, never what to verify before building"
+    },
+    {
+      "depth": 4,
+      "name": "Verification as Afterthought",
+      "description": "The instruction ecosystem treats checking as a post-hoc step, not an integral part of the action"
+    },
+    { "depth": 5, "name": "(attempted -- no further leverage found)" }
   ],
   "fix_depth": 2,
   "understanding_depth": 4,
@@ -172,6 +195,7 @@ Write all findings to `/tmp/unslop-findings-<uuid>.json`.
 Read the findings JSON. Group by the deepest shared pattern in the depth ladder, not by surface category. Two instances with the same depth-0 symptom might have completely different depth-2 causes.
 
 For each group, identify:
+
 - The **fix depth** -- where the cleanest intervention lives
 - The **understanding depth** -- the deepest level with genuine explanatory power
 - Whether fixes across instances in the group can be unified into a single intervention
@@ -182,10 +206,12 @@ Create the directory and write the report (`mkdir -p .unslop/audit`), one file p
 
 ```markdown
 # Session Audit: <session-uuid>
+
 Date: <date>
 Session from: <session start date>
 
 ## Summary
+
 - **Session file**: <path>
 - **Total turns analyzed**: <N>
 - **Findings**: <N>
@@ -195,29 +221,34 @@ Session from: <session start date>
 ## Group 1: <Deepest Shared Pattern Name>
 
 ### The Pattern
+
 <What this group of failures has in common at the deepest level, not the surface level>
 
 ### Instances
-| Turn | What Happened | Premise Violated |
-|------|--------------|-----------------|
-| N | <description> | <the question that wasn't asked> |
+
+| Turn | What Happened | Premise Violated                 |
+| ---- | ------------- | -------------------------------- |
+| N    | <description> | <the question that wasn't asked> |
 
 ### Depth Ladder
-| Depth | Name | Description |
-|-------|------|-------------|
-| 0 | <name> | <description> |
-| 1 | <name> | <description> |
-| ... | ... | ... |
+
+| Depth | Name   | Description   |
+| ----- | ------ | ------------- |
+| 0     | <name> | <description> |
+| 1     | <name> | <description> |
+| ...   | ...    | ...           |
 
 ### Proposed Fix
+
 - **Depth**: <fix depth>
 - **Type**: <instruction rewrite | new rule | hook | design principle>
 - **Location**: <file path>
 - **Patch or cure**: <assessment>
 - **Change**:
-<the fix content -- for rewrites, show before/after>
+  <the fix content -- for rewrites, show before/after>
 
 ### Systemic Understanding (depths beyond the fix)
+
 <What the deeper levels revealed about why this class of bug exists. Not actionable for this instance, but prevents the next one.>
 
 ## Group 2: ...
@@ -228,6 +259,7 @@ Present the complete report. One checkpoint: the user reviews the full analysis 
 ## Step 6: Apply Approved Fixes
 
 For each fix the user approves:
+
 - If instruction rewrite: edit the target file (AGENTS.md, a skill, a `.codex/rules/` file, etc.), show the diff
 - If new rule: prefer a hook over rule text. Per AGENTS.md "When a rule fails", text instructions to a stateless model are not a control surface -- structural enforcement (hook, validate script, workflow gate) is. If a hook isn't feasible, add to the smallest existing rule file that fits.
 - If hook: create the hook script and register in settings

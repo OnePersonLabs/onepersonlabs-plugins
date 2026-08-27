@@ -1,6 +1,7 @@
 ---
 name: review-repo
 description: Use when reviewing large or agent-generated changes, unfamiliar repositories, major refactors, or working code that feels unusually complex, inconsistent, nonidiomatic, difficult to navigate, or difficult to explain; especially before integration or when local patterns may have become self-reinforcing.
+disable-model-invocation: true
 ---
 
 # Auditing Repository Shape
@@ -17,12 +18,12 @@ Do not merely ask whether each piece works or can be defended locally. Reconstru
 
 This is a cold, read-only audit.
 
-* Do not edit files.
-* Do not inherit or defend the implementing agent's reasoning.
-* Treat the current repository as evidence, not authority.
-* Compare against the appropriate baseline when available.
-* Passing tests establish limited behavioral evidence, not architectural correctness.
-* Repetition establishes prevalence, not legitimacy.
+- Do not edit files.
+- Do not inherit or defend the implementing agent's reasoning.
+- Treat the current repository as evidence, not authority.
+- Compare against the appropriate baseline when available.
+- Passing tests establish limited behavioral evidence, not architectural correctness.
+- Repetition establishes prevalence, not legitimacy.
 
 Use isolated subagents or independent passes when available. Give reviewers the requirements, baseline, diff, and repository, but not the implementation conversation or other reviewers' conclusions.
 
@@ -30,11 +31,11 @@ Use isolated subagents or independent passes when available. Give reviewers the 
 
 Identify:
 
-* the intended behavior and constraints;
-* the baseline commit or pre-change state;
-* the complete changed surface;
-* deliberate conventions that clearly predate the change;
-* frameworks, platforms, languages, and tools that define the relevant reference classes.
+- the intended behavior and constraints;
+- the baseline commit or pre-change state;
+- the complete changed surface;
+- deliberate conventions that clearly predate the change;
+- frameworks, platforms, languages, and tools that define the relevant reference classes.
 
 Separate:
 
@@ -49,21 +50,21 @@ Separate:
 
 Before closely interpreting the implementation, independently model:
 
-* the essential domain concepts and invariants;
-* responsibility and ownership boundaries;
-* dependency direction;
-* lifecycle and state ownership;
-* expected public and developer-facing interfaces;
-* conventional framework and platform primitives;
-* the simplest mature architecture that could satisfy the requirements.
+- the essential domain concepts and invariants;
+- responsibility and ownership boundaries;
+- dependency direction;
+- lifecycle and state ownership;
+- expected public and developer-facing interfaces;
+- conventional framework and platform primitives;
+- the simplest mature architecture that could satisfy the requirements.
 
 Ask:
 
-* What would normally exist?
-* What would normally own this responsibility?
-* What vocabulary and structure would make the system predictable?
-* What would be surprising to find in a mature reference implementation?
-* What machinery would likely be unnecessary?
+- What would normally exist?
+- What would normally own this responsibility?
+- What vocabulary and structure would make the system predictable?
+- What would be surprising to find in a mature reference implementation?
+- What machinery would likely be unnecessary?
 
 Do not derive the expected model from the current implementation.
 
@@ -79,25 +80,25 @@ Check responsibility placement, module boundaries, dependency direction, duplica
 
 Treat all interaction surfaces as designed interfaces, including:
 
-* APIs and exported types;
-* commands and scripts;
-* configuration and environment variables;
-* schemas and events;
-* routes and entry points;
-* directory and package structure;
-* CI jobs and operational workflows;
-* naming systems and documentation.
+- APIs and exported types;
+- commands and scripts;
+- configuration and environment variables;
+- schemas and events;
+- routes and entry points;
+- directory and package structure;
+- CI jobs and operational workflows;
+- naming systems and documentation.
 
 For each surface, determine whether:
 
-* peers follow a predictable grammar;
-* names communicate scope, strength, ownership, and effects;
-* distinct terms represent distinct contracts;
-* synonyms or aliases add real value;
-* broad names hide narrow behavior;
-* internal details leak into higher-level interfaces;
-* a root or public surface unnecessarily proxies implementation details;
-* a new maintainer could predict how to perform an analogous operation.
+- peers follow a predictable grammar;
+- names communicate scope, strength, ownership, and effects;
+- distinct terms represent distinct contracts;
+- synonyms or aliases add real value;
+- broad names hide narrow behavior;
+- internal details leak into higher-level interfaces;
+- a root or public surface unnecessarily proxies implementation details;
+- a new maintainer could predict how to perform an analogous operation.
 
 Incoherent vocabulary is often evidence that features were named episode by episode rather than designed as one system.
 
@@ -105,12 +106,12 @@ Incoherent vocabulary is often evidence that features were named episode by epis
 
 Identify custom mechanisms that duplicate, bypass, or fight:
 
-* language facilities;
-* framework primitives;
-* package-manager or build-tool capabilities;
-* platform lifecycle mechanisms;
-* standard configuration;
-* established ecosystem conventions.
+- language facilities;
+- framework primitives;
+- package-manager or build-tool capabilities;
+- platform lifecycle mechanisms;
+- standard configuration;
+- established ecosystem conventions.
 
 Research current official documentation and maintained reference implementations when the expected approach is uncertain.
 
@@ -122,12 +123,12 @@ Trace why each new abstraction, wrapper, adapter, flag, cache, queue, synchroniz
 
 Classify it as:
 
-* intrinsic to the domain;
-* required by a platform boundary;
-* deliberately conventional;
-* temporary migration support;
-* compensation for another local decision;
-* unclear.
+- intrinsic to the domain;
+- required by a platform boundary;
+- deliberately conventional;
+- temporary migration support;
+- compensation for another local decision;
+- unclear.
 
 Investigate anything whose justification depends primarily on another mechanism introduced by the same change.
 
@@ -139,15 +140,15 @@ Look for loops such as:
 
 Trace important flows end to end:
 
-* initialization and shutdown;
-* ownership transfers;
-* state transitions;
-* concurrency and cancellation;
-* retries and failure behavior;
-* persistence and recovery;
-* resource acquisition and cleanup;
-* error propagation;
-* platform-specific boundaries.
+- initialization and shutdown;
+- ownership transfers;
+- state transitions;
+- concurrency and cancellation;
+- retries and failure behavior;
+- persistence and recovery;
+- resource acquisition and cleanup;
+- error propagation;
+- platform-specific boundaries.
 
 ### Contract integrity
 
@@ -155,23 +156,23 @@ Determine whether tests, types, schemas, mocks, comments, and documentation enfo
 
 Look for:
 
-* tests coupled to incidental mechanisms;
-* mocks that bypass the risk being tested;
-* interfaces changed to accommodate an implementation;
-* documentation that retroactively declares an accidental pattern intentional;
-* validators that prove internal consistency without proving correctness.
+- tests coupled to incidental mechanisms;
+- mocks that bypass the risk being tested;
+- interfaces changed to accommodate an implementation;
+- documentation that retroactively declares an accidental pattern intentional;
+- validators that prove internal consistency without proving correctness.
 
 ### Simplicity and deletion
 
 Ask what could disappear if the correct:
 
-* abstraction;
-* ownership boundary;
-* data model;
-* framework primitive;
-* command surface;
-* lifecycle;
-* package structure
+- abstraction;
+- ownership boundary;
+- data model;
+- framework primitive;
+- command surface;
+- lifecycle;
+- package structure
 
 were used.
 
@@ -196,21 +197,21 @@ A novel mechanism may be justified by unusual domain constraints. Require the re
 
 Record mechanisms, conventions, or structures that are:
 
-* newly introduced;
-* unusually elaborate;
-* difficult to name using standard vocabulary;
-* absent from mature reference implementations;
-* spread across many files;
-* responsible for new exceptions or aliases;
-* necessary only because another new mechanism exists.
+- newly introduced;
+- unusually elaborate;
+- difficult to name using standard vocabulary;
+- absent from mature reference implementations;
+- spread across many files;
+- responsible for new exceptions or aliases;
+- necessary only because another new mechanism exists.
 
 For each, state:
 
-* the requirement it serves;
-* why conventional approaches are insufficient;
-* evidence supporting that claim;
-* its downstream complexity;
-* what would become removable if it disappeared.
+- the requirement it serves;
+- why conventional approaches are insufficient;
+- evidence supporting that claim;
+- its downstream complexity;
+- what would become removable if it disappeared.
 
 ## 6. Compress Findings to Root Causes
 
@@ -218,14 +219,14 @@ Do not report a swarm of symptoms independently.
 
 Cluster findings by originating assumption or design decision. Identify:
 
-* the root premise;
-* the affected files and subsystems;
-* downstream machinery it forced into existence;
-* why the result appears locally reasonable;
-* why the overall shape is suspect;
-* the conventional alternative;
-* the expected deletion or simplification radius;
-* migration and behavioral risks.
+- the root premise;
+- the affected files and subsystems;
+- downstream machinery it forced into existence;
+- why the result appears locally reasonable;
+- why the overall shape is suspect;
+- the conventional alternative;
+- the expected deletion or simplification radius;
+- migration and behavioral risks.
 
 A useful audit reduces many oddities to a small number of causal explanations.
 
@@ -233,14 +234,14 @@ A useful audit reduces many oddities to a small number of causal explanations.
 
 Every finding must include:
 
-* severity: critical, high, medium, or low;
-* confidence: high, medium, or speculative;
-* concrete file and symbol references;
-* observed evidence;
-* the expected invariant, convention, or shape;
-* whether it predates or was introduced by the reviewed change;
-* whether it is a root cause or symptom;
-* the conventional alternative or unresolved research question.
+- severity: critical, high, medium, or low;
+- confidence: high, medium, or speculative;
+- concrete file and symbol references;
+- observed evidence;
+- the expected invariant, convention, or shape;
+- whether it predates or was introduced by the reviewed change;
+- whether it is a root cause or symptom;
+- the conventional alternative or unresolved research question.
 
 Do not produce findings merely to fill categories.
 
@@ -254,11 +255,11 @@ Do not recommend replacing unusual code solely because it is unusual.
 
 Classify the change or repository as:
 
-* fundamentally sound;
-* sound but unnecessarily complex;
-* locally correct but globally incoherent;
-* built on faulty premises;
-* too uncertain to integrate safely.
+- fundamentally sound;
+- sound but unnecessarily complex;
+- locally correct but globally incoherent;
+- built on faulty premises;
+- too uncertain to integrate safely.
 
 ### Intended-system model
 
@@ -292,11 +293,11 @@ Identify code and decisions that should probably remain.
 
 Order corrections so premises are fixed before symptoms. For each wave state:
 
-* intended correction;
-* affected areas;
-* behavior that must remain stable;
-* evidence required;
-* code likely to become removable.
+- intended correction;
+- affected areas;
+- behavior that must remain stable;
+- evidence required;
+- code likely to become removable.
 
 ### Open uncertainties
 

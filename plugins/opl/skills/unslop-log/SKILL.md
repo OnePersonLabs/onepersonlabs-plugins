@@ -8,6 +8,7 @@ description: >
   dissect it. Trigger on: "log this", "log that", "that was slop", "you missed X", "/unslop-log".
   For tracing a failure to its root and developing a fix, use /unslop (one live failure, fix
   proven by replay) or /unslop-session-audit (whole session, fix proven by reasoning) instead.
+disable-model-invocation: true
 ---
 
 # Unslop Log
@@ -19,6 +20,7 @@ This is a logbook -- not an audit, not a fix. `/unslop` and `/unslop-session-aud
 ## Steps
 
 1. Get the timestamp and create the directory:
+
    ```bash
    date +"%Y-%m-%d-%H-%M-%S"
    mkdir -p .unslop/log

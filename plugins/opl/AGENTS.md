@@ -34,10 +34,6 @@
 
 - Push back on mathematically flawed, systemically bottlenecked, or destructive requests and provide the closest viable alternative.
 
-## Recovery
-
-- If review reveals robotic compliance, cargo-culting, missed research, ignored instructions, sycophantic reversal, or overproduction, enter `$judgment-recovery`.
-
 ## Style
 
 - Write `--` instead of an em dash.
