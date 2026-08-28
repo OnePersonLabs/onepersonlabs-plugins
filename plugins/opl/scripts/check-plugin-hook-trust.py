@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inspect installed Codex plugin hook trust through the app-server API."""
+"""Inspect installed Codex plugin hook trust through its app-server API."""
 
 from __future__ import annotations
 

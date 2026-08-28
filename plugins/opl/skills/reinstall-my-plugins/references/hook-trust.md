@@ -1,8 +1,8 @@
 # Hook trust workflow
 
-Use this workflow only after `scripts/install.sh` succeeded but did not confirm
-that all installed marketplace hooks are trusted, or when resuming after its
-manual trust pause.
+Use this workflow only after `plugins/opl/scripts/reinstall-my-plugins.py`
+succeeded but did not confirm that all installed marketplace hooks are trusted,
+or when resuming after its manual trust pause.
 
 ## Automatic TUI attempt
 
@@ -72,7 +72,7 @@ and one-word confirmation that resumes the workflow.
 Only after the manual pause and an affirmative user reply, run this checker once:
 
 ```bash
-python3 "$repo_root/scripts/check-plugin-hook-trust.py" \
+python3 "$repo_root/plugins/opl/scripts/check-plugin-hook-trust.py" \
   --codex "$codex_bin" \
   --manifest "$repo_root/.agents/plugins/marketplace.json"
 ```

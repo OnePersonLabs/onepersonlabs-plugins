@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the installed plugin hook trust checker."""
+"""Tests for the plugin-bundled hook trust checker."""
 
 import importlib.util
 import unittest

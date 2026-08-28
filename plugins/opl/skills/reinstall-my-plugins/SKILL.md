@@ -13,7 +13,7 @@ request to edit, inspect, or test a plugin does not authorize uninstalling it.
 
 1. Resolve `repo_root` with `git rev-parse --show-toplevel` from the current
    working directory.
-2. Require both `$repo_root/scripts/install.sh` and
+2. Require both `$repo_root/plugins/opl/scripts/reinstall-my-plugins.py` and
    `$repo_root/.agents/plugins/marketplace.json`. Stop with a concrete error if
    either is absent.
 3. Resolve `codex_bin` from `CODEX_BIN` when set, otherwise `codex`, and verify
@@ -31,11 +31,11 @@ installed state changes.
 
 ## Reinstall once
 
-Run `CODEX_BIN="$codex_bin" ./scripts/install.sh` from `repo_root` and retain its
-complete output and exit status. The repository installer owns marketplace
-removal, plugin uninstall, local-directory marketplace registration, reinstall,
-and the initial hook-trust inspection; do not reproduce those operations
-separately.
+Run `CODEX_BIN="$codex_bin" ./plugins/opl/scripts/reinstall-my-plugins.py` from
+`repo_root` and retain its complete output and exit status. The repository
+installer owns marketplace removal, plugin uninstall, local-directory
+marketplace registration, reinstall, and the initial hook-trust inspection; do
+not reproduce those operations separately.
 
 - On a nonzero exit, report the failing installer output and stop.
 - On `Hook trust check: all N installed marketplace hooks are trusted.`, record
