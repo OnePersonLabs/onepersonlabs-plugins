@@ -1,3 +1,0 @@
-interface:
-  display_name: "STE Rewriter"
-  short_description: "Rewrites ambiguous English into ASD-STE100 style — one meaning per word, active voice, simple tense, short sentences, significantly reducing `AI slop`."

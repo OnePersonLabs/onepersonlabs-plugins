@@ -1,6 +1,0 @@
-interface:
-  display_name: "Public Copy Release Guard"
-  short_description: "Gate public copy for leaks, hype, and overclaims"
-  default_prompt: "Use $public-copy-release-guard to review this copy and return a BLOCK, WARN, or OK release decision with specific fixes."
-policy:
-  allow_implicit_invocation: false

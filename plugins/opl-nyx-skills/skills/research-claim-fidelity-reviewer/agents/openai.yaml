@@ -1,6 +1,0 @@
-interface:
-  display_name: "Research Claim Fidelity Reviewer"
-  short_description: "Review research copy for claim fidelity"
-  default_prompt: "Use $research-claim-fidelity-reviewer to score this technical or research draft for source fidelity, claim support, and publish readiness."
-policy:
-  allow_implicit_invocation: false

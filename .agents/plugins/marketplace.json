@@ -149,18 +149,6 @@
       "category": "Productivity"
     },
     {
-      "name": "opl-ste-writing",
-      "source": {
-        "source": "local",
-        "path": "./plugins/opl-ste-writing"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "opl-superpowers-lite",
       "source": {
         "source": "local",

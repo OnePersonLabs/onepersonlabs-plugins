@@ -1,4 +1,0 @@
-interface:
-  display_name: "STE Lint"
-  short_description: "Lint prose for Simplified Technical English"
-  default_prompt: "Use $ste-lint to lint these files and fix the reported STE issues."

@@ -1,6 +1,0 @@
-interface:
-  display_name: "STE Writing"
-  short_description: "Rewrite prose (docs, READMEs, PR descriptions, error messages, release notes, comments — never code) into ASD-STE100 Simplified Technical English to remove `AI slop`."
-
-policy:
-  allow_implicit_invocation: false
