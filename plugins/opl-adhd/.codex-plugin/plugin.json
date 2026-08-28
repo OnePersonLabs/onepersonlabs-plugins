@@ -1,0 +1,22 @@
+{
+  "name": "opl-adhd",
+  "version": "0.1.0+codex.20260828162547",
+  "description": "ADHD-aware assistance for reducing executive load in project work.",
+  "author": {
+    "name": "One-Person Labs",
+    "url": "https://github.com/OnePersonLabs"
+  },
+  "repository": "https://github.com/OnePersonLabs/onepersonlabs-plugins",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OPL ADHD",
+    "shortDescription": "ADHD-aware support for complex project work",
+    "longDescription": "ADHD-aware project-work assistance that narrows overload to one active path, preserves relevant task state, and makes completion visible.",
+    "developerName": "One-Person Labs",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": [
+      "Use $adhd to turn this into one active path, preserve what matters, and give me a clear stopping point."
+    ]
+  }
+}
