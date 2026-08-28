@@ -8,14 +8,19 @@ change touches a plugin hook, `hooks.json`, or a hook-owned script, run
 again after every later hook edit. The installed cached plugin copy, not the
 repository file, is the hook implementation Codex tests.
 
-When the user asks to reinstall a plugin from this repository, run
-`./install.sh` from the repository root before testing or reporting completion.
-The installer reads `.agents/plugins/marketplace.json` and reinstalls every
-listed plugin through the Codex CLI.
+When the user asks to reinstall plugins from this repository, invoke
+`$reinstall-my-plugins` when available. It runs `./install.sh` from the
+repository root; the installer reads `.agents/plugins/marketplace.json` and
+reinstalls every listed plugin through the Codex CLI from this local checkout.
+If the skill is unavailable, run `./install.sh` directly and use the manual
+trust pause below.
 
-Treat the final `./install.sh` output as agent instructions. If it reports that
-hook trust review is required or that trust could not be verified, ask the user
-to review and trust the changed hooks in Codex. Pause until the user explicitly
-confirms trust. Do not test, invoke, or continue work involving those hooks
-before that confirmation. Proceed without a trust pause only when the installer
-explicitly reports that all installed marketplace hooks are trusted.
+Treat the final `./install.sh` output as agent instructions. Under
+`$reinstall-my-plugins`, follow its bounded second-CLI `/hooks` attempt and
+manual fallback. Outside that skill, if the installer reports that hook trust
+review is required or could not be verified, ask the user to review and trust
+the changed hooks in Codex, then pause until the user explicitly confirms
+trust. Do not test, invoke, or continue work involving unresolved hooks.
+Proceed without a trust pause only when the installer explicitly reports that
+all installed marketplace hooks are trusted or the skill's automatic TUI flow
+completes successfully.

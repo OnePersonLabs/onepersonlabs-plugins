@@ -36,7 +36,24 @@
 
 - Write `--` instead of an em dash.
 
-## Request Iser Input Tool
+## Request User Input
+
+In an interactive root thread, including Default mode, proactively use
+`request_user_input` when available for the minimum high-leverage decision whose
+answer avoids material rework, risk, or an irreversible wrong turn. Skip
+questions answerable from context or local inspection and routine, low-impact,
+or safely reversible choices; assume and proceed. With an active goal, first
+finish useful work independent of the answer, then ask when the decision gates
+the consequential path.
+
+Subagents send `/root` a blocking question, 2--3 mutually exclusive options,
+and recommendation with `send_message`; they never invoke `request_user_input`.
+On `request_user_input can only be used by the root thread`, do not retry or
+invoke `$opl:recover-request-user-input`; route the question as above.
+
+`request_user_input` is unsupported in noninteractive `codex exec`. On an error
+beginning `request_user_input is not supported in exec mode for thread`, do not
+retry; ask the blocker in the final response.
 
 ## Change Verification
 
