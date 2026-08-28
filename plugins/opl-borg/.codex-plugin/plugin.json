@@ -1,0 +1,19 @@
+{
+  "name": "opl-borg",
+  "version": "0.1.0",
+  "description": "First-principles assimilation of technological distinctiveness into coherent, user-owned collectives.",
+  "author": {
+    "name": "One-Person Labs",
+    "url": "https://github.com/OnePersonLabs"
+  },
+  "repository": "https://github.com/OnePersonLabs/onepersonlabs-plugins",
+  "interface": {
+    "displayName": "OPL Borg",
+    "shortDescription": "Assimilate distinctiveness into your own collectives",
+    "longDescription": "First-principles assimilation of technological distinctiveness into coherent, user-owned collectives.",
+    "developerName": "One-Person Labs",
+    "category": "Developer Tools",
+    "capabilities": [],
+    "defaultPrompt": []
+  }
+}

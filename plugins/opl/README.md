@@ -6,6 +6,10 @@ This plugin owns the repository-independent, last-resort rejection of unhandled 
 
 Other workflow-specific handlers and lifecycle rules remain in their workflow plugins. In particular, `opl-openspec` owns OpenSpec deferral resolution, active-artifact workflow entry, archive-time discipline and quality, and stock-artifact protection. Work queues, priority, blocking relationships, and multi-change scheduling remain outside the OpenSpec plugin.
 
+## User-Invoked Workflow
+
+[`handoff`](skills/handoff/SKILL.md) compacts the current conversation into a temporary handoff document so the user can manually continue the work in a new session.
+
 ## Why OPL Curated TDD Exists
 
 OPL introduced [`test-driven-development-curated`](skills/test-driven-development-curated/SKILL.md) after finding high-risk guidance in two alternatives:
