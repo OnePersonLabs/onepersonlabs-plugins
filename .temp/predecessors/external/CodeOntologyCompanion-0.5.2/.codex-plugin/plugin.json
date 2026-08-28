@@ -1,0 +1,54 @@
+{
+  "author": {
+    "name": "battle-doll",
+    "url": "https://github.com/battle-doll"
+  },
+  "description": "Reverse-engineer authorized code into privacy-conscious local ontologies with deterministic analysis, portable RDF, accessible offline 2D/3D views, optional local MCP setup, and consent-based local inference.",
+  "homepage": "https://github.com/battle-doll/code-ontology-companion#readme",
+  "interface": {
+    "brandColor": "#0F766E",
+    "brandColorDark": "#89F0E8",
+    "capabilities": [
+      "Source-level code reverse engineering",
+      "Local static analysis",
+      "Auditable relationship evidence and adapter coverage",
+      "Versioned RDF lineage",
+      "Static impact and snapshot comparison",
+      "Accessible offline 2D and 3D ontology workbench",
+      "Optional read-only local MCP setup",
+      "Optional consent-based local inference sidecars"
+    ],
+    "category": "Developer Tools",
+    "composerIcon": "./.codex-plugin/assets/composer-icon.png",
+    "defaultPrompt": [
+      "Preflight this authorized repository, report adapter coverage and gaps, and propose a safe local ontology workspace.",
+      "Open the offline workbench and explain the bounded 3D neighborhood and equivalent accessible 2D view.",
+      "Use local MCP to explain a relationship's rule, evidence basis, source span, and runtime limitation."
+    ],
+    "developerName": "battle-doll",
+    "displayName": "Code Ontology Companion",
+    "logo": "./.codex-plugin/assets/logo.png",
+    "logoDark": "./.codex-plugin/assets/logo-dark.png",
+    "longDescription": "Statically map an authorized Java, Spring, or Python repository into immutable local knowledge-graph snapshots with rule-attributed relationship evidence and explicit bounded Java/Python adapter coverage. Search symbols, inspect possible change impact, compare versions, preserve evidence lineage, export RDF 1.1 Turtle, and explore the same bounded neighborhood in a default accessible 2D view or optional interactive 3D constellation. The skill includes Windows, macOS, and Linux setup for the optional read-only local MCP server distributed in the complete plugin package. Deterministic analysis executes no target code and makes no network request. If existing Ollama is detected, the user may separately authorize bounded fixed-loopback inference whose suggestions remain outside observed evidence.",
+    "privacyPolicyURL": "https://github.com/battle-doll/code-ontology-companion/blob/main/PRIVACY.md",
+    "shortDescription": "Accessible 2D/3D code graphs",
+    "supportURL": "https://github.com/battle-doll/code-ontology-companion/blob/main/SUPPORT.md",
+    "termsOfServiceURL": "https://github.com/battle-doll/code-ontology-companion/blob/main/TERMS.md",
+    "websiteURL": "https://github.com/battle-doll/code-ontology-companion"
+  },
+  "keywords": [
+    "codex",
+    "code-analysis",
+    "ontology",
+    "rdf",
+    "provenance",
+    "mcp",
+    "spring",
+    "python"
+  ],
+  "license": "Apache-2.0",
+  "name": "code-ontology-companion",
+  "repository": "https://github.com/battle-doll/code-ontology-companion",
+  "skills": "./skills/",
+  "version": "0.5.2"
+}

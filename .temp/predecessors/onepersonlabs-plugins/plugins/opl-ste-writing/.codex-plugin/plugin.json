@@ -1,0 +1,19 @@
+{
+  "name": "opl-ste-writing",
+  "version": "0.1.0+codex.20260809023056",
+  "description": "Simplified Technical English guidance with opt-out-aware prose linting.",
+  "license": "MIT",
+  "keywords": [
+    "writing",
+    "technical-writing",
+    "simplified-technical-english",
+    "lint"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "OPL STE Writing",
+    "shortDescription": "Write clear, controlled technical prose",
+    "longDescription": "Guidance and a stop hook that check technical prose against a practical Simplified Technical English baseline."
+  }
+}

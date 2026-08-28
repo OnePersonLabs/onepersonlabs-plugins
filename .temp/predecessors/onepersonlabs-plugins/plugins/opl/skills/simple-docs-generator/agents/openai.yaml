@@ -1,0 +1,6 @@
+interface:
+  display_name: "Simple Documentation Generator"
+  short_description: "Generate progressive-disclosure architecture docs for a large codebase with Mermaid diagrams and intuitive explanations"
+
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Humanize (MBJ)"
+  short_description: "Rewrite AI-assisted or overly polished prose into writing that preserves the author's intent, voice, asymmetry, specificity, and natural variation."
+
+policy:
+  allow_implicit_invocation: false

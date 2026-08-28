@@ -1,0 +1,6 @@
+interface:
+  display_name: "Source-Grounded Research Announcement"
+  short_description: "Draft source-grounded research announcements"
+  default_prompt: "Use $source-grounded-research-announcement to draft a source-anchored announcement that clearly separates supported claims from non-claims."
+policy:
+  allow_implicit_invocation: false
