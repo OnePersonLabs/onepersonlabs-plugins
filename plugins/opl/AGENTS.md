@@ -36,7 +36,9 @@
 
 - Write `--` instead of an em dash.
 
-## Verification
+## Request Iser Input Tool
+
+## Change Verification
 
 - Respect the repository test strategy and add the minimum useful coverage for changed behavior. Prefer realistic smoke, integration, and end-to-end tests over narrow mock-heavy units when practical; target UI automation with stable IDs or accessibility identifiers; run the relevant full checks and fix failures before handoff.
 
@@ -54,10 +56,10 @@ For skills in this repository, treat Claude's `SKILL.md`
 `disable-model-invocation` and Codex's `agents/openai.yaml`
 `policy.allow_implicit_invocation` as one explicit inverse pair:
 
-| Invocation mode | `disable-model-invocation` | `policy.allow_implicit_invocation` |
-| --- | --- | --- |
-| User-invoked only | `true` | `false` |
-| Model-invoked | `false` | `true` |
+| Invocation mode   | `disable-model-invocation` | `policy.allow_implicit_invocation` |
+| ----------------- | -------------------------- | ---------------------------------- |
+| User-invoked only | `true`                     | `false`                            |
+| Model-invoked     | `false`                    | `true`                             |
 
 Always set both values explicitly. The intended invocation mode is the source of
 truth. When either value is added or changed, resolve the intended mode once and
