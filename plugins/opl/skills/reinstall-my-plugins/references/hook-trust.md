@@ -1,8 +1,8 @@
 # Hook trust workflow
 
-Use this workflow only after `install.sh` succeeded but did not confirm that all
-installed marketplace hooks are trusted, or when resuming after its manual
-trust pause.
+Use this workflow only after `scripts/install.sh` succeeded but did not confirm
+that all installed marketplace hooks are trusted, or when resuming after its
+manual trust pause.
 
 ## Automatic TUI attempt
 

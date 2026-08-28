@@ -4,7 +4,7 @@
 
 **Goal:** Make every immediate `plugins/` directory a consistently named Codex plugin, register the complete set, clean matching installed copies, reinstall, and deliver the verified result to `origin/main`.
 
-**Architecture:** Treat each immediate directory under `plugins/` as the source of truth. Add root manifests only where missing, normalize manifest identity fields in place, and generate the repository marketplace from the resulting directory set. Use the existing `install.sh` for marketplace registration and plugin reinstall after a read-only audit of `~/.codex/plugins/`.
+**Architecture:** Treat each immediate directory under `plugins/` as the source of truth. Add root manifests only where missing, normalize manifest identity fields in place, and generate the repository marketplace from the resulting directory set. Use the existing `scripts/install.sh` for marketplace registration and plugin reinstall after a read-only audit of `~/.codex/plugins/`.
 
 **Tech Stack:** JSON, Bash, Python helper scripts from `plugin-creator`, Codex CLI, Git.
 
@@ -86,14 +86,14 @@ python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/creat
 ### Task 5: Reinstall and Verify
 
 **Files:**
-- Read: `install.sh`
+- Read: `scripts/install.sh`
 - Modify only if a verification failure proves it is required.
 
 **Interfaces:**
 - Consumes: normalized `.agents/plugins/marketplace.json`.
 - Produces: the local marketplace registered in Codex with every entry installed.
 
-- [ ] **Step 1: Run `./install.sh` and capture failures without masking them.**
+- [ ] **Step 1: Run `./scripts/install.sh` and capture failures without masking them.**
 - [ ] **Step 2: Query the Codex plugin list and confirm every marketplace plugin is installed.**
 - [ ] **Step 3: Run JSON, prefix, set-equality, source-path, and `git diff --check` verification.**
 

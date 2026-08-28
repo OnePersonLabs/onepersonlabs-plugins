@@ -4,18 +4,18 @@
 
 This repository is the source for a local Codex plugin marketplace. When a
 change touches a plugin hook, `hooks.json`, or a hook-owned script, run
-`./install.sh` before any test that can invoke or exercise that hook. Run it
-again after every later hook edit. The installed cached plugin copy, not the
-repository file, is the hook implementation Codex tests.
+`./scripts/install.sh` before any test that can invoke or exercise that hook.
+Run it again after every later hook edit. The installed cached plugin copy, not
+the repository file, is the hook implementation Codex tests.
 
 When the user asks to reinstall plugins from this repository, invoke
-`$reinstall-my-plugins` when available. It runs `./install.sh` from the
+`$reinstall-my-plugins` when available. It runs `./scripts/install.sh` from the
 repository root; the installer reads `.agents/plugins/marketplace.json` and
 reinstalls every listed plugin through the Codex CLI from this local checkout.
-If the skill is unavailable, run `./install.sh` directly and use the manual
-trust pause below.
+If the skill is unavailable, run `./scripts/install.sh` directly and use the
+manual trust pause below.
 
-Treat the final `./install.sh` output as agent instructions. Under
+Treat the final `./scripts/install.sh` output as agent instructions. Under
 `$reinstall-my-plugins`, follow its bounded second-CLI `/hooks` attempt and
 manual fallback. Outside that skill, if the installer reports that hook trust
 review is required or could not be verified, ask the user to review and trust

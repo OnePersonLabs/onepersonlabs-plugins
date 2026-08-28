@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CODEX_BIN="${CODEX_BIN:-codex}"
 MARKETPLACE_MANIFEST="$REPO_ROOT/.agents/plugins/marketplace.json"
 TRUST_CHECKER="$REPO_ROOT/scripts/check-plugin-hook-trust.py"
