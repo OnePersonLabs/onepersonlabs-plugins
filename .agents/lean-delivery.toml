@@ -1,0 +1,15 @@
+schema_version = 1
+
+[git]
+commit = "auto"
+dirty_worktree = "ask-on-conflict"
+worktree = "adaptive"
+
+[delegation]
+mode = "adaptive"
+
+[review]
+max_repair_cycles = 1
+
+[verification]
+full_gate = "pre-review-and-closure"

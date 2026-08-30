@@ -2,3 +2,6 @@ interface:
   display_name: "OpenSpec Sync Specs"
   short_description: "Merge OpenSpec delta specs into main specs"
   default_prompt: "Use $openspec-sync-specs to sync the selected change into main specs."
+
+policy:
+  allow_implicit_invocation: true

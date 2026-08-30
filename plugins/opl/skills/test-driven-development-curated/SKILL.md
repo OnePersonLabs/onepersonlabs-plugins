@@ -1,6 +1,7 @@
 ---
 name: test-driven-development-curated
 description: Use when implementing features, fixing bugs, refactoring executable behavior, or changing an observable contract that needs regression protection.
+disable-model-invocation: false
 ---
 
 # Curated Test-Driven Development

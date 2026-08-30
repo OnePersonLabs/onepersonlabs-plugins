@@ -2,3 +2,6 @@ interface:
   display_name: "OpenSpec Bulk Archive"
   short_description: "Archive several completed OpenSpec changes together"
   default_prompt: "Use $openspec-bulk-archive-change to batch-archive completed OpenSpec changes."
+
+policy:
+  allow_implicit_invocation: true

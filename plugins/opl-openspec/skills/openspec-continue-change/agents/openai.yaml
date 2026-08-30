@@ -2,3 +2,6 @@ interface:
   display_name: "OpenSpec Continue Change"
   short_description: "Create the next artifact for an OpenSpec change"
   default_prompt: "Use $openspec-continue-change to continue the selected OpenSpec workflow."
+
+policy:
+  allow_implicit_invocation: true

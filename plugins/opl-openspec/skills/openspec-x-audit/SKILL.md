@@ -1,6 +1,7 @@
 ---
 name: "openspec-x-audit"
 description: "Use when current implementation may differ from live OpenSpec specs or a named active change, durable behavior may lack specification coverage, or specified behavior may have been removed."
+disable-model-invocation: false
 ---
 
 # OPSXX Audit

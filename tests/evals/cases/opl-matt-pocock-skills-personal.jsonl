@@ -1,0 +1,3 @@
+{"id":"obsidian-vault:direct","skill":"obsidian-vault","kind":"direct","prompt":"Use $obsidian-vault for a representative request. Announce the skill you are using before doing any work, then briefly describe the first workflow step.","should_activate":true}
+{"id":"obsidian-vault:indirect","skill":"obsidian-vault","kind":"indirect","prompt":"Handle a representative request suited to the Obsidian Vault workflow. Announce any skill you choose before doing any work, then briefly describe the first workflow step.","should_activate":true}
+{"id":"obsidian-vault:negative","skill":"obsidian-vault","kind":"negative","prompt":"Define the ordinary English word \"plugin\" in one sentence. Do not invoke $obsidian-vault or any specialized workflow.","should_activate":false}

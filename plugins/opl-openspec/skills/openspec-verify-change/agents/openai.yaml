@@ -2,3 +2,6 @@ interface:
   display_name: "OpenSpec Verify Change"
   short_description: "Verify implementation against OpenSpec artifacts"
   default_prompt: "Use $openspec-verify-change to confirm the implementation matches the selected change."
+
+policy:
+  allow_implicit_invocation: true

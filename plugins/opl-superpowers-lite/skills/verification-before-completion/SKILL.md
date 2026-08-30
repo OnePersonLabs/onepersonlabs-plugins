@@ -1,6 +1,7 @@
 ---
 name: verification-before-completion
 description: Use before claiming work is complete, fixed, correct, passing, ready to commit, or ready to ship.
+disable-model-invocation: false
 ---
 
 # Verification Before Completion

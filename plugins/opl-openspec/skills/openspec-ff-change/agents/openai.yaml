@@ -2,3 +2,6 @@ interface:
   display_name: "OpenSpec Fast-Forward Change"
   short_description: "Generate required OpenSpec artifacts for implementation"
   default_prompt: "Use $openspec-ff-change to fast-forward artifact creation for this OpenSpec change."
+
+policy:
+  allow_implicit_invocation: true

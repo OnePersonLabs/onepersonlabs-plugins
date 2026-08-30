@@ -1,0 +1,6 @@
+interface:
+  display_name: "Docs Manage"
+  short_description: "Use the Docs Manage workflow"
+
+policy:
+  allow_implicit_invocation: true

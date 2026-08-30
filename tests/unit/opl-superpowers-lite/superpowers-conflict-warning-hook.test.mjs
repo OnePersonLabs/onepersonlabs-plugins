@@ -12,7 +12,8 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const pluginRoot = resolve(new URL("..", import.meta.url).pathname);
+const repositoryRoot = resolve(new URL("../../..", import.meta.url).pathname);
+const pluginRoot = join(repositoryRoot, "plugins", "opl-superpowers-lite");
 const hookPath = join(pluginRoot, "scripts", "superpowers-conflict-warning-hook.py");
 
 function withCodexHome(config, run) {

@@ -1,6 +1,7 @@
 ---
 name: adversarial-review
 description: Critical adversarial review for proposals, plans, architecture, code changes, specs, prompts, agent workflows, harnesses, and written arguments. Use when the user asks to review changes, sanity check, check for issues, tear something apart, explain what is wrong, before committing significant work, after implementation phases, or when a PreToolUse hook blocks archive pending coherence verification.
+disable-model-invocation: false
 ---
 
 # Adversarial Review

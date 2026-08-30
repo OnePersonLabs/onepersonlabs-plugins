@@ -1,6 +1,6 @@
 {
   "name": "opl-docs-mcp-server",
-  "version": "0.1.0+codex.20260809023056",
+  "version": "0.1.0",
   "description": "Documentation search and management skills for Codex.",
   "author": {
     "name": "One-Person Labs"

@@ -8,6 +8,7 @@ metadata:
   author: openspec
   version: "1.0"
   generatedBy: "1.11.0"
+disable-model-invocation: false
 ---
 
 Propose a new change - create the change and generate all artifacts in one step.

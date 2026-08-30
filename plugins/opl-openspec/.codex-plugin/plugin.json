@@ -1,6 +1,6 @@
 {
   "name": "opl-openspec",
-  "version": "0.8.0+codex.20260825164157",
+  "version": "0.8.0",
   "description": "OpenSpec workflow skills and Codex guard hooks for selected implementation changes.",
   "license": "MIT",
   "keywords": [

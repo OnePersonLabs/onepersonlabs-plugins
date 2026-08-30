@@ -1,0 +1,23 @@
+{
+  "name": "opl-lean-delivery",
+  "version": "0.1.0",
+  "description": "Bounded, acceptance-backed delivery for substantial software changes.",
+  "author": {
+    "name": "One-Person Labs",
+    "url": "https://github.com/OnePersonLabs"
+  },
+  "repository": "https://github.com/OnePersonLabs/onepersonlabs-plugins",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OPL Lean Delivery",
+    "shortDescription": "Ship substantial changes with bounded review",
+    "longDescription": "Acceptance-backed delivery for substantial software changes with compact context, continuity review, consolidated repair, and proportionate verification.",
+    "developerName": "One-Person Labs",
+    "category": "Developer Tools",
+    "capabilities": [],
+    "defaultPrompt": [
+      "Use $lean-delivery to ship this substantial change with bounded review.",
+      "Use $lean-delivery configure to set this repository's delivery policy."
+    ]
+  }
+}

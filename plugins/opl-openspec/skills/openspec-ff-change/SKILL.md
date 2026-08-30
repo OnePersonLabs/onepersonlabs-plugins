@@ -8,6 +8,7 @@ metadata:
   author: openspec
   version: "1.0"
   generatedBy: "1.11.0"
+disable-model-invocation: false
 ---
 
 Fast-forward through artifact creation - generate everything needed to start implementation in one go.

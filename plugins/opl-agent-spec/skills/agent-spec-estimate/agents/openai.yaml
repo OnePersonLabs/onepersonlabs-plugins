@@ -1,0 +1,6 @@
+interface:
+  display_name: "Agent Spec Estimate"
+  short_description: "Use the Agent Spec Estimate workflow"
+
+policy:
+  allow_implicit_invocation: true

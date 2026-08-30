@@ -1,6 +1,7 @@
 ---
 name: agent-spec-intent-compiler
 description: Use when converting PRD or issue prose into KLL requirements, running the intent compiler plan, or reverse-interviewing a human to resolve requirement ambiguity before task spec generation.
+disable-model-invocation: false
 ---
 
 # Agent Spec Intent Compiler

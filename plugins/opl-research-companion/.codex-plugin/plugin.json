@@ -1,6 +1,6 @@
 {
   "name": "opl-research-companion",
-  "version": "1.1.0+codex.20260809023056",
+  "version": "1.1.0",
   "description": "Strategic research thinking agents for brainstorming, idea evaluation, and project triage.",
   "author": {
     "name": "Andre Huang",

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "codexVersion": "0.151.0",
+  "inspectorVersion": "2.4.0",
+  "rootUnitRoots": ["tests/unit/plugin-dev"],
+  "evaluation": {
+    "model": "gpt-5.6-terra",
+    "reasoningEffort": "high"
+  },
+  "plugins": {
+    "opl-agent-spec": {
+      "unitRoots": [],
+      "commands": [
+        {
+          "command": "cargo",
+          "args": ["test", "--workspace"],
+          "cwd": "packages/agent-spec"
+        }
+      ],
+      "mcpMode": "none",
+      "uiMode": "none"
+    },
+    "opl-awesome-codex-subagents": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-docs-mcp-server": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-matt-pocock-skills-engineering": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-matt-pocock-skills-in-progress": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-matt-pocock-skills-misc": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-matt-pocock-skills-personal": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-matt-pocock-skills-productivity": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-nyx-skills": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl": {
+      "unitRoots": ["tests/unit/opl"],
+      "commands": [],
+      "mcpMode": "launcher-contract",
+      "uiMode": "none"
+    },
+    "opl-openspec": {
+      "unitRoots": ["tests/unit/opl-openspec"],
+      "commands": [],
+      "mcpMode": "none",
+      "uiMode": "none"
+    },
+    "opl-research-companion": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-superpowers-lite": {
+      "unitRoots": ["tests/unit/opl-superpowers-lite"],
+      "commands": [],
+      "mcpMode": "none",
+      "uiMode": "none"
+    },
+    "opl-borg": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-adhd": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-lean-delivery": {
+      "unitRoots": ["tests/unit/opl-lean-delivery"],
+      "commands": [],
+      "mcpMode": "none",
+      "uiMode": "none"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 ---
 name: systematic-debugging
 description: Use when a bug, failing test, performance regression, build failure, or unexpected behavior needs diagnosis before a fix.
+disable-model-invocation: false
 ---
 
 # Systematic Debugging

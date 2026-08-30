@@ -7,6 +7,7 @@ description: |
   "how many rounds", "how long will this take", "estimate this spec",
   估算, 工作量, 多久, 时间估算, 预估, 工时, 规模, 评估工作量,
   "这个 spec 要多久", "估算一下", "工作量评估"
+disable-model-invocation: false
 ---
 
 # Agent Spec Estimate

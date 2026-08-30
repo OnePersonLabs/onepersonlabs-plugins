@@ -8,6 +8,7 @@ metadata:
   author: openspec
   version: "1.0"
   generatedBy: "1.11.0"
+disable-model-invocation: false
 ---
 
 Sync delta specs from a change to main specs.

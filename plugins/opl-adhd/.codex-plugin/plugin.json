@@ -1,6 +1,6 @@
 {
   "name": "opl-adhd",
-  "version": "0.1.0+codex.20260828162547",
+  "version": "0.1.0",
   "description": "ADHD-aware assistance for reducing executive load in project work.",
   "author": {
     "name": "One-Person Labs",

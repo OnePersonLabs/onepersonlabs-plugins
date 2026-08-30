@@ -1,6 +1,7 @@
 ---
 name: agent-spec-wiki
 description: Use when initializing, checking, enriching, or reviewing agent-spec code live wiki pages, source_files trace, or Rust architecture inventory.
+disable-model-invocation: false
 ---
 
 # Agent-Spec Code Live Wiki Workflow

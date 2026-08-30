@@ -8617,8 +8617,8 @@ name: "退款"
     fn test_docs_describe_requirements_compiler_plan_and_questions() {
         let readme = include_str!("../README.md");
         let agents = include_str!("../AGENTS.md");
-        let skill = include_str!("../skills/agent-spec-tool-first/SKILL.md");
-        let commands = include_str!("../skills/agent-spec-tool-first/references/commands.md");
+        let skill = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-tool-first/SKILL.md");
+        let commands = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-tool-first/references/commands.md");
 
         for content in [readme, agents, skill, commands] {
             assert!(content.contains("requirements plan"));
@@ -8643,7 +8643,7 @@ name: "退款"
 
     #[test]
     fn test_requirements_compiler_skill_defines_prd_intake_and_reverse_interview_contract() {
-        let skill = include_str!("../skills/agent-spec-intent-compiler/SKILL.md");
+        let skill = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-intent-compiler/SKILL.md");
 
         for term in [
             "PRD Intake Output Contract",
@@ -11198,7 +11198,7 @@ Scenario: verification metadata stays visible
     fn test_docs_describe_cross_project_wiki_authoring() {
         let readme = include_str!("../README.md");
         let agents = include_str!("../AGENTS.md");
-        let skill = include_str!("../skills/agent-spec-wiki/SKILL.md");
+        let skill = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-wiki/SKILL.md");
 
         for content in [readme, agents, skill] {
             for term in [
@@ -11680,7 +11680,7 @@ Scenario: verification metadata stays visible
         let docs = [
             include_str!("../README.md"),
             include_str!("../AGENTS.md"),
-            include_str!("../skills/agent-spec-wiki/SKILL.md"),
+            include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-wiki/SKILL.md"),
         ];
         for content in docs {
             for command in [
@@ -11726,7 +11726,7 @@ Scenario: verification metadata stays visible
     fn test_atlas_incremental_docs_describe_generation_and_live_runtime_boundary() {
         let guide = include_str!("../docs/atlas-incremental-builds.md");
         let roadmap = include_str!("../docs/atlas-roadmap.md");
-        let skill = include_str!("../skills/agent-spec-tool-first/SKILL.md");
+        let skill = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-tool-first/SKILL.md");
         let wiki = include_str!("../.agent-spec/wiki/architecture/atlas.md");
         for content in [guide, roadmap, skill, wiki] {
             for term in ["generation", "frontier", "orphan", "zero-change"] {
@@ -11857,9 +11857,9 @@ Scenario: verification metadata stays visible
     fn test_docs_describe_deepened_live_wiki_workflow() {
         let readme = include_str!("../README.md");
         let agents = include_str!("../AGENTS.md");
-        let skill = include_str!("../skills/agent-spec-tool-first/SKILL.md");
-        let commands = include_str!("../skills/agent-spec-tool-first/references/commands.md");
-        let wiki_skill = include_str!("../skills/agent-spec-wiki/SKILL.md");
+        let skill = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-tool-first/SKILL.md");
+        let commands = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-tool-first/references/commands.md");
+        let wiki_skill = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-wiki/SKILL.md");
         let claude_skill = include_str!("../.claude/skills/agent-spec-tool-first/SKILL.md");
         let claude_commands =
             include_str!("../.claude/skills/agent-spec-tool-first/references/commands.md");
@@ -14655,20 +14655,20 @@ Scenario: pass
 
     #[test]
     fn test_skill_guidance_rejects_parity_contracts_missing_behavior_matrix() {
-        let skill = include_str!("../skills/agent-spec-tool-first/SKILL.md");
+        let skill = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-tool-first/SKILL.md");
         assert!(skill.contains("rewrite, migration, or parity"));
         assert!(
             skill.contains("switch back to authoring mode and add scenarios before coding"),
             "parity contracts with unbound observable behavior are not deliverable as-is"
         );
-        let authoring = include_str!("../skills/agent-spec-authoring/SKILL.md");
+        let authoring = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-authoring/SKILL.md");
         assert!(authoring.contains("Behavior Surface Checklist"));
         assert!(authoring.contains("treat this as mandatory"));
     }
 
     #[test]
     fn test_skill_guidance_does_not_require_behavior_matrix_for_non_parity_tasks() {
-        let authoring = include_str!("../skills/agent-spec-authoring/SKILL.md");
+        let authoring = include_str!("../../../plugins/opl-agent-spec/skills/agent-spec-authoring/SKILL.md");
         assert!(
             authoring.contains("not required for ordinary incremental tasks"),
             "non-parity tasks must be exempt from the behavior matrix"

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Agent Spec Authoring"
+  short_description: "Use the Agent Spec Authoring workflow"
+
+policy:
+  allow_implicit_invocation: true

@@ -1,6 +1,0 @@
-interface:
-  display_name: "Reinstall My Plugins"
-  short_description: "Reinstall local plugins and resolve hook trust"
-  default_prompt: "Use $reinstall-my-plugins to reinstall every plugin from this local marketplace checkout and resolve hook trust."
-policy:
-  allow_implicit_invocation: true

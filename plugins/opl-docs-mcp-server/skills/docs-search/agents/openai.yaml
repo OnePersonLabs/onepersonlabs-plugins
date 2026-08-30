@@ -1,0 +1,6 @@
+interface:
+  display_name: "Docs Search"
+  short_description: "Use the Docs Search workflow"
+
+policy:
+  allow_implicit_invocation: true

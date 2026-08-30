@@ -144,7 +144,7 @@ tags: [api, auth]
 
 ## Rewrite / Parity Example
 
-See [`examples/rewrite-parity-contract.spec`](../../../examples/rewrite-parity-contract.spec) for a compatibility-oriented contract that binds output modes, cache state, source type, and failure paths.
+The Agent Spec product package includes a compatibility-oriented rewrite-parity example that binds output modes, cache state, source type, and failure paths.
 
 ## Mandatory Validation
 

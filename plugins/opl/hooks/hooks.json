@@ -45,17 +45,6 @@
         ]
       }
     ],
-    "Start": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-skill-review-gate.sh\"",
-            "timeout": 20
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "matcher": "startup",

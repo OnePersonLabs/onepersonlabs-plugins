@@ -1,6 +1,7 @@
 ---
 name: research-companion
 description: Strategic research companion for Codex. Use when the user wants to brainstorm research directions, evaluate ideas, assess project strategy, or run a structured ideation session from vague topic to pursue/park/kill decision.
+disable-model-invocation: false
 ---
 
 # Research Companion For Codex

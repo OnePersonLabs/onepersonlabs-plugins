@@ -2,3 +2,6 @@ interface:
   display_name: "OpenSpec Propose"
   short_description: "Create a complete OpenSpec proposal in one pass"
   default_prompt: "Use $openspec-propose to draft the OpenSpec proposal artifacts for this change."
+
+policy:
+  allow_implicit_invocation: true

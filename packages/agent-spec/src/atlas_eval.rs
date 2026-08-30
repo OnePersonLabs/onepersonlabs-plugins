@@ -3887,6 +3887,14 @@ mod tests {
     fn test_atlas_eval_opt_in_runner_passes_literal_argv_without_eval() {
         use std::os::unix::fs::PermissionsExt;
 
+        if !std::process::Command::new("jq")
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success())
+        {
+            return;
+        }
+
         let dir = temp_dir("atlas-eval-runner-argv");
         let plan = dir.join("plan.json");
         let receipts = dir.join("receipts.ndjson");

@@ -10,6 +10,7 @@ metadata:
     - image-generation
     - subtitles
     - media-pipeline
+disable-model-invocation: false
 ---
 
 # ChatGPT Image Short Video

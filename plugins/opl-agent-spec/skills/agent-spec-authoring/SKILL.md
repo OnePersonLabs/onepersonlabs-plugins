@@ -9,6 +9,7 @@ description: |
   写 spec, 创建规格, 编辑合约, 任务合约, 验收标准, 完成条件,
   BDD 场景, 测试选择器, 约束, 意图, 决策, 边界, 排除范围,
   "怎么写 spec", "spec 格式", "spec 语法", "合约质量"
+disable-model-invocation: false
 ---
 
 # Agent Spec Authoring

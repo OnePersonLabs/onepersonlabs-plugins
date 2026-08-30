@@ -1,5 +1,9 @@
 # Evidence-backed local development workflow for Codex plugin repositories
 
+> Implemented by `docs/local-plugin-development.md`, `tools/plugin-dev.mjs`,
+> and the root package scripts. This document remains the design rationale; use
+> the implementation guide for current commands.
+
 Date: 2026-08-28
 
 ## Scope and conclusion

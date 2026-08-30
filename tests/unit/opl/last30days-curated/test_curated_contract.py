@@ -10,7 +10,8 @@ import tempfile
 import unittest
 
 
-SKILL_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+SKILL_ROOT = REPOSITORY_ROOT / "plugins" / "opl" / "skills" / "last30days-curated"
 SCRIPT = SKILL_ROOT / "scripts" / "last30days-curated.py"
 
 

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Agent Spec Tool First"
+  short_description: "Use the Agent Spec Tool First workflow"
+
+policy:
+  allow_implicit_invocation: true

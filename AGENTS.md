@@ -1,28 +1,48 @@
 # Repository Instructions
 
-## Installed plugin cache and hook trust
+## Local plugin development
 
-This repository is the source for a local Codex plugin marketplace. When a
-change touches a plugin hook, `hooks.json`, or a hook-owned script, run
-`./plugins/opl/scripts/reinstall-my-plugins.py` before any test that can invoke
-or exercise that hook.
-Run it again after every later hook edit. The installed cached plugin copy, not
-the repository file, is the hook implementation Codex tests.
+This repository uses the source-first, two-loop workflow in
+`docs/local-plugin-development.md`. Plugin roots under `plugins/` contain only
+shipping files. Tests live under `tests/`, product source lives under
+`packages/`, and repository drivers live under `tools/`.
 
-When the user asks to reinstall plugins from this repository, invoke
-`$reinstall-my-plugins` when available. It runs
-`./plugins/opl/scripts/reinstall-my-plugins.py` from the repository root; the
-installer reads `.agents/plugins/marketplace.json` and reinstalls every listed
-plugin through the Codex CLI from this local checkout. If the skill is
-unavailable, run `./plugins/opl/scripts/reinstall-my-plugins.py` directly and
-use the manual trust pause below.
+After each executable behavior edit, run the smallest finite focused test that
+can prove the behavior. After it passes, run the deterministic suite for only
+the affected plugin:
 
-Treat the final `./plugins/opl/scripts/reinstall-my-plugins.py` output as agent
-instructions. Under `$reinstall-my-plugins`, follow its bounded second-CLI
-`/hooks` attempt and manual fallback. Outside that skill, if the installer
-reports that hook trust review is required or could not be verified, ask the
-user to review and trust the changed hooks in Codex, then pause until the user
-explicitly confirms trust. Do not test, invoke, or continue work involving
-unresolved hooks. Proceed without a trust pause only when the installer
-explicitly reports that all installed marketplace hooks are trusted or the
-skill's automatic TUI flow completes successfully.
+```bash
+npm run test:contract -- --plugin <plugin-name>
+npm run test:unit -- --plugin <plugin-name>
+```
+
+Cross capability boundaries only when the change crosses them:
+
+- Skill instructions or activation metadata: run
+  `npm run eval:smoke -- --plugin <plugin-name> --skill <skill-name>`.
+- MCP launcher or server metadata: run
+  `npm run test:mcp -- --plugin <plugin-name>`.
+- UI code or resources: run `npm run test:ui -- --plugin <plugin-name>`.
+- Package-visible files at a coherent checkpoint: run
+  `npm run test:installed -- --plugin <plugin-name>`.
+
+`test:installed` uses a separate black-box Codex home and installs only the
+selected plugin. If it exits with status 78, open the printed Codex command,
+review the plugin in `/hooks`, and ask the user to reply `done`. After that
+confirmation, resume with the same command plus `--resume-after-trust`; the
+resume path verifies the existing installed copy and does not reinstall it.
+
+`npm run install:local -- --plugin <plugin-name> --target-home <path>` is an
+installation-only consumer operation. It never runs unit tests, contract
+checks, installed checks, or skill evaluations. Use `--plugin all` only when
+the user explicitly asks to install every marketplace plugin. Never choose a
+user's default `~/.codex` implicitly; require the target home.
+
+The full skill corpus is not a routine update check. Only the explicit
+`npm run release:verify` release gate runs clean installed checks for every
+plugin and behavioral evaluations for every shipped skill. `npm run verify`
+runs the complete deterministic repository gate without model evaluations.
+
+Do not add timestamp cachebusters to plugin versions and do not restore the
+retired all-plugin reinstall script. Codex's installed cache is tested only at
+the black-box checkpoint or used by the explicit installation command.

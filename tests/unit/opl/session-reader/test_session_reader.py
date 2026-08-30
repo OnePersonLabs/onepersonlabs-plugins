@@ -14,7 +14,8 @@ from argparse import Namespace
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).with_name("session_reader.py")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+MODULE_PATH = REPOSITORY_ROOT / "plugins" / "opl" / "skills" / "session-reader" / "scripts" / "session_reader.py"
 SPEC = importlib.util.spec_from_file_location("session_reader", MODULE_PATH)
 assert SPEC and SPEC.loader
 reader = importlib.util.module_from_spec(SPEC)

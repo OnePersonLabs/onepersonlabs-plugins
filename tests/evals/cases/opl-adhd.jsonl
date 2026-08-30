@@ -1,0 +1,3 @@
+{"id":"adhd:direct","skill":"adhd","kind":"direct","prompt":"Use $adhd for a representative request. Announce the skill you are using before doing any work, then briefly describe the first workflow step.","should_activate":true}
+{"id":"adhd:indirect","skill":"adhd","kind":"indirect","prompt":"Handle a representative request suited to the Adhd workflow. Announce any skill you choose before doing any work, then briefly describe the first workflow step.","should_activate":true}
+{"id":"adhd:negative","skill":"adhd","kind":"negative","prompt":"Define the ordinary English word \"plugin\" in one sentence. Do not invoke $adhd or any specialized workflow.","should_activate":false}

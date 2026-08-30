@@ -10,6 +10,7 @@ description: |
   plan context, codebase scan, task sketch, implementation plan,
   合约, 验证, 生命周期, 守卫, 规格检查, 质量门禁, 合约审查, 计划,
   "验证失败", "怎么用 agent-spec", "spec 不通过", "工作流"
+disable-model-invocation: false
 ---
 
 # Agent Spec Tool-First Workflow

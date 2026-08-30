@@ -1,0 +1,6 @@
+interface:
+  display_name: "Research Companion"
+  short_description: "Use the Research Companion workflow"
+
+policy:
+  allow_implicit_invocation: true

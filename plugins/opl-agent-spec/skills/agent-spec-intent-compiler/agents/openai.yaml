@@ -1,0 +1,6 @@
+interface:
+  display_name: "Agent Spec Intent Compiler"
+  short_description: "Use the Agent Spec Intent Compiler workflow"
+
+policy:
+  allow_implicit_invocation: true

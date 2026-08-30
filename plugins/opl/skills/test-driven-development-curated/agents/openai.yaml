@@ -2,3 +2,6 @@ interface:
   display_name: "Curated Test-Driven Development"
   short_description: "Develop behavior through reliable test-first feedback"
   default_prompt: "Use $test-driven-development-curated to implement this behavior change with reliable test-first evidence."
+
+policy:
+  allow_implicit_invocation: true

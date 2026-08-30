@@ -11,7 +11,8 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const pluginRoot = resolve(new URL("..", import.meta.url).pathname);
+const repositoryRoot = resolve(new URL("../../..", import.meta.url).pathname);
+const pluginRoot = join(repositoryRoot, "plugins", "opl");
 const hookPath = join(pluginRoot, "scripts", "codex-agents-bootstrap-hook.sh");
 const currentVersion = "0.1.0+codex.current";
 

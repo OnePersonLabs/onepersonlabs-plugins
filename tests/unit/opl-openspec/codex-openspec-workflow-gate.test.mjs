@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { test } from 'node:test'
 
-const pluginRoot = resolve(new URL('..', import.meta.url).pathname)
+const repositoryRoot = resolve(new URL('../../..', import.meta.url).pathname)
+const pluginRoot = join(repositoryRoot, 'plugins', 'opl-openspec')
 const gate = join(pluginRoot, 'scripts', 'codex-openspec-workflow-gate.sh')
 
 function writeTranscript(records) {

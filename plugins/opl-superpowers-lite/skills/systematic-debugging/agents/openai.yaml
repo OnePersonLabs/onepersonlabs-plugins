@@ -2,3 +2,6 @@ interface:
   display_name: "Systematic Debugging"
   short_description: "Trace root causes before implementing fixes"
   default_prompt: "Use $systematic-debugging to diagnose this failure from evidence before proposing a fix."
+
+policy:
+  allow_implicit_invocation: true
