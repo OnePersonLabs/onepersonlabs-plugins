@@ -85,7 +85,7 @@ def main() -> int:
     message = (
         "🚨 DANGER 🚨 CONFLICTING TDD SKILL(S) ENABLED: "
         f"{', '.join(conflicts)}. DISABLE THEM NOW IN CODEX SETTINGS. "
-        "ENABLE AND USE ONLY OPL's $test-driven-development-curated."
+        "ENABLE AND USE ONLY OPL's $test-driven-development."
     )
     json.dump(
         {

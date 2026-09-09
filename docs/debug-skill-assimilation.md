@@ -4,7 +4,7 @@
 OPL Matt Pocock Skills and `$systematic-debugging` in OPL Superpowers Lite.
 The replacement preserves causal investigation and exact-symptom verification,
 adds optional practical techniques, and composes executable fixes with OPL's
-existing `$test-driven-development-curated` owner.
+existing `$test-driven-development` owner.
 
 ## Sources and scope
 
@@ -16,7 +16,7 @@ not an assessment of current upstream releases.
 | --- | --- | --- |
 | `plugins/opl-superpowers-lite/skills/systematic-debugging/` | Entrypoint and invocation metadata | Causal loop, scope boundaries, and evidence standards reexpressed in `$debug`; old entrypoint retired |
 | `plugins/opl-matt-pocock-skills/skills/diagnosing-bugs/` | Entrypoint, invocation metadata, and human-assisted Bash template | Useful reproduction and performance techniques retained; rigid gates and generic template retired |
-| `plugins/opl/skills/test-driven-development-curated/` | Entrypoint and regression/test-quality ownership | Existing owner reused; no competing TDD workflow created |
+| `plugins/opl/skills/test-driven-development/` | Entrypoint and regression/test-quality ownership | Existing owner reused; no competing TDD workflow created |
 | `plugins/opl-borg/skills/assimilate/` | Entrypoint and prior independent gap review | Used to guide assimilation; recommendations below, no changes to Borg |
 
 Both donor plugin manifests declare MIT. The Matt bundle credits Matt Pocock's

@@ -50,7 +50,7 @@ function assertDangerWarning(result, expectedConflict) {
   assert.match(output.systemMessage, /disable/iu);
   assert.match(
     output.systemMessage,
-    /only OPL's \$test-driven-development-curated/iu,
+    /only OPL's \$test-driven-development\.$/iu,
   );
   assert.equal(output.hookSpecificOutput.hookEventName, "SessionStart");
   assert.equal(

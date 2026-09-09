@@ -1,10 +1,10 @@
 ---
-name: test-driven-development-curated
+name: test-driven-development
 description: Use when implementing features, fixing bugs, refactoring executable behavior, or changing an observable contract that needs regression protection.
 disable-model-invocation: false
 ---
 
-# Curated Test-Driven Development
+# Test-Driven Development
 
 Use a tight evidence loop: specify one observable behavior, watch a test fail for
 that behavior, make it pass with the smallest coherent change, then improve the

@@ -39,18 +39,18 @@ this deterministic coverage from the installed-copy checkpoint.
 causal investigation, symptom-specific reproduction, and realistic regression
 coverage, with optional techniques for intermittent and performance failures.
 Diagnosis-only requests remain diagnosis-only; implementation composes with
-`$test-driven-development-curated` in this plugin.
+`$test-driven-development` in this plugin.
 
 It replaces `$diagnosing-bugs` from OPL Matt Pocock Skills and
 `$systematic-debugging` from OPL Superpowers Lite. Install `opl` to use `$debug`.
 The repository's [assimilation record](../../docs/debug-skill-assimilation.md)
 records provenance, design choices, and validation.
 
-## Why OPL Curated TDD Exists
+## Why OPL TDD Exists
 
-OPL introduced [`test-driven-development-curated`](skills/test-driven-development-curated/SKILL.md) after finding high-risk guidance in two alternatives:
+OPL introduced [`test-driven-development`](skills/test-driven-development/SKILL.md) after finding high-risk guidance in two alternatives:
 
 - Agent Skills 0.6.7 hard-codes test-layer ratios and expands ordinary TDD into browser-tool and subagent workflows that may be unavailable or disproportionate.
 - Superpowers 6.3.0 directs agents to delete implementation written before tests, contains a broken sync/async TypeScript example, and contradicts behavior-level testing with a per-function test mandate.
 
-The curated skill keeps stack discovery, meaningful RED evidence, realistic boundaries, and safe brownfield handling without those failure modes.
+The skill keeps stack discovery, meaningful RED evidence, realistic boundaries, and safe brownfield handling without those failure modes.

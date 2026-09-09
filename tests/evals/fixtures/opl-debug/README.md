@@ -4,7 +4,7 @@ These trials complement activation smoke cases. They exercise decisions and
 actual changes; the smoke driver alone only checks whether a skill was invoked.
 
 Copy `workspace/` into an isolated directory and copy the candidate `$debug` and
-`$test-driven-development-curated` skill folders into its `.agents/skills/`.
+`$test-driven-development` skill folders into its `.agents/skills/`.
 Give a fresh agent access to that directory with the exact request:
 
 > Read REQUEST.md and complete the task.

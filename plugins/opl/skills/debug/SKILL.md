@@ -63,7 +63,7 @@ existing environment-based credentials and capture only the needed signal.
 - Put regression coverage at the narrowest boundary that reproduces the real
   failure pattern, including multiple callers, ordering, or state when those
   are causal. A shallow test that cannot expose the defect is not coverage.
-  Use the recipient's `$test-driven-development-curated` for the executable
+  Use the recipient's `$test-driven-development` for the executable
   change: observe the defect fail, make the smallest coherent fix, and rerun.
 - Change the layer that owns the violated contract. Do not accumulate
   downstream compensation unless recovery is that boundary's responsibility.
