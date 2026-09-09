@@ -5,6 +5,11 @@ Canonical shipping bundles live in `plugins/`; tests and product source stay
 outside those roots so an installed-copy comparison can prove exactly what is
 shipped.
 
+Use [$debug](plugins/opl/skills/debug/SKILL.md) from the `opl` plugin for
+debugging. It replaces `diagnosing-bugs` in Matt Pocock Skills and
+`systematic-debugging` in Superpowers Lite. Superpowers Lite retains
+`verification-before-completion`.
+
 For an ordinary change, validate only the affected plugin:
 
 ```bash

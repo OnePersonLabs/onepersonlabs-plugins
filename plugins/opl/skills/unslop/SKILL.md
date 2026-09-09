@@ -17,8 +17,8 @@ Most postmortems stop too shallow. "The agent explored too much" is a symptom. "
 
 This `.agents` skill can be used by any worker that supports the standard skill layout. Route by the **failure session being unslopped**, not by the worker running the skill:
 
-- Claude Code sessions: `~/.claude/projects/<project-hash>/<session-uuid>.jsonl`; records use top-level `sessionId` and `uuid`. Forge/analyze with `--agent claude`; replay with `scripts/run-replay.sh ... --agent claude`.
-- Codex sessions: `~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-<session-id>.jsonl`; records use `session_meta`, `turn_context`, `event_msg`, and `response_item`. Forge/analyze with `--agent codex`; replay with `scripts/run-replay.sh ... --agent codex`.
+- Claude Code sessions: `~/.claude/projects/<project-hash>/<session-uuid>.jsonl`; records use top-level `sessionId` and `uuid`. Forge/analyze with `--agent claude`; choose the Claude interactive replay in Step 6c.
+- Codex sessions: `~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-<session-id>.jsonl`; records use `session_meta`, `turn_context`, `event_msg`, and `response_item`. Forge/analyze with `--agent codex`; choose the Codex interactive replay in Step 6c.
 - If the session owner is obvious from path/format, `--agent auto` is fine for forge/analyze. Do not infer session owner from the worker or delegation chain.
 
 ## Never
@@ -177,7 +177,16 @@ Do not accept "I didn't notice" as a root cause. Ask _why_ you didn't notice. Tr
 
 ## Step 5: Write the Trace
 
-Create the directory and get a timestamp:
+Create the directory and get a timestamp using the current shell.
+
+In PowerShell:
+
+```powershell
+Get-Date -Format 'yyyy-MM-dd-HH-mm-ss'
+New-Item -ItemType Directory -Path '.unslop/replay' -Force | Out-Null
+```
+
+In a POSIX shell:
 
 ```bash
 date +"%Y-%m-%d-%H-%M-%S"
@@ -233,37 +242,84 @@ Often the best fix is a **depth 2 rewrite** -- don't add a new rule when you can
 
 1. **The session is reachable.** The JSONL that produced the failure exists under `~/.codex/sessions/...` or `~/.claude/projects/...` and you can identify it by timestamp. A failure the user describes from memory, with no session on disk, can't be replayed.
 2. **The failure is reproducible under replay.** It must reproduce from the forged cutpoint forward -- not depend on external state that has since changed (a file that's now fixed, a flag that's now set). If the world moved on, the replay tests against a world that no longer exists.
-3. **`tmux` and the target agent CLI are available** in this environment (replay needs the full interactive harness; print/exec modes strip skills/hooks and produce non-discriminating runs).
+3. **The target agent CLI's full interactive environment is available.** On POSIX,
+   use the Bash/tmux runner. On native Windows, use an observable manual replay
+   in a native terminal as described in Step 6c. Both routes must preserve the
+   relevant skills, hooks, plugins, and permissions; print/exec mode is not a
+   substitute for that interactive environment.
 
 If any precondition fails, **do not fake it**: skip Steps 6b-6e, develop the rule by reasoning instead (the `/unslop-session-audit` methodology), and tell the user the rule is **reasoned, not replay-tested** -- never present an untested rule as validated. Either way the analysis from Steps 1-5 still stands.
 
 Find the session that produced the failure. Codex sessions live in `~/.codex/sessions/YYYY/MM/DD/`; Claude Code sessions live in `~/.claude/projects/`. Use timestamp correlation with the slop entry to find the right JSONL file.
 
-Analyze the session to find the **cutpoint** -- the assistant message just before the failure:
+Analyze the session to find the **cutpoint** -- the assistant message just before
+the failure. Resolve the scripts from the directory containing this loaded
+`SKILL.md` and choose the current shell's commands.
+
+In PowerShell:
+
+```powershell
+$unslopSkillDir = '<absolute directory containing this SKILL.md>'
+python -X utf8 "$unslopSkillDir/scripts/forge-session.py" '<session.jsonl>' --analyze --agent auto
+```
+
+In a POSIX shell:
 
 ```bash
-python3 scripts/forge-session.py <session.jsonl> --analyze --agent auto
+UNSLOP_SKILL_DIR="<absolute directory containing this SKILL.md>"
+python3 -X utf8 "${UNSLOP_SKILL_DIR}/scripts/forge-session.py" "<session.jsonl>" --analyze --agent auto
 ```
 
 Then forge a truncated copy:
 
+In PowerShell:
+
+```powershell
+python -X utf8 "$unslopSkillDir/scripts/forge-session.py" '<session.jsonl>' '<cutpoint>' '<output-dir>' --agent auto --project-dir '<target-agent-session-dir>'
+```
+
+In a POSIX shell:
+
 ```bash
-python3 scripts/forge-session.py <session.jsonl> <cutpoint> <output-dir> \
+python3 -X utf8 "${UNSLOP_SKILL_DIR}/scripts/forge-session.py" "<session.jsonl>" "<cutpoint>" "<output-dir>" \
   --agent auto \
-  --project-dir <target-agent-session-dir>
+  --project-dir "<target-agent-session-dir>"
 ```
 
 This truncates the JSONL at the cutpoint, rewrites the target agent's session id fields to a fresh UUID, and optionally places the forged session where the target agent can find it.
 
 ### 6c: Replay with Candidate Rules
 
-Launch the forged session in a tmux holodeck -- interactive mode is required because `--print` mode strips skills, hooks, and plugins, producing non-discriminating results:
+**POSIX only:** the shipped `run-replay.sh` requires Bash and tmux. From an
+existing POSIX environment, launch the forged session in its interactive runner:
 
 ```bash
-scripts/run-replay.sh <forged-session-id> <rule-file> <workspace-dir> --agent <claude|codex>
+bash "${UNSLOP_SKILL_DIR}/scripts/run-replay.sh" "<forged-session-id>" "<rule-file>" "<workspace-dir>" --agent <claude|codex>
 ```
 
 Choose `--agent` from the target failure session, not from the worker. The script launches the matching interactive CLI inside a detached tmux session and captures output via `tmux capture-pane`.
+
+**Native Windows:** use a manual interactive replay in a native PowerShell
+terminal; keep the selected workspace and the original permission settings.
+Read the candidate rule from its file, then run only the command matching the
+target session:
+
+```powershell
+Set-Location -LiteralPath '<workspace-dir>'
+$ruleText = Get-Content -LiteralPath '<rule-file>' -Raw
+# Codex target:
+codex fork '<forged-session-id>' "Rule under test: $ruleText"
+# Claude Code target:
+claude --resume '<forged-session-id>' --fork-session --append-system-prompt $ruleText
+```
+
+Continue the chosen session interactively and retain its resulting transcript
+and observations for Steps 6d-6e. If direct terminal control is unavailable, the
+user can run this replay and provide the trace. Keep each trial's evidence in a
+distinct timestamped file under `.unslop/replay/`. If a usable interactive replay
+or trace is unavailable, use the reasoning fallback from Step 6b and label the
+rule **reasoned, not replay-tested**. Do not launch WSL or Git Bash to run the
+POSIX helper from a native Windows workflow.
 
 ### 6d: Binary Search on Rule Specificity
 

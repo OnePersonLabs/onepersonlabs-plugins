@@ -2,22 +2,24 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
+  copyFileSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
-  readdirSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { pythonBin } from "../../../tools/runtime.mjs";
 
-const repositoryRoot = resolve(new URL("../../..", import.meta.url).pathname);
+const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const pluginRoot = join(repositoryRoot, "plugins", "opl-superpowers-lite");
 const hookPath = join(pluginRoot, "scripts", "superpowers-conflict-warning-hook.py");
 
 function withCodexHome(config, run) {
-  const root = mkdtempSync(join(tmpdir(), "opl-superpowers-lite-warning-"));
+  const root = mkdtempSync(join(tmpdir(), "opl superpowers lite warning "));
   const codexHome = join(root, ".codex");
   mkdirSync(codexHome, { recursive: true });
   writeFileSync(join(codexHome, "config.toml"), config);
@@ -29,7 +31,7 @@ function withCodexHome(config, run) {
 }
 
 function runHook(codexHome) {
-  return spawnSync("python3", [hookPath], {
+  return spawnSync(pythonBin(), ["-B", "-X", "utf8", hookPath], {
     env: { ...process.env, CODEX_HOME: codexHome },
     encoding: "utf8",
   });
@@ -87,26 +89,34 @@ test("hook manifest warns when root sessions start", () => {
   );
 });
 
-test("plugin exposes exactly the two intended skills", () => {
+test("plugin exposes verification-before-completion through its skill manifest", () => {
   const manifest = JSON.parse(
     readFileSync(join(pluginRoot, ".codex-plugin", "plugin.json"), "utf8"),
   );
   assert.equal(manifest.name, "opl-superpowers-lite");
   assert.equal(manifest.skills, "./skills/");
 
-  const expectedSkills = ["systematic-debugging", "verification-before-completion"];
-  const actualSkills = readdirSync(join(pluginRoot, "skills"), {
-    withFileTypes: true,
-  })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
-  assert.deepEqual(actualSkills, expectedSkills);
+  assert.match(
+    readFileSync(
+      join(pluginRoot, "skills", "verification-before-completion", "SKILL.md"),
+      "utf8",
+    ),
+    /name: verification-before-completion/u,
+  );
+});
 
-  for (const skill of expectedSkills) {
-    assert.match(
-      readFileSync(join(pluginRoot, "skills", skill, "SKILL.md"), "utf8"),
-      new RegExp(`name: ${skill}`, "u"),
-    );
-  }
+test("Windows startup manifest preserves the Unicode warning from a spaced path", { skip: process.platform !== "win32" }, () => {
+  withCodexHome('[plugins."superpowers@openai-curated-remote"]\nenabled = true\n', (codexHome) => {
+    const installed = join(codexHome, "installed plugin");
+    mkdirSync(join(installed, "scripts"), { recursive: true });
+    copyFileSync(hookPath, join(installed, "scripts", "superpowers-conflict-warning-hook.py"));
+    const manifest = JSON.parse(readFileSync(join(pluginRoot, "hooks", "hooks.json"), "utf8"));
+    const command = manifest.hooks.SessionStart[0].hooks[0].commandWindows.replaceAll("${PLUGIN_ROOT}", installed);
+    const result = spawnSync(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `"${command}"`], {
+      env: { ...process.env, CODEX_HOME: codexHome, PLUGIN_ROOT: installed },
+      input: "{}", encoding: "utf8", windowsHide: true, windowsVerbatimArguments: true,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(JSON.parse(result.stdout).systemMessage, /🚨 DANGER/u);
+  });
 });

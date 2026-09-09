@@ -12,7 +12,7 @@ Long fields are truncated to first/last 100 chars so structure survives without 
 Usage:
     python3 extract-session.py <session.jsonl> [--agent auto|claude|codex] [--out <path>] [--max-kb <N>]
 
-    --out:    output path (default: /tmp/unslop-session-<session-uuid>.txt)
+    --out:    output path (default: unslop-session-<session-uuid>.txt in the system temporary directory)
     --max-kb: soft cap on output size in KB (default 50). When exceeded, earlier
               turns are dropped (the recent tail is where redirects and fixes cluster)
               and a NOTICE records how many were elided -- never a silent truncation.
@@ -21,6 +21,7 @@ Usage:
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -158,7 +159,7 @@ def detect_agent(src: Path, requested: AgentKind) -> Literal["claude", "codex"]:
     if requested != "auto":
         return requested
 
-    with src.open() as f:
+    with src.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -196,11 +197,11 @@ def main() -> None:
 
     agent = detect_agent(src, args.agent)
     session_uuid = session_name(src, agent)
-    out_path = Path(args.out) if args.out else Path(f"/tmp/unslop-session-{session_uuid}.txt")
+    out_path = Path(args.out) if args.out else Path(tempfile.gettempdir()) / f"unslop-session-{session_uuid}.txt"
 
     rendered_turns: list[str] = []
     turn_no = 0
-    with src.open() as f:
+    with src.open(encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -228,7 +229,7 @@ def main() -> None:
     if dropped:
         header += f"\n# NOTICE: {dropped} oldest turns elided to fit {args.max_kb}KB cap (analyze the tail)"
 
-    out_path.write_text(header + "\n\n" + "\n".join(rendered_turns))
+    out_path.write_text(header + "\n\n" + "\n".join(rendered_turns), encoding="utf-8")
     print(json.dumps({
         "out": str(out_path),
         "agent": agent,

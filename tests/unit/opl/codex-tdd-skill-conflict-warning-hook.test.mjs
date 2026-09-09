@@ -9,9 +9,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { pythonBin } from "../../../tools/runtime.mjs";
 
-const repositoryRoot = resolve(new URL("../../..", import.meta.url).pathname);
+const repositoryRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const pluginRoot = join(repositoryRoot, "plugins", "opl");
 const hookPath = join(
   pluginRoot,
@@ -33,7 +35,7 @@ function withCodexHome(config, run) {
 }
 
 function runHook(codexHome) {
-  return spawnSync("python3", [hookPath], {
+  return spawnSync(pythonBin(), [hookPath], {
     env: { ...process.env, CODEX_HOME: codexHome },
     encoding: "utf8",
   });

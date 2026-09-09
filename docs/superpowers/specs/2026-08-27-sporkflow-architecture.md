@@ -1456,6 +1456,10 @@ contract through a query path.
 
 ### Matt workflows
 
+Migration note (2026-09-09): the `diagnosing-bugs` workflow named below is now
+the canonical `$debug` skill in `opl`. The original workflow list is retained
+to preserve this architecture proposal's context.
+
 `ask-matt`, `diagnosing-bugs`, `triage`, `wayfinder`,
 `setup-matt-pocock-skills`, `setup-ts-deep-modules`, and curated TDD migrate
 from retired skill names and `CONTEXT.md` assumptions to the common query

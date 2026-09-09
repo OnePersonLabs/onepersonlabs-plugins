@@ -18,8 +18,10 @@ import { homedir } from 'node:os'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
 import readline from 'node:readline'
+import { fileURLToPath } from 'node:url'
+import { codexCommand, pythonBin, trustCommand } from './runtime.mjs'
 
-const repoRoot = resolve(new URL('..', import.meta.url).pathname)
+const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 const marketplacePath = join(repoRoot, '.agents', 'plugins', 'marketplace.json')
 const matrixPath = join(repoRoot, 'tools', 'plugin-matrix.json')
 const supportedHookEvents = new Set([
@@ -96,8 +98,8 @@ function walk(root) {
 }
 
 function commandPath(root, command) {
-  const match = command.match(/\$\{PLUGIN_ROOT\}\/([^"']+)/u)
-  return match ? join(root, match[1]) : null
+  const match = command.match(/\$\{PLUGIN_ROOT\}[\\/]([^"']+)/u)
+  return match ? join(root, match[1].replaceAll('\\', '/')) : null
 }
 
 function commandObjects(value, output = []) {
@@ -169,7 +171,7 @@ function contractErrors(entry, root = pluginRoot(entry)) {
   }
 
   const polluted = walk(root)
-    .map((path) => relative(root, path))
+    .map((path) => relative(root, path).split(sep).join('/'))
     .filter((path) => /(^|\/)(?:tests?\/|test_[^/]*[.]py$)|[.]test[.](?:mjs|js|ts)$/u.test(path))
   for (const path of polluted) errors.push(`${entry.name}: non-runtime test file is shipped: ${path}`)
 
@@ -186,12 +188,16 @@ function contractErrors(entry, root = pluginRoot(entry)) {
       if (!supportedHookEvents.has(event)) errors.push(`${entry.name}: unsupported hook event ${event}`)
     }
     for (const hook of commandObjects(hooks)) {
-      if (!hook.command.includes('${PLUGIN_ROOT}')) {
-        errors.push(`${entry.name}: plugin hook command must use PLUGIN_ROOT: ${hook.command}`)
-        continue
+      for (const field of ['command', 'commandWindows']) {
+        const command = hook[field]
+        if (command === undefined) continue
+        if (typeof command !== 'string' || !command.includes('${PLUGIN_ROOT}')) {
+          errors.push(`${entry.name}: plugin hook ${field} must use PLUGIN_ROOT: ${command}`)
+          continue
+        }
+        const target = commandPath(root, command)
+        if (!target || !existsSync(target)) errors.push(`${entry.name}: hook ${field} target is missing: ${command}`)
       }
-      const target = commandPath(root, hook.command)
-      if (!target || !existsSync(target)) errors.push(`${entry.name}: hook command target is missing: ${hook.command}`)
     }
   }
 
@@ -279,7 +285,7 @@ function run(arguments_, options = {}) {
 }
 
 function unitFiles(root) {
-  return walk(root).filter((path) => /[.]test[.]mjs$/u.test(path) || /(^|\/)test_[^/]+[.]py$/u.test(path))
+  return walk(root).filter((path) => /[.]test[.]mjs$/u.test(path) || /^test_[^/]+[.]py$/u.test(basename(path)))
 }
 
 function runUnit(entries = selectedPlugins()) {
@@ -287,8 +293,8 @@ function runUnit(entries = selectedPlugins()) {
     const rootFiles = (matrix.rootUnitRoots ?? []).flatMap((root) => unitFiles(resolve(repoRoot, root)))
     const node = rootFiles.filter((path) => path.endsWith('.mjs'))
     const python = rootFiles.filter((path) => path.endsWith('.py'))
-    if (node.length) run(['node', '--test', ...node])
-    for (const path of python) run(['python3', path])
+    if (node.length) run([process.execPath, '--test', ...node])
+    for (const path of python) run([pythonBin(), path])
     console.log(`repository tools: unit checks passed (${rootFiles.length} test files).`)
   }
   for (const entry of entries) {
@@ -296,8 +302,8 @@ function runUnit(entries = selectedPlugins()) {
     const files = (config.unitRoots ?? []).flatMap((root) => unitFiles(resolve(repoRoot, root)))
     const node = files.filter((path) => path.endsWith('.mjs'))
     const python = files.filter((path) => path.endsWith('.py'))
-    if (node.length) run(['node', '--test', ...node])
-    for (const path of python) run(['python3', path])
+    if (node.length) run([process.execPath, '--test', ...node])
+    for (const path of python) run([pythonBin(), path])
     for (const command of config.commands ?? []) run([command.command, ...command.args], { cwd: resolve(repoRoot, command.cwd) })
     console.log(`${entry.name}: unit checks passed (${files.length} test files, ${(config.commands ?? []).length} native commands).`)
   }
@@ -309,13 +315,13 @@ function runFocus() {
   const path = resolve(repoRoot, file)
   if (!existsSync(path)) fail(`focused test does not exist: ${file}`)
   if (path.endsWith('.mjs')) {
-    const args = ['node', '--test']
+    const args = [process.execPath, '--test']
     const name = option('name')
     if (name) args.push('--test-name-pattern', name)
     args.push(path)
     run(args)
   } else if (path.endsWith('.py')) {
-    run(['python3', path])
+    run([pythonBin(), path])
   } else {
     fail('focused tests must be .test.mjs or test_*.py; use the native package runner for other files')
   }
@@ -350,16 +356,12 @@ function stateRoot() {
   return resolve(process.env.OPL_PLUGIN_DEV_STATE ?? join(homedir(), '.local', 'state', 'onepersonlabs-plugins', 'codex'))
 }
 
-function codexBin() {
-  return process.env.CODEX_BIN || 'codex'
-}
-
 function prepareSkillHost(entry) {
   const work = resolve(repoRoot, '.work', 'dev-hosts', entry.name)
   rmSync(work, { recursive: true, force: true })
   const target = join(work, '.agents', 'skills')
   mkdirSync(target, { recursive: true })
-  for (const skill of skillsFor(entry)) symlinkSync(skill.root, join(target, skill.name), 'dir')
+  for (const skill of skillsFor(entry)) symlinkSync(skill.root, join(target, skill.name), process.platform === 'win32' ? 'junction' : 'dir')
   return work
 }
 
@@ -371,7 +373,8 @@ function evalCases(entry) {
 
 function activationEvidence(text, skill) {
   const escaped = skill.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
-  return new RegExp(`(?:using|invoking|loaded|applying)[^\\n]{0,80}\\$?${escaped}`, 'iu').test(text)
+  const plain = text.replace(/[*_`]/gu, '')
+  return new RegExp(`\\b(?:using|invoking|loaded|applying)\\s+(?:(?:the|requested|manual-only)\\s+)*\\$?(?:[a-z0-9][a-z0-9-]*:)?${escaped}(?![a-z0-9_-])`, 'iu').test(plain)
 }
 
 function runEval(entries = selectedPlugins()) {
@@ -392,14 +395,14 @@ function runEval(entries = selectedPlugins()) {
     }
     const receipts = []
     for (const item of cases) {
-      const output = run([
-        codexBin(),
+      const output = run(codexCommand([
         'exec',
         '--ephemeral',
         '--json',
         '--ignore-user-config',
         '--sandbox',
         'read-only',
+        ...(process.platform === 'win32' ? ['-c', 'windows.sandbox="elevated"'] : []),
         '-m',
         matrix.evaluation.model,
         '-c',
@@ -407,15 +410,16 @@ function runEval(entries = selectedPlugins()) {
         '-C',
         host,
         item.prompt,
-      ], { env: { ...process.env, CODEX_HOME: authoringHome }, capture: true })
+      ]), { env: { ...process.env, CODEX_HOME: authoringHome }, capture: true })
       const events = output.split(/\r?\n/u).filter(Boolean).map((line) => JSON.parse(line))
+      writeFileSync(join(resultRoot, `${entry.name}-${item.id.replace(/[^a-z0-9_-]/giu, '-')}.events.json`), `${JSON.stringify(events, null, 2)}\n`)
       const text = events
         .filter((event) => event.type === 'item.completed' && event.item?.type === 'agent_message')
         .map((event) => event.item.text ?? '')
         .join('\n')
       const activated = activationEvidence(text, item.skill)
       const pass = activated === item.should_activate
-      receipts.push({ ...item, activated, pass, model: matrix.evaluation.model, reasoningEffort: matrix.evaluation.reasoningEffort })
+      receipts.push({ ...item, activated, pass, model: matrix.evaluation.model, reasoningEffort: matrix.evaluation.reasoningEffort, response: text })
       console.log(`${pass ? 'PASS' : 'FAIL'} ${item.id}`)
     }
     const path = join(resultRoot, `${entry.name}.json`)
@@ -464,7 +468,8 @@ function compareInventory(sourceRoot, installedRoot, name) {
 
 async function hookTrust(env, pluginId) {
   return await new Promise((resolvePromise, rejectPromise) => {
-    const child = spawn(codexBin(), ['app-server', '--stdio'], { env, stdio: ['pipe', 'pipe', 'pipe'] })
+    const [executable, ...args] = codexCommand(['app-server', '--stdio'], { env })
+    const child = spawn(executable, args, { env, stdio: ['pipe', 'pipe', 'pipe'] })
     const lines = readline.createInterface({ input: child.stdout })
     const timer = setTimeout(() => {
       child.kill()
@@ -516,7 +521,7 @@ function installedFromReceipt(entry, targetHome) {
   const receipt = readJson(path)
   const env = { ...process.env, CODEX_HOME: targetHome }
   const expectedId = `${entry.name}@${marketplace.name}`
-  const listed = jsonCommand([codexBin(), 'plugin', 'list', '--json'], env)
+  const listed = jsonCommand(codexCommand(['plugin', 'list', '--json'], { env }), env)
   if (!(listed.installed ?? []).some((item) => item.pluginId === expectedId)) {
     fail(`${entry.name}: the receipt exists but the plugin is no longer installed`)
   }
@@ -529,7 +534,7 @@ function installedFromReceipt(entry, targetHome) {
 function installCandidate(entry, targetHome, { consumer = false } = {}) {
   const env = { ...process.env, CODEX_HOME: targetHome }
   mkdirSync(targetHome, { recursive: true })
-  const listed = jsonCommand([codexBin(), 'plugin', 'list', '--json'], env)
+  const listed = jsonCommand(codexCommand(['plugin', 'list', '--json'], { env }), env)
   const installed = listed.installed ?? []
   if (!consumer) {
     const unrelated = installed.filter((item) => item.marketplaceName !== marketplace.name)
@@ -537,14 +542,14 @@ function installCandidate(entry, targetHome, { consumer = false } = {}) {
   }
   for (const item of installed) {
     if (consumer && item.pluginId !== `${entry.name}@${marketplace.name}`) continue
-    jsonCommand([codexBin(), 'plugin', 'remove', item.pluginId, '--json'], env)
+    jsonCommand(codexCommand(['plugin', 'remove', item.pluginId, '--json'], { env }), env)
   }
-  const sources = jsonCommand([codexBin(), 'plugin', 'marketplace', 'list', '--json'], env)
+  const sources = jsonCommand(codexCommand(['plugin', 'marketplace', 'list', '--json'], { env }), env)
   if (configuredMarketplace(sources, marketplace.name)) {
-    jsonCommand([codexBin(), 'plugin', 'marketplace', 'remove', marketplace.name, '--json'], env)
+    jsonCommand(codexCommand(['plugin', 'marketplace', 'remove', marketplace.name, '--json'], { env }), env)
   }
-  jsonCommand([codexBin(), 'plugin', 'marketplace', 'add', repoRoot, '--json'], env)
-  const result = jsonCommand([codexBin(), 'plugin', 'add', `${entry.name}@${marketplace.name}`, '--json'], env)
+  jsonCommand(codexCommand(['plugin', 'marketplace', 'add', repoRoot, '--json'], { env }), env)
+  const result = jsonCommand(codexCommand(['plugin', 'add', `${entry.name}@${marketplace.name}`, '--json'], { env }), env)
   if (typeof result.installedPath !== 'string' || !existsSync(result.installedPath)) {
     fail(`${entry.name}: install did not return a usable installedPath`)
   }
@@ -575,7 +580,7 @@ async function runInstalled(entries = selectedPlugins()) {
     const pending = hooks.filter((hook) => hook.trustStatus !== 'trusted')
     if (!packageOnly && pending.length) {
       console.error(`Hook trust is not complete for ${installed.pluginId}.`)
-      console.error(`Run: CODEX_HOME=${blackboxHome} ${codexBin()} --no-alt-screen -C ${repoRoot}`)
+      console.error(`Run: ${trustCommand(blackboxHome, repoRoot, { env: installed.env })}`)
       console.error('Open /hooks, review this plugin, trust it, then reply done.')
       console.error('After confirmation, rerun this checkpoint with --resume-after-trust.')
       fail('installed hook smoke paused for trust review', 78)
@@ -589,19 +594,19 @@ function installLocal(entries = selectedPlugins(), targetHome = option('target-h
   const resolvedHome = resolve(targetHome)
   const env = { ...process.env, CODEX_HOME: resolvedHome }
   mkdirSync(resolvedHome, { recursive: true })
-  const installed = jsonCommand([codexBin(), 'plugin', 'list', '--json'], env).installed ?? []
+  const installed = jsonCommand(codexCommand(['plugin', 'list', '--json'], { env }), env).installed ?? []
   for (const entry of entries) {
     const pluginId = `${entry.name}@${marketplace.name}`
     if (installed.some((item) => item.pluginId === pluginId)) {
-      jsonCommand([codexBin(), 'plugin', 'remove', pluginId, '--json'], env)
+      jsonCommand(codexCommand(['plugin', 'remove', pluginId, '--json'], { env }), env)
     }
   }
-  const sources = jsonCommand([codexBin(), 'plugin', 'marketplace', 'list', '--json'], env)
+  const sources = jsonCommand(codexCommand(['plugin', 'marketplace', 'list', '--json'], { env }), env)
   if (!configuredMarketplace(sources, marketplace.name)) {
-    jsonCommand([codexBin(), 'plugin', 'marketplace', 'add', repoRoot, '--json'], env)
+    jsonCommand(codexCommand(['plugin', 'marketplace', 'add', repoRoot, '--json'], { env }), env)
   }
   for (const entry of entries) {
-    const result = jsonCommand([codexBin(), 'plugin', 'add', `${entry.name}@${marketplace.name}`, '--json'], env)
+    const result = jsonCommand(codexCommand(['plugin', 'add', `${entry.name}@${marketplace.name}`, '--json'], { env }), env)
     if (typeof result.installedPath !== 'string' || !existsSync(result.installedPath)) {
       fail(`${entry.name}: install did not return a usable installedPath`)
     }

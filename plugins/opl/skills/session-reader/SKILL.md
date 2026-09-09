@@ -8,11 +8,11 @@ disable-model-invocation: false
 
 Use the bundled CLI instead of reading rollout JSONL directly. It streams source files, indexes only canonical user-visible messages, and bounds every body-bearing response.
 
-```bash
-python3 "${SKILL_DIR}/scripts/session_reader.py" <command> [options]
-```
-
-Set `SKILL_DIR` to this skill directory when the runtime does not provide it.
+Resolve the script from this skill directory. On native Windows PowerShell,
+run `python -B -X utf8 "<skill-directory>/scripts/session_reader.py"` followed
+by the command and options. On POSIX, use `python3 -B -X utf8` with the same
+script and arguments. Quote the resolved path and use the active shell's
+variable syntax; do not send Bash assignments to PowerShell.
 
 ## Workflow
 

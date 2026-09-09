@@ -45,7 +45,16 @@ Session JSONL files live in different roots by target agent:
 - Claude Code: `~/.claude/projects/<project-hash>/<session-uuid>.jsonl`
 - Codex: `~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-<session-id>.jsonl`
 
-If the user specifies a session (by UUID, path, or description like "yesterday's session"), find it. Otherwise, list recent sessions:
+If the user specifies a session (by UUID, path, or description like "yesterday's session"), find it. Otherwise, list recent sessions using the current shell.
+
+In PowerShell:
+
+```powershell
+$sessionRoots = @("$HOME/.codex/sessions", "$HOME/.claude/projects") | Where-Object { Test-Path -LiteralPath $_ }
+Get-ChildItem -LiteralPath $sessionRoots -Recurse -File -Filter '*.jsonl' | Sort-Object LastWriteTime -Descending | Select-Object -First 20 FullName, LastWriteTime
+```
+
+In a POSIX shell:
 
 ```bash
 find ~/.codex/sessions ~/.claude/projects -type f -name '*.jsonl' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -20
@@ -53,13 +62,26 @@ find ~/.codex/sessions ~/.claude/projects -type f -name '*.jsonl' -printf '%T@ %
 
 ## Step 2: Extract Session Content
 
-Run the shipped extraction script directly -- it writes a trimmed transcript to `/tmp` without consuming context (only Step 3's sub-agent reads the output):
+Run the shipped extraction script directly -- it writes a trimmed transcript to
+the system temporary directory without consuming context (only Step 3's
+sub-agent reads the output). Resolve the script from the directory containing
+this loaded `SKILL.md`.
 
-```bash
-python3 scripts/extract-session.py <session.jsonl> --agent auto
+In PowerShell:
+
+```powershell
+$auditSkillDir = '<absolute directory containing this SKILL.md>'
+python -X utf8 "$auditSkillDir/scripts/extract-session.py" '<session.jsonl>' --agent auto
 ```
 
-It detects Claude vs Codex logs unless overridden with `--agent claude` or `--agent codex`. It filters to behavioral turns, keeps text + tool calls (name + 200 chars of input) + tool results (200 chars), numbers each turn, and writes `/tmp/unslop-session-<uuid>.txt`. Long fields are reduced to first/last 100 chars so structure survives without bulk. A soft 50KB cap drops the **oldest** turns first (redirects and fixes cluster in the tail) and records a `NOTICE` line with the count -- never a silent truncation. Override with `--max-kb <N>` or `--out <path>`.
+In a POSIX shell:
+
+```bash
+AUDIT_SKILL_DIR="<absolute directory containing this SKILL.md>"
+python3 -X utf8 "${AUDIT_SKILL_DIR}/scripts/extract-session.py" "<session.jsonl>" --agent auto
+```
+
+It detects Claude vs Codex logs unless overridden with `--agent claude` or `--agent codex`. It filters to behavioral turns, keeps text + tool calls (name + 200 chars of input) + tool results (200 chars), numbers each turn, and writes `unslop-session-<uuid>.txt` in Python's system temporary directory. Use the absolute `out` path returned in its JSON response. Long fields are reduced to first/last 100 chars so structure survives without bulk. A soft 50KB cap drops the **oldest** turns first (redirects and fixes cluster in the tail) and records a `NOTICE` line with the count -- never a silent truncation. Override with `--max-kb <N>` or `--out <path>`.
 
 The output looks like:
 
@@ -188,7 +210,8 @@ For each finding, produce:
 }
 ```
 
-Write all findings to `/tmp/unslop-findings-<uuid>.json`.
+Write all findings to `unslop-findings-<uuid>.json` in the same temporary
+directory as the extractor's returned `out` path.
 
 ## Step 4: Synthesize and Group
 
@@ -202,7 +225,9 @@ For each group, identify:
 
 ## Step 5: Write the Report
 
-Create the directory and write the report (`mkdir -p .unslop/audit`), one file per session at `.unslop/audit/<date>-<session-uuid-short>.md`:
+Create `.unslop/audit` with `New-Item -ItemType Directory -Path '.unslop/audit' -Force`
+in PowerShell or `mkdir -p ".unslop/audit"` in a POSIX shell. Write one report per
+session at `.unslop/audit/<date>-<session-uuid-short>.md`:
 
 ```markdown
 # Session Audit: <session-uuid>

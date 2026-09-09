@@ -130,7 +130,15 @@ Archive a completed change in the experimental workflow.
 
 5. **Perform the archive**
 
-   Create an `archive` directory under `planningHome.changesDir` if it doesn't exist:
+   Use the commands for the current shell. Create an `archive` directory under
+   `planningHome.changesDir` if it doesn't exist.
+
+   In PowerShell:
+   ```powershell
+   New-Item -ItemType Directory -Path '<planningHome.changesDir>/archive' -Force | Out-Null
+   ```
+
+   In a POSIX shell:
    ```bash
    mkdir -p "<planningHome.changesDir>/archive"
    ```
@@ -141,6 +149,16 @@ Archive a completed change in the experimental workflow.
    - If yes: Fail with error, suggest renaming existing archive or using different date
    - If no: Move `changeRoot` to the archive directory
 
+   Before moving, resolve the absolute source and destination paths and confirm
+   they stay within the selected `planningHome.changesDir` and its `archive`
+   directory, respectively.
+
+   In PowerShell:
+   ```powershell
+   Move-Item -LiteralPath '<changeRoot>' -Destination '<planningHome.changesDir>/archive/<target-name>' -ErrorAction Stop
+   ```
+
+   In a POSIX shell:
    ```bash
    mv "<changeRoot>" "<planningHome.changesDir>/archive/<target-name>"
    ```

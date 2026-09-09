@@ -13,6 +13,7 @@ import unittest
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 SKILL_ROOT = REPOSITORY_ROOT / "plugins" / "opl" / "skills" / "last30days-curated"
 SCRIPT = SKILL_ROOT / "scripts" / "last30days-curated.py"
+PYTHON_COMMAND = [sys.executable, "-B", "-X", "utf8"]
 
 
 class CuratedNamespaceContractTest(unittest.TestCase):
@@ -30,10 +31,10 @@ class CuratedNamespaceContractTest(unittest.TestCase):
         )
         self.assertIn("request_user_input", skill_text)
         self.assertIn("search the web for", skill_text)
-        self.assertIn(
-            'LAST30DAYS_CURATED_PYTHON="$(command -v "$PYTHON_CANDIDATE")"',
-            skill_text,
-        )
+        self.assertIn("Get-Command", skill_text)
+        self.assertIn("command -v", skill_text)
+        self.assertIn("& $env:LAST30DAYS_CURATED_PYTHON -B -X utf8", skill_text)
+        self.assertIn('"$LAST30DAYS_CURATED_PYTHON" -B -X utf8', skill_text)
         self.assertNotIn("AskUserQuestion", skill_text)
         self.assertNotIn("WebSearch", skill_text)
         self.assertIn("Doctor labels the", planning_text)
@@ -43,7 +44,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
     def test_runtime_defaults_are_isolated_from_upstream_skill(self) -> None:
         with tempfile.TemporaryDirectory() as temp_home:
             command = [
-                sys.executable,
+                *PYTHON_COMMAND,
                 "-c",
                 (
                     "import json, sys; "
@@ -59,6 +60,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
             ]
             process_env = os.environ.copy()
             process_env["HOME"] = temp_home
+            process_env["USERPROFILE"] = temp_home
             process_env.pop("LAST30DAYS_CURATED_CONFIG_DIR", None)
             result = subprocess.run(
                 command,
@@ -66,7 +68,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
                 env=process_env,
                 check=True,
                 capture_output=True,
-                text=True,
+                encoding="utf-8",
             )
             payload = json.loads(result.stdout)
 
@@ -88,7 +90,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
             nested.mkdir()
 
             command = [
-                sys.executable,
+                *PYTHON_COMMAND,
                 "-c",
                 (
                     "import json, sys; "
@@ -103,6 +105,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
             ]
             process_env = os.environ.copy()
             process_env["HOME"] = str(Path(temp_dir) / "home")
+            process_env["USERPROFILE"] = str(Path(temp_dir) / "home")
             process_env["LAST30DAYS_CURATED_CONFIG_DIR"] = ""
             process_env["LAST30DAYS_CURATED_TRUST_PROJECT_CONFIG"] = "1"
             result = subprocess.run(
@@ -111,7 +114,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
                 env=process_env,
                 check=True,
                 capture_output=True,
-                text=True,
+                encoding="utf-8",
             )
             payload = json.loads(result.stdout)
 
@@ -120,10 +123,10 @@ class CuratedNamespaceContractTest(unittest.TestCase):
 
     def test_cli_help_uses_curated_command_name(self) -> None:
         result = subprocess.run(
-            [sys.executable, str(SCRIPT), "--help"],
+            [*PYTHON_COMMAND, str(SCRIPT), "--help"],
             check=True,
             capture_output=True,
-            text=True,
+            encoding="utf-8",
         )
         self.assertIn("last30days-curated", result.stdout)
 
@@ -137,7 +140,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
             manifest.write_text('{"name":"plugin","version":"9.8.7"}\n', encoding="utf-8")
 
             command = [
-                sys.executable,
+                *PYTHON_COMMAND,
                 "-c",
                 (
                     "import sys; "
@@ -146,7 +149,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
                     f"print(read_plugin_version({str(script_path).__repr__()}) or '')"
                 ),
             ]
-            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            result = subprocess.run(command, check=True, capture_output=True, encoding="utf-8")
 
         self.assertEqual(result.stdout.strip(), "9.8.7")
 
@@ -155,22 +158,24 @@ class CuratedNamespaceContractTest(unittest.TestCase):
             process_env = {
                 "PATH": os.environ.get("PATH", ""),
                 "USER": os.environ.get("USER", ""),
+                "HOME": temp_dir,
+                "USERPROFILE": temp_dir,
                 "LAST30DAYS_CURATED_CONFIG_DIR": temp_dir,
                 "BRAVE_API_KEY": "doctor-must-not-print-this-secret",
             }
             live = subprocess.run(
-                [sys.executable, str(SCRIPT), "doctor", "--json"],
+                [*PYTHON_COMMAND, str(SCRIPT), "doctor", "--json"],
                 env=process_env,
                 check=True,
                 capture_output=True,
-                text=True,
+                encoding="utf-8",
             )
             cached = subprocess.run(
-                [sys.executable, str(SCRIPT), "doctor", "--cached", "--json"],
+                [*PYTHON_COMMAND, str(SCRIPT), "doctor", "--cached", "--json"],
                 env=process_env,
                 check=True,
                 capture_output=True,
-                text=True,
+                encoding="utf-8",
             )
             cache_file = Path(temp_dir) / "doctor-cache.json"
             live_payload = json.loads(live.stdout)
@@ -207,11 +212,13 @@ class CuratedNamespaceContractTest(unittest.TestCase):
             process_env = {
                 "PATH": os.environ.get("PATH", ""),
                 "USER": os.environ.get("USER", ""),
+                "HOME": temp_dir,
+                "USERPROFILE": temp_dir,
                 "LAST30DAYS_CURATED_CONFIG_DIR": str(config_dir),
             }
             result = subprocess.run(
                 [
-                    sys.executable,
+                    *PYTHON_COMMAND,
                     str(SCRIPT),
                     "--mock",
                     "--emit=compact",
@@ -221,7 +228,7 @@ class CuratedNamespaceContractTest(unittest.TestCase):
                 env=process_env,
                 check=True,
                 capture_output=True,
-                text=True,
+                encoding="utf-8",
             )
             saved = sorted(report_dir.glob("*.md"))
             self.assertEqual(len(saved), 1)

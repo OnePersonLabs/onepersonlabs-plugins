@@ -203,6 +203,18 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
 
       Target name: use the change name as-is when it already starts with a `YYYY-MM-DD-` prefix; otherwise prepend the current date as `YYYY-MM-DD-<name>` (same rule as `openspec archive`).
 
+      Resolve the absolute source and destination paths and confirm they stay
+      within the selected `planningHome.changesDir` and its `archive` directory,
+      respectively. If the target already exists, fail this change and continue
+      with the remaining changes. Use the commands for the current shell.
+
+      In PowerShell:
+      ```powershell
+      New-Item -ItemType Directory -Path '<planningHome.changesDir>/archive' -Force | Out-Null
+      Move-Item -LiteralPath '<changeRoot>' -Destination '<planningHome.changesDir>/archive/<target-name>' -ErrorAction Stop
+      ```
+
+      In a POSIX shell:
       ```bash
       mkdir -p "<planningHome.changesDir>/archive"
       mv "<changeRoot>" "<planningHome.changesDir>/archive/<target-name>"

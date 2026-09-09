@@ -96,7 +96,7 @@ def main() -> int:
             },
         },
         sys.stdout,
-        ensure_ascii=False,
+        ensure_ascii=True,
     )
     print()
     return 0

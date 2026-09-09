@@ -361,8 +361,10 @@ class SessionReaderTests(unittest.TestCase):
         self.assertEqual(code, 0)
         payload = json.loads(output.getvalue())
         self.assertEqual(payload[0]["session_id"], ID_ONE)
-        mode = stat.S_IMODE(self.cache.stat().st_mode)
-        self.assertEqual(mode & 0o077, 0)
+        if sys.platform != "win32":
+            # Windows access is governed by inherited ACLs, not POSIX mode bits.
+            mode = stat.S_IMODE(self.cache.stat().st_mode)
+            self.assertEqual(mode & 0o077, 0)
         self.conn = reader.connect_db(self.cache)
 
 

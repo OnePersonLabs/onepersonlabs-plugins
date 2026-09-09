@@ -2,28 +2,29 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import {
-  chmodSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { pythonBin } from '../../../tools/runtime.mjs'
 
-const repositoryRoot = resolve(new URL('../../..', import.meta.url).pathname)
+const repositoryRoot = fileURLToPath(new URL('../../../', import.meta.url))
 const pluginRoot = join(repositoryRoot, 'plugins', 'opl')
 const openspecPluginRoot = join(repositoryRoot, 'plugins', 'opl-openspec')
 const githubIssueHandler = join(
   pluginRoot,
   'scripts',
-  'codex-github-issues-deferral-handler.sh',
+  'codex-github-issues-deferral-handler.py',
 )
 function runHookStatus(name, input, env = {}, root = pluginRoot) {
   try {
-    const stdout = execFileSync('bash', [join(root, 'scripts', name)], {
+    const stdout = execFileSync(pythonBin(), ['-B', '-X', 'utf8', join(root, 'scripts', name)], {
       cwd: env.CODEX_PROJECT_DIR ?? pluginRoot,
-      env: { ...process.env, ...env },
+      env: { ...process.env, NODE_BIN: process.execPath, CODEX_BIN: join(repositoryRoot, 'missing-test-codex'), ...env },
       input: JSON.stringify(input),
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -42,37 +43,43 @@ function makeProject() {
   return mkdtempSync(join(tmpdir(), 'opl-discipline-test-'))
 }
 
-function fakeCodexWithEnabledPlugin(pluginPath) {
+function fakeCodexWithEnabledPlugin(pluginPath, { installedPath = false, localShim = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'opl-codex-cli-'))
-  const file = join(dir, 'codex')
+  const file = localShim ? join(dir, 'node_modules', '.bin', 'codex.cmd') : join(dir, 'codex.mjs')
   const payload = JSON.stringify({
     installed: [
       {
         installed: true,
         enabled: true,
-        source: { path: pluginPath },
+        ...(installedPath ? { installedPath: pluginPath } : { source: { path: pluginPath } }),
       },
     ],
   })
-  writeFileSync(file, `#!/bin/bash\nprintf '%s\\n' '${payload}'\n`)
-  chmodSync(file, 0o755)
+  if (localShim) {
+    const owner = join(dir, 'node_modules', '@openai', 'codex', 'bin', 'codex.js')
+    mkdirSync(dirname(file), { recursive: true })
+    mkdirSync(dirname(owner), { recursive: true })
+    writeFileSync(file, '@echo off\r\nexit /b 99\r\n')
+    writeFileSync(owner, `console.log(${JSON.stringify(payload)})\n`)
+  } else {
+    writeFileSync(file, `console.log(${JSON.stringify(payload)})\n`)
+  }
   return { dir, file }
 }
 
 function fakeGhIssue({ number = 42, state = 'OPEN' } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'opl-gh-cli-'))
-  const file = join(dir, 'gh')
+  const file = join(dir, 'gh.mjs')
   writeFileSync(
     file,
     [
-      '#!/bin/bash',
-      '[[ "$1" == "issue" && "$2" == "view" ]] || exit 64',
-      `[[ "$3" == "${number}" || "$3" == */issues/${number} ]] || exit 1`,
-      `printf '%s\\n' '{"number":${number},"state":"${state}","url":"https://github.com/acme/example/issues/${number}"}'`,
+      "const [command, action, ref] = process.argv.slice(2)",
+      "if (command !== 'issue' || action !== 'view') process.exit(64)",
+      `if (ref !== '${number}' && !ref.endsWith('/issues/${number}')) process.exit(1)`,
+      `console.log(JSON.stringify({number:${number},state:${JSON.stringify(state)},url:'https://github.com/acme/example/issues/${number}'}))`,
       '',
     ].join('\n'),
   )
-  chmodSync(file, 0o755)
   return { dir, file }
 }
 
@@ -86,7 +93,7 @@ function writeTranscript(records) {
 function runSkillReviewGate(records) {
   const transcript = writeTranscript(records)
   try {
-    return runHookStatus('codex-skill-review-gate.sh', {
+    return runHookStatus('codex-skill-review-gate.py', {
       transcript_path: transcript.file,
     })
   } finally {
@@ -139,7 +146,7 @@ function linearProof({
 function runResponse(text, { project, priorRecords = [], env = {} } = {}) {
   const transcript = writeTranscript([...priorRecords, assistant(text)])
   const result = runHookStatus(
-    'codex-response-discipline-gate.sh',
+    'codex-response-discipline-gate.py',
     { transcript_path: transcript.file },
     { CODEX_PROJECT_DIR: project ?? pluginRoot, ...env },
   )
@@ -180,6 +187,92 @@ test('skill review re-arms when an edit follows a review', () => {
   assert.equal(decision.decision, 'block')
 })
 
+test('skill review recognizes Windows paths and a native review skill read', () => {
+  const edit = skillEdit('C:\\work\\.agents\\skills\\example\\SKILL.md')
+  assert.equal(skillReviewDecision([edit]).decision, 'block')
+  assert.equal(skillReviewDecision([
+    edit,
+    {
+      name: 'exec_command',
+      arguments: JSON.stringify({ cmd: 'rtk proxy powershell -Command "Get-Content C:\\work\\.agents\\skills\\agent-instructions\\SKILL.md"' }),
+    },
+  ]).continue, true)
+})
+
+test('skill review recognizes Codex apply_patch skill edits', () => {
+  const decision = skillReviewDecision([{
+    name: 'functions.apply_patch',
+    input: '*** Begin Patch\n*** Update File: C:\\work\\skills\\example\\SKILL.md\n@@\n+New instruction\n*** End Patch',
+  }])
+  assert.equal(decision.decision, 'block')
+})
+
+test('dangerous shell blocks PowerShell root, home, parent, and glob removals', () => {
+  for (const command of [
+    'Remove-Item -LiteralPath "C:\\" -Recurse -Force',
+    'Remove-Item -LiteralPath $HOME -Recurse -Force',
+    'Remove-Item -LiteralPath "..\\shared" -Recurse -Force',
+    'Remove-Item -Path "C:\\work\\*" -Recurse -Force',
+    'rtk proxy powershell -Command "Remove-Item -LiteralPath $HOME -Recurse"',
+    'git push origin main --force',
+    'git push -f origin main',
+  ]) {
+    const result = runHookStatus('codex-dangerous-shell-gate.py', { tool_input: { command } })
+    assert.equal(result.status, 2, `${command}\n${result.stderr}`)
+  }
+})
+
+test('dangerous shell permits explicit repository cleanup in PowerShell', () => {
+  const result = runHookStatus('codex-dangerous-shell-gate.py', {
+    tool_input: { command: 'Remove-Item -LiteralPath "./build output" -Recurse -Force' },
+  })
+  assert.equal(result.status, 0, result.stderr)
+})
+
+test('skill sigil gate discovers skills and respects same-line literal bypasses', () => {
+  const project = makeProject()
+  const skill = join(project, '.agents', 'skills', 'native-example')
+  mkdirSync(skill, { recursive: true })
+  writeFileSync(join(skill, 'SKILL.md'), '---\nname: native-example\n---\nInstructions.\n')
+  const path = join(project, 'AGENTS.md')
+  try {
+    writeFileSync(path, 'Run `native-example`.\n')
+    const result = runHookStatus('codex-skill-reference-sigil-gate.py', {
+      tool_input: { file_path: path },
+    }, { CODEX_PROJECT_DIR: project })
+    assert.equal(result.status, 2, result.stderr)
+    assert.match(result.stderr, /dollar-sigil/u)
+    writeFileSync(path, 'The literal `native-example`. <!-- skill-reference-sigil-bypass -->\n')
+    assert.equal(runHookStatus('codex-skill-reference-sigil-gate.py', {
+      tool_input: { file_path: path },
+    }, { CODEX_PROJECT_DIR: project }).status, 0)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+  }
+})
+
+test('artifact policy keeps bypasses and per-token allowlist semantics', () => {
+  const plugin = makeProject()
+  mkdirSync(join(plugin, 'scripts'))
+  writeFileSync(join(plugin, 'scripts', 'codex-discipline-gate.exceptions.txt'), '# A real release name\nTauri v2\n')
+  const env = { OPL_DISCIPLINE_PLUGIN_ROOT: plugin, DISCIPLINE_DEFERRAL_HANDLERS: '' }
+  try {
+    for (const text of ['Use Tauri v2.', 'Deferred work. <!-- discipline-bypass -->']) {
+      assert.equal(runHookStatus('codex-artifact-discipline-gate.py', {
+        tool_input: { content: text },
+      }, env).status, 0, text)
+    }
+    const result = runHookStatus('codex-artifact-discipline-gate.py', {
+      tool_input: { content: 'Use Tauri v2 for our v1.' },
+    }, env)
+    assert.equal(result.status, 2)
+    assert.match(result.stderr, /token: "v1"/u)
+    assert.doesNotMatch(result.stderr, /token: "v2"/u)
+  } finally {
+    rmSync(plugin, { recursive: true, force: true })
+  }
+})
+
 test('core response rejects an OpenSpec-shaped deferral when no provider handles it', () => {
   const project = makeProject()
   mkdirSync(join(project, 'openspec', 'changes', 'add-photon-torpedoes'), {
@@ -208,7 +301,7 @@ test('OpenSpec provider handles an existing active change', () => {
   })
   try {
     const result = runHookStatus(
-      'codex-openspec-deferral-handler.sh',
+      'codex-openspec-deferral-handler.py',
       {
         protocol_version: 1,
         content: 'Deferred to openspec/changes/add-photon-torpedoes/.',
@@ -240,7 +333,7 @@ test('core response accepts a deferral consumed by the OpenSpec provider', () =>
           DISCIPLINE_DEFERRAL_HANDLERS: join(
             openspecPluginRoot,
             'scripts',
-            'codex-openspec-deferral-handler.sh',
+            'codex-openspec-deferral-handler.py',
           ),
         },
       }),
@@ -271,18 +364,50 @@ test('core discovers deferral handlers from enabled Codex plugins', () => {
   }
 })
 
+test('core discovers providers in installed Codex cache paths', () => {
+  const project = makeProject()
+  const fakeCodex = fakeCodexWithEnabledPlugin(openspecPluginRoot, { installedPath: true })
+  mkdirSync(join(project, 'openspec', 'changes', 'cached-change'), { recursive: true })
+  try {
+    assert.equal(responseDecision(runResponse('Deferred to openspec/changes/cached-change/.', {
+      project,
+      env: { CODEX_BIN: fakeCodex.file },
+    })).continue, true)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+    rmSync(fakeCodex.dir, { recursive: true, force: true })
+  }
+})
+
+test('Windows provider discovery resolves a project-local npm Codex shim without a shell', {
+  skip: process.platform !== 'win32',
+}, () => {
+  const project = makeProject()
+  const fakeCodex = fakeCodexWithEnabledPlugin(openspecPluginRoot, { localShim: true })
+  mkdirSync(join(project, 'openspec', 'changes', 'local-shim-change'), { recursive: true })
+  try {
+    assert.equal(responseDecision(runResponse('Deferred to openspec/changes/local-shim-change/.', {
+      project,
+      env: { CODEX_BIN: fakeCodex.file },
+    })).continue, true)
+  } finally {
+    rmSync(project, { recursive: true, force: true })
+    rmSync(fakeCodex.dir, { recursive: true, force: true })
+  }
+})
+
 test('GitHub Issues provider handles an existing open issue', () => {
   const project = makeProject()
   const fakeGh = fakeGhIssue()
   try {
     const result = runHookStatus(
-      'codex-github-issues-deferral-handler.sh',
+      'codex-github-issues-deferral-handler.py',
       {
         protocol_version: 1,
         content: 'Deferred to #42.',
         repository_root: project,
       },
-      { CODEX_PROJECT_DIR: project, PATH: `${fakeGh.dir}:${process.env.PATH}` },
+      { CODEX_PROJECT_DIR: project, GH_BIN: fakeGh.file },
     )
     assert.equal(result.status, 0, result.stderr)
     assert.deepEqual(JSON.parse(result.stdout), {
@@ -305,7 +430,7 @@ test('core discovers the GitHub Issues provider from the enabled OPL plugin', ()
         project,
         env: {
           CODEX_BIN: fakeCodex.file,
-          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+          GH_BIN: fakeGh.file,
         },
       }),
     )
@@ -326,7 +451,7 @@ test('core response accepts a deferral backed by an existing GitHub issue', () =
         project,
         env: {
           DISCIPLINE_DEFERRAL_HANDLERS: githubIssueHandler,
-          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+          GH_BIN: fakeGh.file,
         },
       }),
     )
@@ -346,7 +471,7 @@ test('GitHub Issues provider leaves a missing issue for the catch-all to reject'
         project,
         env: {
           DISCIPLINE_DEFERRAL_HANDLERS: githubIssueHandler,
-          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+          GH_BIN: fakeGh.file,
         },
       }),
     )
@@ -367,7 +492,7 @@ test('GitHub Issues provider rejects a closed issue as a deferral sink', () => {
         project,
         env: {
           DISCIPLINE_DEFERRAL_HANDLERS: githubIssueHandler,
-          PATH: `${fakeGh.dir}:${process.env.PATH}`,
+          GH_BIN: fakeGh.file,
         },
       }),
     )
@@ -389,7 +514,7 @@ test('OpenSpec provider leaves a missing change for the catch-all to reject', ()
           DISCIPLINE_DEFERRAL_HANDLERS: join(
             openspecPluginRoot,
             'scripts',
-            'codex-openspec-deferral-handler.sh',
+            'codex-openspec-deferral-handler.py',
           ),
         },
       }),
@@ -467,7 +592,7 @@ test('response blocks MVP framing even beside a valid sink', () => {
 })
 
 test('artifact blocks a newly inserted TODO without a sink', () => {
-  const result = runHookStatus('codex-artifact-discipline-gate.sh', {
+  const result = runHookStatus('codex-artifact-discipline-gate.py', {
     tool_input: {
       file_path: '/tmp/example.js',
       new_string: '// TODO: repair the warp core',
@@ -478,7 +603,7 @@ test('artifact blocks a newly inserted TODO without a sink', () => {
 })
 
 test('artifact blocks an unresolved TODO introduced by apply_patch', () => {
-  const result = runHookStatus('codex-artifact-discipline-gate.sh', {
+  const result = runHookStatus('codex-artifact-discipline-gate.py', {
     tool_input: {
       patch: [
         '*** Begin Patch',
@@ -504,7 +629,7 @@ test('artifact catch-all blocks Linear TODO without a Linear provider', () => {
   )
   try {
     const result = runHookStatus(
-      'codex-artifact-discipline-gate.sh',
+      'codex-artifact-discipline-gate.py',
       {
         transcript_path: transcript.file,
         tool_input: {
@@ -527,7 +652,7 @@ test('archive scans every markdown file in the change', () => {
   writeFileSync(join(change, 'tasks.md'), 'This is deferred with no durable sink.\n')
   try {
     const result = runHookStatus(
-      'codex-openspec-archive-discipline-gate.sh',
+      'codex-openspec-archive-discipline-gate.py',
       {
         tool_input: {
           command:
@@ -540,7 +665,7 @@ test('archive scans every markdown file in the change', () => {
         DISCIPLINE_DEFERRAL_HANDLERS: join(
           openspecPluginRoot,
           'scripts',
-          'codex-openspec-deferral-handler.sh',
+          'codex-openspec-deferral-handler.py',
         ),
       },
       openspecPluginRoot,
@@ -559,7 +684,7 @@ test('archive recognizes option-bearing commands with quoted paths', () => {
   writeFileSync(join(change, 'tasks.md'), 'This is deferred with no durable sink.\n')
   try {
     const result = runHookStatus(
-      'codex-openspec-archive-discipline-gate.sh',
+      'codex-openspec-archive-discipline-gate.py',
       {
         tool_input: {
           command:
@@ -572,7 +697,7 @@ test('archive recognizes option-bearing commands with quoted paths', () => {
         DISCIPLINE_DEFERRAL_HANDLERS: join(
           openspecPluginRoot,
           'scripts',
-          'codex-openspec-deferral-handler.sh',
+          'codex-openspec-deferral-handler.py',
         ),
       },
       openspecPluginRoot,
@@ -598,7 +723,7 @@ test('archive accepts an archived OpenSpec change reference', () => {
   )
   try {
     const result = runHookStatus(
-      'codex-openspec-archive-discipline-gate.sh',
+      'codex-openspec-archive-discipline-gate.py',
       {
         tool_input: {
           command:
@@ -611,7 +736,7 @@ test('archive accepts an archived OpenSpec change reference', () => {
         DISCIPLINE_DEFERRAL_HANDLERS: join(
           openspecPluginRoot,
           'scripts',
-          'codex-openspec-deferral-handler.sh',
+          'codex-openspec-deferral-handler.py',
         ),
       },
       openspecPluginRoot,
@@ -632,7 +757,7 @@ test('archive blocks a missing OpenSpec change', () => {
   )
   try {
     const result = runHookStatus(
-      'codex-openspec-archive-discipline-gate.sh',
+      'codex-openspec-archive-discipline-gate.py',
       {
         tool_input: {
           command:
@@ -645,7 +770,7 @@ test('archive blocks a missing OpenSpec change', () => {
         DISCIPLINE_DEFERRAL_HANDLERS: join(
           openspecPluginRoot,
           'scripts',
-          'codex-openspec-deferral-handler.sh',
+          'codex-openspec-deferral-handler.py',
         ),
       },
       openspecPluginRoot,

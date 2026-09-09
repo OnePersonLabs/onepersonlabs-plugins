@@ -6,8 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/scripts/superpowers-conflict-warning-hook.py\"",
-            "timeout": 20
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/superpowers-conflict-warning-hook.py\"",
+            "timeout": 20,
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/superpowers-conflict-warning-hook.py\""
           }
         ]
       }

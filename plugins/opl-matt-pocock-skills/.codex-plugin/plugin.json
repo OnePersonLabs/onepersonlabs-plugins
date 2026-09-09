@@ -14,6 +14,6 @@
   "interface": {
     "displayName": "OPL Matt Pocock Skills",
     "shortDescription": "Engineering, productivity, and project setup skills",
-    "longDescription": "A consolidated bundle of Matt Pocock skills for planning, implementation, diagnosis, review, interviewing, and project setup."
+    "longDescription": "A consolidated bundle of Matt Pocock skills for planning, implementation, review, interviewing, and project setup. Ask Matt routes debugging to the canonical debug skill in opl when available."
   }
 }

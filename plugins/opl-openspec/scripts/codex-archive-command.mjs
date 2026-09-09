@@ -4,7 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-function splitSegments(command) {
+function splitSegments(command, powershell = false) {
   const segments = []
   let current = ''
   let quote = null
@@ -17,7 +17,7 @@ function splitSegments(command) {
       escaped = false
       continue
     }
-    if (character === '\\' && quote !== "'") {
+    if (character === (powershell ? '`' : '\\') && quote !== "'") {
       current += character
       escaped = true
       continue
@@ -52,7 +52,7 @@ function splitSegments(command) {
   return segments
 }
 
-function words(segment) {
+function words(segment, powershell = false) {
   const result = []
   let current = ''
   let quote = null
@@ -65,19 +65,25 @@ function words(segment) {
     started = false
   }
 
-  for (const character of segment) {
+  for (let index = 0; index < segment.length; index += 1) {
+    const character = segment[index]
     if (escaped) {
       current += character
       started = true
       escaped = false
       continue
     }
-    if (character === '\\' && quote !== "'") {
+    if (character === (powershell ? '`' : '\\') && quote !== "'") {
       escaped = true
       started = true
       continue
     }
     if (quote) {
+      if (powershell && quote === "'" && character === "'" && segment[index + 1] === "'") {
+        current += "'"
+        index += 1
+        continue
+      }
       if (character === quote) quote = null
       else current += character
       started = true
@@ -97,18 +103,48 @@ function words(segment) {
   return result
 }
 
-function operands(tokens) {
+function commandStart(tokens) {
   let index = 0
+  if (tokens[index] === 'rtk') {
+    index += 1
+    if (tokens[index] === 'proxy') index += 1
+  }
+  if (tokens[index] === '&') index += 1
   if (tokens[index] === 'command') {
     index += 1
     while (tokens[index]?.startsWith('-')) index += 1
   }
+  return index
+}
 
+function executableName(executable) {
+  return executable.replaceAll('\\', '/').split('/').at(-1).replace(/\.exe$/iu, '')
+}
+
+function operands(tokens, powershell = false) {
+  let index = commandStart(tokens)
   const executable = tokens[index]
   if (!executable) return null
-  if (path.basename(executable) === 'git' && tokens[index + 1] === 'mv') {
+  const basename = executableName(executable)
+  if ((powershell || basename !== 'mv') && ['move-item', 'mi', 'move', 'mv'].includes(basename.toLowerCase())) {
+    let source
+    let destination
+    const positional = []
+    for (let offset = index + 1; offset < tokens.length; offset += 1) {
+      const token = tokens[offset].toLowerCase()
+      if (token === '-literalpath' || token === '-path') source = tokens[++offset]
+      else if (token === '-destination') destination = tokens[++offset]
+      else if (['-erroraction', '-warningaction', '-informationaction', '-errorvariable', '-outvariable'].includes(token)) offset += 1
+      else if (token.startsWith('-')) continue
+      else positional.push(tokens[offset])
+    }
+    source ??= positional.shift()
+    destination ??= positional.shift()
+    return source && destination ? [source, destination] : null
+  }
+  if (basename === 'git' && tokens[index + 1] === 'mv') {
     index += 2
-  } else if (path.basename(executable) === 'mv') {
+  } else if (basename === 'mv') {
     index += 1
   } else return null
 
@@ -116,19 +152,30 @@ function operands(tokens) {
   return tokens.slice(index)
 }
 
-export function archiveChangeFromCommand(command) {
-  for (const segment of splitSegments(command)) {
-    const values = operands(words(segment))
-    if (!values || values.length < 2) continue
-    const source = values[0].replace(/\/$/u, '')
-    const destination = values[1].replace(/\/$/u, '')
-    const match = /(?:^|\/)openspec\/changes\/([a-z][a-z0-9-]*)$/u.exec(source)
-    if (
-      match &&
-      /(?:^|\/)openspec\/changes\/archive(?:\/|$)/u.test(destination)
-    ) {
-      return match[1]
-    }
+function archiveFromTokens(tokens, powershell, depth) {
+  const index = commandStart(tokens)
+  const executable = tokens[index]
+  if (!executable) return null
+  if (['powershell', 'pwsh'].includes(executableName(executable).toLowerCase())) {
+    const commandIndex = tokens.findIndex((token, offset) => offset > index && ['-command', '-c', '-commandwithargs'].includes(token.toLowerCase()))
+    if (commandIndex < 0 || depth >= 8) return null
+    const body = tokens.slice(commandIndex + 1)
+    if (body.length === 1) return archiveChangeFromCommand(body[0], depth + 1)
+    return archiveFromTokens(body, true, depth + 1)
+  }
+  const values = operands(tokens, powershell)
+  if (!values || values.length < 2) return null
+  const source = values[0].replaceAll('\\', '/').replace(/\/$/u, '')
+  const destination = values[1].replaceAll('\\', '/').replace(/\/$/u, '')
+  const match = /(?:^|\/)openspec\/changes\/([a-z][a-z0-9-]*)$/u.exec(source)
+  return match && /(?:^|\/)openspec\/changes\/archive(?:\/|$)/u.test(destination) ? match[1] : null
+}
+
+export function archiveChangeFromCommand(command, depth = 0) {
+  const powershell = /\b(?:Move-Item|LiteralPath)\b|\bopenspec\\changes\\|(?:^|\s)["']?(?:[A-Za-z]:\\|\.\\openspec\\)/iu.test(command)
+  for (const segment of splitSegments(command, powershell)) {
+    const change = archiveFromTokens(words(segment, powershell), powershell, depth)
+    if (change) return change
   }
   return null
 }

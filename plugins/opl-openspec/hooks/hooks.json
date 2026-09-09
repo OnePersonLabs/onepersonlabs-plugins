@@ -6,12 +6,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-quality-gate.sh\"",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-quality-gate.py\"",
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-quality-gate.py\"",
             "timeout": 600
           },
           {
             "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-discipline-gate.sh\"",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-discipline-gate.py\"",
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-openspec-archive-discipline-gate.py\"",
             "timeout": 20
           }
         ]
@@ -21,7 +23,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-stock-openspec-guard.sh\"",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-stock-openspec-guard.py\"",
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-stock-openspec-guard.py\"",
             "timeout": 20
           }
         ]
@@ -32,7 +35,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-openspec-workflow-gate.sh\"",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-openspec-workflow-gate.py\"",
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-openspec-workflow-gate.py\"",
             "timeout": 20
           }
         ]

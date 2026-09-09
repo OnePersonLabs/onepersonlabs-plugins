@@ -18,11 +18,26 @@ Active change specs are otherwise out of scope. If a requested name could be eit
 
 ## Establish Structural Context
 
-Run:
+Run the CLI checks in the current shell:
 
-```bash
+```text
 openspec validate --specs --strict --no-interactive
 openspec doctor --json
+```
+
+Run the bundled inventory using the absolute directory containing the loaded
+`SKILL.md`. Choose the commands for the current shell.
+
+In PowerShell:
+
+```powershell
+$auditSkillDir = '<absolute path of the directory containing this SKILL.md>'
+node "$auditSkillDir/scripts/spec_inventory.mjs" --markdown
+```
+
+In a POSIX shell:
+
+```bash
 AUDIT_SKILL_DIR="<absolute path of the directory containing this SKILL.md>"
 node "${AUDIT_SKILL_DIR}/scripts/spec_inventory.mjs" --markdown
 ```
@@ -31,7 +46,7 @@ Use `--capability <slug>` for a focused inventory and `--json` for machine-reada
 
 For a named change, also run:
 
-```bash
+```text
 openspec status --change "<name>" --json
 openspec instructions apply --change "<name>" --json
 ```

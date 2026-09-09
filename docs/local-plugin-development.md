@@ -16,6 +16,38 @@ the entire marketplace.
 - `OPL_PLUGIN_DEV_STATE` selects persistent Codex authoring and black-box state;
   it defaults outside the checkout under the user's local state directory.
 
+## Native runtimes
+
+Run the same commands from native PowerShell on Windows or a POSIX shell on
+Linux and macOS. Use Node.js 24 or newer; child Node tests reuse the interpreter
+that launched the driver. Python tests use `python` on Windows and `python3`
+elsewhere. Set `PYTHON_BIN` to an interpreter path when a project needs a
+specific Python environment.
+
+`CODEX_BIN` can select a native Codex executable or its `.js`/`.mjs` entrypoint.
+On Windows, the driver resolves standard npm Codex shims to the adjacent
+`@openai/codex/bin/codex.js` and launches it with Node, passing arguments directly.
+Skill evaluation hosts use directory junctions on Windows and directory
+symlinks elsewhere. Printed hook-trust commands use the host shell's quoting
+and environment-assignment syntax.
+
+Windows skill evaluations explicitly select `windows.sandbox="elevated"`
+while retaining `--sandbox read-only`: `--ignore-user-config` would otherwise
+omit the native sandbox backend. Complete the documented
+[Windows sandbox setup](https://learn.chatgpt.com/docs/config-file/config-basic#windows-sandbox-mode)
+for the isolated authoring home under `OPL_PLUGIN_DEV_STATE` before evaluating.
+If sandbox setup or executable access prevents a command from running, retain
+the error as an execution limitation. Inspect the saved response and
+`.events.json` receipt: a skill announcement demonstrates selection, while
+successful command events establish execution of the requested workflow.
+
+Plugin hooks use Codex's `commandWindows` override to select `python` on
+Windows, while the default command selects `python3`. Both run with
+`-B -X utf8`. Codex resolves `${PLUGIN_ROOT}` before launching the hook; the
+`Bash` event matcher also covers unified `exec_command` calls on Windows.
+See [Codex hooks](https://learn.chatgpt.com/docs/hooks) and the
+[native portability record](native-plugin-runtime.md).
+
 ## Inner loop
 
 Choose the smallest observable behavior, run its focused test, make it pass,

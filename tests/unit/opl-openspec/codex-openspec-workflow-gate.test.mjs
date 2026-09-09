@@ -4,10 +4,12 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
+import { pythonBin } from '../../../tools/runtime.mjs'
 
-const repositoryRoot = resolve(new URL('../../..', import.meta.url).pathname)
+const repositoryRoot = resolve(fileURLToPath(new URL('../../..', import.meta.url)))
 const pluginRoot = join(repositoryRoot, 'plugins', 'opl-openspec')
-const gate = join(pluginRoot, 'scripts', 'codex-openspec-workflow-gate.sh')
+const gate = join(pluginRoot, 'scripts', 'codex-openspec-workflow-gate.py')
 
 function writeTranscript(records) {
   const dir = mkdtempSync(join(tmpdir(), 'opl-openspec-workflow-'))
@@ -20,7 +22,7 @@ function runGate(records) {
   const transcript = writeTranscript(records)
   try {
     return JSON.parse(
-      execFileSync('bash', [gate], {
+      execFileSync(pythonBin(), ['-B', '-X', 'utf8', gate], {
         input: JSON.stringify({ transcript_path: transcript.file }),
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -52,7 +54,7 @@ function skillRead(path) {
     payload: {
       type: 'function_call',
       name: 'exec_command',
-      arguments: JSON.stringify({ cmd: `sed -n '1,240p' ${path}` }),
+      arguments: JSON.stringify({ cmd: `Get-Content -LiteralPath '${path}'` }),
     },
   }
 }
@@ -109,6 +111,10 @@ test('workflow gate ignores placeholder artifact paths', () => {
 
 for (const [label, path] of [
   [
+    'native Windows plugin cache',
+    'C:\\Users\\test\\.codex\\plugins\\cache\\acme\\opl-openspec\\1.2.3\\skills\\openspec-propose\\SKILL.md',
+  ],
+  [
     'repository-local',
     '.agents/skills/openspec-apply-change/SKILL.md',
   ],
@@ -133,7 +139,7 @@ for (const [label, path] of [
 test('workflow gate accepts OpenSpec skill entry through the orchestrated exec tool', () => {
   const decision = runGate([
     orchestratedExec(
-      "sed -n '1,240p' /work/plugins/opl-openspec/skills/openspec-x-finish/SKILL.md",
+      "Get-Content -LiteralPath '/work/plugins/opl-openspec/skills/openspec-x-finish/SKILL.md'",
     ),
     patch('openspec/changes/add-example/tasks.md'),
   ])

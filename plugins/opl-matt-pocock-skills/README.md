@@ -5,11 +5,14 @@ Based on [Matt Pocock’s skills](https://github.com/mattpocock/skills).
 This plugin combines the retained engineering, productivity, project setup, and
 experimental skills in one install. Each skill keeps its invocation policy.
 
+For debugging, use [$debug](../opl/skills/debug/SKILL.md) in the `opl` plugin.
+It replaces this bundle's former `diagnosing-bugs` skill; `$ask-matt` routes
+debugging requests there and can continue ordinary diagnosis when `opl` is unavailable.
+
 ## Engineering
 
 - [$ask-matt](skills/ask-matt/SKILL.md)
 - [$code-review](skills/code-review/SKILL.md)
-- [$diagnosing-bugs](skills/diagnosing-bugs/SKILL.md)
 - [$implement](skills/implement/SKILL.md)
 - [$prototype](skills/prototype/SKILL.md)
 - [$research](skills/research/SKILL.md)

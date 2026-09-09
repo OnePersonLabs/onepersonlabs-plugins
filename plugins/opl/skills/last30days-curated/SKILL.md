@@ -14,14 +14,13 @@ improves planning, but it never substitutes for the engine.
 Codex provides the selected skill's `SKILL.md` path. Set `SKILL_ROOT` to the
 directory containing that exact file and use its sibling engine:
 
-```bash
-SKILL_ROOT="<directory containing the selected SKILL.md>"
-ENGINE="$SKILL_ROOT/scripts/last30days-curated.py"
-test -f "$ENGINE" || {
-  echo "last30days-curated engine not found beside the selected skill: $ENGINE" >&2
-  exit 1
-}
-```
+In PowerShell, set `$SKILL_ROOT` to that directory and use
+`$ENGINE = Join-Path $SKILL_ROOT 'scripts/last30days-curated.py'`; verify it
+with `Test-Path -LiteralPath $ENGINE -PathType Leaf`. In POSIX, set
+`SKILL_ROOT="<directory containing the selected SKILL.md>"`, use
+`ENGINE="$SKILL_ROOT/scripts/last30days-curated.py"`, and verify with
+`test -f "$ENGINE"`. If the engine is missing, report the exact expected
+path and stop.
 
 Do not scan `~/.codex`, compare cache versions, search for another copy, or
 substitute a repository checkout. The selected skill path is the authority;
@@ -61,23 +60,13 @@ from `python3.14`, `python3.13`, `python3.12`, `python3`, or `python`. Assign th
 verified choice to `LAST30DAYS_CURATED_PYTHON` for every later command. Do not
 install Python automatically.
 
-```bash
-if [ -n "${LAST30DAYS_CURATED_PYTHON:-}" ]; then
-  PYTHON_CANDIDATES=("$LAST30DAYS_CURATED_PYTHON")
-else
-  PYTHON_CANDIDATES=(python3.14 python3.13 python3.12 python3 python)
-fi
-LAST30DAYS_CURATED_PYTHON=""
-for PYTHON_CANDIDATE in "${PYTHON_CANDIDATES[@]}"; do
-  if command -v "$PYTHON_CANDIDATE" >/dev/null 2>&1 &&
-    "$PYTHON_CANDIDATE" -c \
-      'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'
-  then
-    LAST30DAYS_CURATED_PYTHON="$(command -v "$PYTHON_CANDIDATE")"
-    break
-  fi
-done
-```
+Resolve candidates with `Get-Command` in PowerShell or `command -v` in a
+POSIX shell. Prefer native `python` on Windows. Verify the selected executable
+with `-c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)"`.
+Honor an explicit interpreter override instead of silently substituting another.
+In PowerShell, store the verified path in `$env:LAST30DAYS_CURATED_PYTHON` and
+invoke it with `&`; in POSIX, use `LAST30DAYS_CURATED_PYTHON` and quote it.
+Resolve `ENGINE` to the bundled script using paths native to the active runtime.
 
 If `LAST30DAYS_CURATED_PYTHON` is still empty, report the requirement and stop.
 Do not replace the engine with ordinary web search.
@@ -87,10 +76,16 @@ The default report directory is `~/Documents/Last30DaysCurated`. Honor
 
 ## Check source health
 
-Before research, run a cached doctor check:
+Before research, run a cached doctor check. In PowerShell:
+
+```powershell
+& $env:LAST30DAYS_CURATED_PYTHON -B -X utf8 $ENGINE doctor --cached --json
+```
+
+In POSIX:
 
 ```bash
-"$LAST30DAYS_CURATED_PYTHON" "$ENGINE" doctor --cached --json
+"$LAST30DAYS_CURATED_PYTHON" -B -X utf8 "$ENGINE" doctor --cached --json
 ```
 
 Treat a source as usable only when its doctor record is `ready`, or `degraded`
@@ -108,7 +103,15 @@ for research.
 ## Build and run the research command
 
 Keep all arguments in a shell array so topics, paths, and apostrophes are not
-reparsed by a nested shell:
+reparsed by a nested shell. In PowerShell:
+
+```powershell
+$ReportDir = $env:LAST30DAYS_CURATED_MEMORY_DIR
+if (-not $ReportDir) { $ReportDir = Join-Path $HOME 'Documents/Last30DaysCurated' }
+$EngineArgs = @($TOPIC, '--emit=compact', "--save-dir=$ReportDir")
+```
+
+In POSIX:
 
 ```bash
 REPORT_DIR="${LAST30DAYS_CURATED_MEMORY_DIR:-$HOME/Documents/Last30DaysCurated}"
@@ -133,9 +136,10 @@ Run in the foreground with a timeout proportionate to depth (five minutes is a
 reasonable default). Preserve stderr because it contains progress, saved-file
 paths, degraded-source warnings, and comparison artifact locations.
 
-```bash
-"$LAST30DAYS_CURATED_PYTHON" "$ENGINE" "${ENGINE_ARGS[@]}"
-```
+In PowerShell, append flags with `$EngineArgs += @('--plan', $PLAN_FILE)` and
+invoke `& $env:LAST30DAYS_CURATED_PYTHON -B -X utf8 $ENGINE @EngineArgs`.
+In POSIX, append with `ENGINE_ARGS+=(--plan "$PLAN_FILE")` and invoke
+`"$LAST30DAYS_CURATED_PYTHON" -B -X utf8 "$ENGINE" "${ENGINE_ARGS[@]}"`.
 
 If the engine asks a clarifying question or refuses a low-quality query,
 surface that question and wait. If it fails, report the concrete failure and

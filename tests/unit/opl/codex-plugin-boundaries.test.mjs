@@ -1,9 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const repositoryRoot = resolve(new URL('../../..', import.meta.url).pathname)
+const repositoryRoot = fileURLToPath(new URL('../../..', import.meta.url))
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'))
@@ -40,8 +41,8 @@ test('OpenSpec owns only its domain-specific discipline integrations', () => {
     /dangerous-shell|skill-review|skill-reference-sigil/u.test(name),
   )
   assert.deepEqual(forbidden, [])
-  assert.ok(scripts.includes('codex-openspec-deferral-handler.sh'))
-  assert.ok(scripts.includes('codex-openspec-archive-discipline-gate.sh'))
+  assert.ok(scripts.includes('codex-openspec-deferral-handler.py'))
+  assert.ok(scripts.includes('codex-openspec-archive-discipline-gate.py'))
   assert.ok(!scripts.includes('codex-openspec-dependency-gate.sh'))
   assert.ok(!scripts.includes('codex-openspec-archive-order-gate.sh'))
 })
@@ -81,7 +82,7 @@ test('public plugin ownership docs do not advertise retired OpenSpec scheduling'
 
 test('OPL owns the repository-independent GitHub Issues deferral provider', () => {
   const scripts = readdirSync(join(repositoryRoot, 'plugins', 'opl', 'scripts'))
-  assert.ok(scripts.includes('codex-github-issues-deferral-handler.sh'))
+  assert.ok(scripts.includes('codex-github-issues-deferral-handler.py'))
 })
 
 test('OnePersonLabs manifest exports its hooks', () => {
