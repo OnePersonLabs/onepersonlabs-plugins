@@ -1,0 +1,19 @@
+{
+  "name": "opl-matt-pocock-skills",
+  "version": "0.1.0",
+  "description": "Matt Pocock skills for engineering, productivity, and project setup.",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "engineering",
+    "productivity",
+    "workflow",
+    "code-review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OPL Matt Pocock Skills",
+    "shortDescription": "Engineering, productivity, and project setup skills",
+    "longDescription": "A consolidated bundle of Matt Pocock skills for planning, implementation, diagnosis, review, interviewing, and project setup."
+  }
+}

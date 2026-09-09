@@ -22,11 +22,7 @@
     },
     "opl-awesome-codex-subagents": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
     "opl-docs-mcp-server": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
-    "opl-matt-pocock-skills-engineering": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
-    "opl-matt-pocock-skills-in-progress": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
-    "opl-matt-pocock-skills-misc": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
-    "opl-matt-pocock-skills-personal": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
-    "opl-matt-pocock-skills-productivity": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
+    "opl-matt-pocock-skills": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
     "opl-nyx-skills": { "unitRoots": [], "commands": [], "mcpMode": "none", "uiMode": "none" },
     "opl": {
       "unitRoots": ["tests/unit/opl"],
