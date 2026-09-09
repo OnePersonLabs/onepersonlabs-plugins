@@ -2,8 +2,37 @@
 
 > Assimilate technological distinctiveness. Build collectives that belong to you.
 
-> [!NOTE]
-> This is an early philosophy scaffold. The `$assimilate` skill is being designed and is not implemented yet.
+## Use `$assimilate`
+
+`$assimilate` turns the philosophy below into an operational skill: investigate
+donor mechanisms, compare their actual value, discover the right collective
+boundaries, integrate native capabilities, and prove that their distinctiveness
+survived. It works with repositories, plugins, skills, and other inspectable
+systems. The user's request determines whether the endpoint is investigation,
+design, or implementation.
+
+```text
+Use $assimilate to extract the useful capabilities from these donors and
+integrate them into my system. Choose the collective boundaries that fit.
+```
+
+For large assimilations, the skill keeps source coverage, evidence, decisions,
+work ownership, and verification in a durable campaign directory. Bounded agents
+work from indexed evidence and explicit write ownership. Checkpoints and baton
+passes let a fresh context recover the next action without repeating the entire
+investigation. It can also execute those work packets serially when subagents
+are unavailable.
+
+```text
+Use $assimilate to resume /absolute/path/to/campaign/STATE.md.
+```
+
+The [skill](skills/assimilate/SKILL.md) contains the shared assimilation workflow.
+[Campaign state](skills/assimilate/references/campaign-state.md) and
+[orchestration](skills/assimilate/references/orchestration.md) supply the large-job
+protocol. Continuation uses the host's available mechanisms; a handoff file does
+not itself launch a new session. Campaign records support the work without
+becoming a runtime dependency of the resulting collectives.
 
 ## Why Borg?
 
