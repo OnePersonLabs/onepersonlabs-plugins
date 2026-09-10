@@ -25,6 +25,11 @@ def skill(name, plugin=None, enabled=True):
             "plugin": plugin, "id": qualified, "enabled": enabled}
 
 
+def last30days_owner(enabled=True):
+    return dict(skill("last30days", "opl@onepersonlabs-plugins", enabled),
+                id="opl-owner", path=str(PLUGIN / "skills/last30days/SKILL.md"))
+
+
 class HookTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="opl-compatibility-")
@@ -61,6 +66,87 @@ class HookTests(unittest.TestCase):
     def test_disabled_own_skill_allows_alternative(self):
         self.conflict(False)
         self.assertIsNone(self.event())
+
+    def test_last30days_flags_every_other_enabled_copy(self):
+        alternatives = [
+            dict(skill("last30days"), id="standalone", path="/local/last30days/SKILL.md"),
+            dict(skill("last30days", "research@market"), id="other-provider",
+                 path="/plugins/research/skills/last30days/SKILL.md"),
+            dict(skill("last30days", "opl@onepersonlabs-plugins"), id="other-opl-copy",
+                 path="/another/opl/skills/last30days/SKILL.md"),
+        ]
+        self.inventory["items"] = [last30days_owner(), *alternatives,
+                                   skill("last30days", "disabled@market", False),
+                                   skill("last30days-extended", "other@market")]
+        report = hook.scan(self.repo, PLUGIN, self.home)
+        self.assertEqual([item["code"] for item in report["findings"]], ["disallowed_enabled"])
+        finding = report["findings"][0]
+        self.assertEqual(finding["ruleId"], "opl.last30days.alternatives")
+        self.assertEqual({item["id"] for item in finding["matches"]},
+                         {"standalone", "other-provider", "other-opl-copy"})
+        self.assertEqual(finding["source"], str(PLUGIN / "compatibility/skills/last30days.json"))
+        warning = self.event()
+        self.assertIn("opl.last30days.alternatives", warning["systemMessage"])
+        self.assertIn("pause", warning["hookSpecificOutput"]["additionalContext"].lower())
+
+    def test_last30days_does_not_reject_its_owner_or_disabled_alternatives(self):
+        self.inventory["items"] = [last30days_owner(), skill("last30days", "other@market", False)]
+        self.assertIsNone(self.event())
+
+    def test_last30days_missing_or_disabled_owner_allows_other_copies(self):
+        for owners in ([], [last30days_owner(False)]):
+            with self.subTest(owners=owners):
+                self.inventory["items"] = [*owners, skill("last30days"),
+                    dict(skill("last30days", "opl@onepersonlabs-plugins"),
+                         id="other-opl-copy", path="/another/opl/skills/last30days/SKILL.md")]
+                self.assertEqual(hook.scan(self.repo, PLUGIN, self.home)["findings"], [])
+
+    def test_last30days_unknown_states_remain_unverifiable(self):
+        scenarios = [
+            ([last30days_owner(None), skill("last30days")], True, ["opl-owner"]),
+            ([last30days_owner(), skill("last30days", "other@market", None)], True, ["other:last30days"]),
+            ([last30days_owner()], False, []),
+        ]
+        for items, complete, expected_matches in scenarios:
+            with self.subTest(items=items, complete=complete):
+                self.inventory["items"] = items
+                self.inventory["complete"]["skill"] = complete
+                findings = [item for item in hook.scan(self.repo, PLUGIN, self.home)["findings"]
+                            if item["ruleId"] == "opl.last30days.alternatives"]
+                self.assertEqual([item["code"] for item in findings], ["cannot_verify"])
+                self.assertEqual([item["id"] for item in findings[0]["matches"]], expected_matches)
+
+    def test_last30days_rule_can_be_suppressed_with_a_reason(self):
+        self.inventory["items"] = [last30days_owner(), skill("last30days")]
+        self.policy({"version": 1, "ignoreRules": [{"id": "opl.last30days.alternatives",
+                    "reason": "This repository compares both research workflows."}]})
+        self.assertIsNone(self.event())
+
+    def test_bundled_owner_path_binding_is_generic_and_rejects_escape(self):
+        plugin = self.root / "bundled-plugin"
+        policy_path = plugin / "compatibility/skills/review.json"
+        policy_path.parent.mkdir(parents=True)
+        value = {"version": 1, "rules": [{"id": "review.alternatives",
+                 "whenEnabled": {"kind": "skill", "name": "review",
+                                 "path": "${PLUGIN_ROOT}/skills/review/SKILL.md"},
+                 "disallowed": [{"kind": "skill", "name": "review"}]}]}
+        original = json.dumps(value)
+        policy_path.write_text(original, encoding="utf-8")
+        loaded, _, _ = hook.load_policy(self.repo, plugin)
+        self.assertEqual(loaded["rules"][0]["whenEnabled"]["path"],
+                         str(plugin / "skills/review/SKILL.md"))
+        self.assertEqual(policy_path.read_text(encoding="utf-8"), original)
+        value["rules"][0]["whenEnabled"]["path"] = "${PLUGIN_ROOT}/../outside/SKILL.md"
+        policy_path.write_text(json.dumps(value), encoding="utf-8")
+        with self.assertRaisesRegex(hook.PolicyError, r"/rules/0/whenEnabled/path: bundled owner path must resolve inside this plugin"):
+            hook.load_policy(self.repo, plugin)
+
+    def test_repository_owner_paths_do_not_expand_plugin_root(self):
+        self.policy({"version": 1, "rules": [{"id": "repo.owner",
+                     "whenEnabled": {"kind": "skill", "name": "last30days",
+                                     "path": "${PLUGIN_ROOT}/skills/last30days/SKILL.md"}}]})
+        with self.assertRaisesRegex(hook.PolicyError, "expected an absolute skill path"):
+            hook.load_policy(self.repo, PLUGIN)
 
     def test_enabled_own_skill_warns_and_acknowledgment_preserves_task(self):
         self.conflict()

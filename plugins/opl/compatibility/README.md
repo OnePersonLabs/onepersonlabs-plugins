@@ -125,14 +125,25 @@ These rules ship in OPL and activate only while their owner skill is enabled:
 | Policy file | Rule ID |
 | --- | --- |
 | [`skills/debug.json`](skills/debug.json) | `opl.debug.alternatives` |
+| [`skills/last30days.json`](skills/last30days.json) | `opl.last30days.alternatives` |
 | [`skills/test-driven-development.json`](skills/test-driven-development.json) | `opl.test-driven-development.alternatives` |
 | [`plugins/opl-superpowers-lite.json`](plugins/opl-superpowers-lite.json) | `opl-superpowers-lite.verification.alternatives` |
 
 OPL `$debug` flags `$systematic-debugging`, `$diagnosing-bugs`, and other `$debug`
-copies. OPL `$test-driven-development` flags alternative
+copies. OPL `$last30days` flags every other enabled skill named `$last30days`,
+including standalone skills, other providers, and other OPL copies. Its owner
+is bound to the skill file in the OPL copy running the checker. Disabled copies
+do not conflict, and a missing or disabled owner does not activate the rule.
+OPL `$test-driven-development` flags alternative
 `$test-driven-development` and `$test-driven-development-curated` copies.
 The Lite rule flags other `$verification-before-completion` copies when its
 own skill is enabled. OPL centralizes these checks; Lite alone runs none.
+
+Bundled rules can bind a top-level `whenEnabled.path` to the current plugin
+using `${PLUGIN_ROOT}/`, as in `${PLUGIN_ROOT}/skills/last30days/SKILL.md`.
+The loader resolves that path inside the current plugin root before normal
+selector validation and rejects paths that escape the plugin. Expansion applies
+only to bundled rule owners; repository policy still requires absolute paths.
 
 Repository policy adds to these defaults. To accept a shipped conflict, merge
 this object into `codex.compatibility`, using the exact reported ID:

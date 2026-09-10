@@ -62,7 +62,21 @@ def load_policy(root: Path, plugin_root: Path):
     rules = []
     origins = {}
     for path in files:
-        data = validate_policy(read_json(path), str(path))
+        data = read_json(path)
+        # Bundled owners may identify the skill in this installed copy. Keep
+        # repository selectors absolute and leave other selector paths literal.
+        if isinstance(data, dict) and isinstance(data.get("rules"), list):
+            for index, rule in enumerate(data["rules"]):
+                owner = rule.get("whenEnabled") if isinstance(rule, dict) else None
+                owner_path = owner.get("path") if isinstance(owner, dict) else None
+                prefix = "${PLUGIN_ROOT}/"
+                if isinstance(owner_path, str) and owner_path.startswith(prefix):
+                    plugin_path = plugin_root.resolve()
+                    bound_path = (plugin_path / owner_path[len(prefix):]).resolve()
+                    if not bound_path.is_relative_to(plugin_path):
+                        raise PolicyError(f"{path}#/rules/{index}/whenEnabled/path: bundled owner path must resolve inside this plugin")
+                    owner["path"] = str(bound_path)
+        data = validate_policy(data, str(path))
         rules.extend(data["rules"])
         origins.update({rule["id"]: str(path) for rule in data["rules"]})
     path = root / ".opl" / "config.json"
