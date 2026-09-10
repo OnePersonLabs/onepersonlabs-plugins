@@ -374,7 +374,7 @@ function evalCases(entry) {
 function activationEvidence(text, skill) {
   const escaped = skill.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
   const plain = text.replace(/[*_`]/gu, '')
-  return new RegExp(`\\b(?:using|invoking|loaded|applying)\\s+(?:(?:the|requested|manual-only)\\s+)*\\$?(?:[a-z0-9][a-z0-9-]*:)?${escaped}(?![a-z0-9_-])`, 'iu').test(plain)
+  return new RegExp(`\\b(?:using|invoking|loaded|applying)\\s+(?:(?:the|requested|manual-only|explicitly\\s+(?:selected|requested))\\s+)*\\$?(?:[a-z0-9][a-z0-9-]*:)?${escaped}(?![a-z0-9_-])`, 'iu').test(plain)
 }
 
 function runEval(entries = selectedPlugins()) {

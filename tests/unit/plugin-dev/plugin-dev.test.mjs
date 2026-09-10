@@ -236,6 +236,9 @@ for (const [label, response, activated] of [
   ['another skill with a later workflow mention', 'I’m using the **humanizer** skill because the Unslop workflow is about making drafted prose sound direct.', false],
   ['manual-only namespaced invocation', 'I’m using the requested manual-only **`$opl:unslop`** skill.', true],
   ['Markdown around the article and skill', 'I’m applying **the `$unslop` skill** now.', true],
+  ['explicitly selected skill', 'I’m using the explicitly selected `unslop` skill to identify its first workflow step.', true],
+  ['explicitly requested skill', 'I’m using the explicitly requested `unslop` skill to identify its first workflow step.', true],
+  ['another explicitly selected skill with a later target mention', 'I’m using the explicitly selected `humanizer` skill because the unslop workflow is unavailable.', false],
 ]) {
   test(`eval matches the announced skill target: ${label}`, () => {
     withFakeCodex(({ root, fakeCodex, log }) => {
