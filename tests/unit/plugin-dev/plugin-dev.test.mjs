@@ -238,6 +238,11 @@ for (const [label, response, activated] of [
   ['Markdown around the article and skill', 'I’m applying **the `$unslop` skill** now.', true],
   ['explicitly selected skill', 'I’m using the explicitly selected `unslop` skill to identify its first workflow step.', true],
   ['explicitly requested skill', 'I’m using the explicitly requested `unslop` skill to identify its first workflow step.', true],
+  ['conditional namespaced selection', 'I’d use the `opl:unslop` skill.', true],
+  ['conditional selection with straight apostrophe', "I'd use `$unslop`.", true],
+  ['expanded conditional selection', 'I would use the `unslop` skill.', true],
+  ['negated conditional selection', 'I would not use the `unslop` skill.', false],
+  ['another conditional skill with a later target mention', 'I’d use `humanizer` because the unslop workflow is unavailable.', false],
   ['another explicitly selected skill with a later target mention', 'I’m using the explicitly selected `humanizer` skill because the unslop workflow is unavailable.', false],
 ]) {
   test(`eval matches the announced skill target: ${label}`, () => {
@@ -266,7 +271,7 @@ for (const [label, response, activated] of [
 
 test('installed package discovery launches the Codex app-server without a shell', () => {
   withFakeCodex(({ root, fakeCodex, log }) => {
-    const name = 'opl-superpowers-lite'
+    const name = 'opl'
     const result = spawnSync(process.execPath, [driver, 'installed', '--plugin', name, '--package-only'], {
       cwd: repositoryRoot,
       encoding: 'utf8',
