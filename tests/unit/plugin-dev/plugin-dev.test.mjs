@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { codexCommand, pythonBin, trustCommand } from '../../../tools/runtime.mjs'
+import { codexCommand, pythonBin } from '../../../tools/runtime.mjs'
 
 const repositoryRoot = fileURLToPath(new URL('../../..', import.meta.url))
 const driver = join(repositoryRoot, 'tools', 'plugin-dev.mjs')
@@ -17,18 +17,31 @@ function withFakeCodex(run) {
   const fakeCodex = join(root, 'codex.mjs')
   const log = join(root, 'codex-commands.jsonl')
   writeFileSync(fakeCodex, `#!/usr/bin/env node
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import readline from 'node:readline'
 const args = process.argv.slice(2)
 appendFileSync(process.env.FAKE_CODEX_LOG, JSON.stringify(args) + '\\n')
 if (args[0] === 'exec') {
   process.stdout.write(JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: process.env.FAKE_AGENT_MESSAGE || 'Using $adhd.' } }) + '\\n')
 } else if (args[0] === 'app-server') {
+  let trusted = false
   const lines = readline.createInterface({ input: process.stdin })
   lines.on('line', (line) => {
     const message = JSON.parse(line)
-    if (message.id === 1) process.stdout.write(JSON.stringify({ id: 1, result: {} }) + '\\n')
-    if (message.id === 2) process.stdout.write(JSON.stringify({ id: 2, result: { data: [{ hooks: [{ pluginId: process.env.FAKE_HOOK_PLUGIN_ID, trustStatus: 'untrusted' }] }] } }) + '\\n')
+    const reply = (result) => process.stdout.write(JSON.stringify({ id: message.id, result }) + '\\n')
+    if (message.method === 'initialize') reply({})
+    if (message.method === 'hooks/list') reply({ data: [{ cwd: process.cwd(), errors: [], warnings: [], hooks: process.env.FAKE_HOOK_PLUGIN_ID ? [{
+      pluginId: process.env.FAKE_HOOK_PLUGIN_ID, key: 'plugin:fixture', currentHash: 'fixture-hash',
+      enabled: true, trustStatus: trusted ? 'trusted' : 'untrusted', sourcePath: join(process.env.FAKE_INSTALLED_PATH, 'hooks', 'hooks.json'),
+    }] : [] }] })
+    if (message.method === 'config/batchWrite') {
+      appendFileSync(process.env.FAKE_CODEX_LOG, JSON.stringify(['rpc', message.method, message.params.edits]) + '\\n')
+      trusted = true
+      const filePath = join(process.env.CODEX_HOME, 'config.toml')
+      writeFileSync(filePath, '# fixture configuration\\n')
+      reply({ filePath, version: '1', status: 'ok' })
+    }
   })
 } else if (args[0] !== 'plugin') process.exit(91)
 else if (args[1] === 'list') {
@@ -37,7 +50,7 @@ else if (args[1] === 'list') {
     : []
   process.stdout.write(JSON.stringify({ installed }))
 } else if (args[1] === 'marketplace' && args[2] === 'list') {
-  process.stdout.write(JSON.stringify({ marketplaces: [{ name: 'onepersonlabs-plugins' }] }))
+  process.stdout.write(JSON.stringify({ marketplaces: [{ name: 'onepersonlabs-plugins', root: ${JSON.stringify(repositoryRoot)} }] }))
 } else if (args[1] === 'add') {
   process.stdout.write(JSON.stringify({ installedPath: process.env.FAKE_INSTALLED_PATH }))
 } else {
@@ -67,6 +80,8 @@ function fixtureRepository(root) {
   }
   copyFileSync(driver, join(root, 'tools', 'plugin-dev.mjs'))
   copyFileSync(join(repositoryRoot, 'tools', 'runtime.mjs'), join(root, 'tools', 'runtime.mjs'))
+  const helpers = 'plugins/opl/skills/refresh-local-plugins/scripts'
+  cpSync(join(repositoryRoot, helpers), join(root, helpers), { recursive: true })
   return join(root, 'tools', 'plugin-dev.mjs')
 }
 
@@ -93,43 +108,22 @@ test('install-local installs only the selected plugin and runs no verification l
     assert.match(result.stdout, /Installation only: no tests or skill evaluations were run[.]/u)
     assert.doesNotMatch(result.stdout, /Contract checks|unit checks|clean installed-copy|PASS .*:/u)
     assert.deepEqual(commands(log).map((args) => args.slice(0, 2)), [
-      ['plugin', 'list'],
       ['plugin', 'marketplace'],
       ['plugin', 'add'],
+      ['app-server', '--stdio'],
     ])
   })
 })
 
-test('resume-after-trust verifies the saved installed copy without reinstalling', () => {
+test('install-local requires an explicit plugin instead of defaulting to the entire marketplace', () => {
   withFakeCodex(({ root, fakeCodex, log }) => {
-    const state = join(root, 'state')
-    const receiptDirectory = join(state, 'blackbox', 'opl-plugin-dev-receipts')
-    mkdirSync(receiptDirectory, { recursive: true })
-    writeFileSync(join(receiptDirectory, 'opl-adhd.json'), `${JSON.stringify({
-      pluginId,
-      installedPath: sourcePlugin,
-    })}\n`)
-
-    const result = spawnSync(process.execPath, [
-      driver,
-      'installed',
-      '--plugin',
-      'opl-adhd',
-      '--resume-after-trust',
-    ], {
-      cwd: repositoryRoot,
+    const result = spawnSync(process.execPath, [driver, 'install-local', '--target-home', join(root, 'consumer')], {
       encoding: 'utf8',
-      env: {
-        ...process.env,
-        CODEX_BIN: fakeCodex,
-        FAKE_CODEX_LOG: log,
-        FAKE_INSTALLED_ID: pluginId,
-        OPL_PLUGIN_DEV_STATE: state,
-      },
+      env: { ...process.env, CODEX_BIN: fakeCodex, FAKE_CODEX_LOG: log, FAKE_INSTALLED_PATH: sourcePlugin },
     })
-    assert.equal(result.status, 0, result.stderr)
-    assert.match(result.stdout, /clean installed-copy checkpoint passed/u)
-    assert.deepEqual(commands(log), [['plugin', 'list', '--json']])
+    assert.equal(result.status, 1, result.stdout)
+    assert.match(result.stderr, /--plugin/u)
+    assert.equal(existsSync(log), false, 'invalid scope must not invoke Codex')
   })
 })
 
@@ -286,16 +280,51 @@ test('installed package discovery launches the Codex app-server without a shell'
     })
     assert.equal(result.status, 0, result.stderr)
     assert.match(result.stdout, /package\/discovery only/u)
-    assert.deepEqual(commands(log).at(-1), ['app-server', '--stdio'])
+    assert.ok(commands(log).some((args) => args[0] === 'app-server' && args[1] === '--stdio'))
+    assert.equal(commands(log).at(-1)[1], 'config/batchWrite')
   })
 })
 
-test('trust instructions use quoted PowerShell and POSIX environment assignments', () => {
-  const options = { env: { CODEX_BIN: process.execPath } }
-  const powershell = trustCommand("C:\\a user's home", 'C:\\repo & work', { ...options, platform: 'win32' })
-  assert.match(powershell, /^\$env:CODEX_HOME = 'C:\\a user''s home'; & /u)
-  assert.ok(powershell.endsWith("'-C' 'C:\\repo & work'"))
-  const posix = trustCommand("/a user's home", '/repo & work', { ...options, platform: 'linux' })
-  assert.ok(posix.startsWith("CODEX_HOME='/a user'\\''s home' "))
-  assert.ok(posix.endsWith("'-C' '/repo & work'"))
+test('the default installed checkpoint tests and trusts selected hooks without interactive onboarding', () => {
+  withFakeCodex(({ root, fakeCodex, log }) => {
+    const fixtureDriver = fixtureRepository(root)
+    const plugin = join(root, 'plugins', 'fixture')
+    const manifestPath = join(plugin, '.codex-plugin', 'plugin.json')
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    manifest.hooks = './hooks/hooks.json'
+    writeFileSync(manifestPath, JSON.stringify(manifest))
+    mkdirSync(join(plugin, 'scripts'))
+    mkdirSync(join(plugin, 'hooks'))
+    writeFileSync(join(plugin, 'scripts', 'hook.mjs'), "process.stdout.write('{}')\n")
+    writeFileSync(join(plugin, 'hooks', 'hooks.json'), JSON.stringify({
+      hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'node "${PLUGIN_ROOT}/scripts/hook.mjs"' }] }] },
+    }))
+    const unitRoot = join(root, 'tests', 'unit', 'fixture')
+    mkdirSync(unitRoot, { recursive: true })
+    writeFileSync(join(unitRoot, 'executed.test.mjs'), "import { writeFileSync } from 'node:fs'\nwriteFileSync(process.env.UNIT_MARKER, 'executed')\n")
+    const marker = join(root, 'unit-marker.txt')
+    const result = spawnSync(process.execPath, [fixtureDriver, 'installed', '--plugin', 'fixture'], {
+      encoding: 'utf8',
+      env: {
+        ...Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'NODE_TEST_CONTEXT')),
+        CODEX_BIN: fakeCodex,
+        FAKE_CODEX_LOG: log,
+        FAKE_INSTALLED_PATH: plugin,
+        FAKE_HOOK_PLUGIN_ID: 'fixture@fixture-marketplace',
+        OPL_PLUGIN_DEV_STATE: join(root, 'fresh-state'),
+        UNIT_MARKER: marker,
+      },
+    })
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(readFileSync(marker, 'utf8'), 'executed')
+    assert.match(result.stdout, /clean installed-copy checkpoint passed/u)
+    assert.deepEqual(commands(log), [
+      ['plugin', 'list', '--json'],
+      ['plugin', 'marketplace', 'list', '--json'],
+      ['plugin', 'marketplace', 'add', root + sep, '--json'],
+      ['plugin', 'add', 'fixture@fixture-marketplace', '--json'],
+      ['app-server', '--stdio'],
+      ['rpc', 'config/batchWrite', [{ keyPath: 'hooks.state', value: { 'plugin:fixture': { trusted_hash: 'fixture-hash' } }, mergeStrategy: 'upsert' }]],
+    ])
+  })
 })

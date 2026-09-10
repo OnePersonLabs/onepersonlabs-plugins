@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto'
-import { spawn, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import {
   existsSync,
   lstatSync,
@@ -17,9 +17,10 @@ import {
 import { homedir } from 'node:os'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
-import readline from 'node:readline'
 import { fileURLToPath } from 'node:url'
-import { codexCommand, pythonBin, trustCommand } from './runtime.mjs'
+import { codexCommand, pythonBin } from './runtime.mjs'
+import { runInstallLocal } from '../plugins/opl/skills/refresh-local-plugins/scripts/install-local.mjs'
+import { ensurePluginHookTrust } from '../plugins/opl/skills/refresh-local-plugins/scripts/codex-hooks.mjs'
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 const marketplacePath = join(repoRoot, '.agents', 'plugins', 'marketplace.json')
@@ -466,82 +467,18 @@ function compareInventory(sourceRoot, installedRoot, name) {
   }
 }
 
-async function hookTrust(env, pluginId) {
-  return await new Promise((resolvePromise, rejectPromise) => {
-    const [executable, ...args] = codexCommand(['app-server', '--stdio'], { env })
-    const child = spawn(executable, args, { env, stdio: ['pipe', 'pipe', 'pipe'] })
-    const lines = readline.createInterface({ input: child.stdout })
-    const timer = setTimeout(() => {
-      child.kill()
-      rejectPromise(new Error('hook trust query timed out'))
-    }, 20000)
-    lines.on('line', (line) => {
-      let payload
-      try { payload = JSON.parse(line) } catch { return }
-      if (payload.id === 1) {
-        child.stdin.write(`${JSON.stringify({ method: 'initialized', params: {} })}\n`)
-        child.stdin.write(`${JSON.stringify({ method: 'hooks/list', id: 2, params: {} })}\n`)
-      }
-      if (payload.id === 2) {
-        clearTimeout(timer)
-        const hooks = (payload.result?.data ?? []).flatMap((workspace) => workspace.hooks ?? [])
-          .filter((hook) => hook.pluginId === pluginId)
-        child.kill()
-        resolvePromise(hooks)
-      }
-    })
-    child.on('error', (error) => {
-      clearTimeout(timer)
-      rejectPromise(error)
-    })
-    child.stdin.write(`${JSON.stringify({ method: 'initialize', id: 1, params: { clientInfo: { name: 'opl-plugin-dev', version: '1' } } })}\n`)
-  })
-}
-
 function configuredMarketplace(payload, name) {
   return (payload.marketplaces ?? []).some((item) => item.name === name)
 }
 
-function receiptPath(targetHome, entry) {
-  return join(targetHome, 'opl-plugin-dev-receipts', `${entry.name}.json`)
-}
-
-function writeInstallReceipt(targetHome, entry, installed) {
-  const path = receiptPath(targetHome, entry)
-  mkdirSync(resolve(path, '..'), { recursive: true })
-  writeFileSync(path, `${JSON.stringify({
-    pluginId: installed.pluginId,
-    installedPath: installed.installedPath,
-  }, null, 2)}\n`)
-}
-
-function installedFromReceipt(entry, targetHome) {
-  const path = receiptPath(targetHome, entry)
-  if (!existsSync(path)) fail(`${entry.name}: no installed-checkpoint receipt exists; run without --resume-after-trust first`)
-  const receipt = readJson(path)
-  const env = { ...process.env, CODEX_HOME: targetHome }
-  const expectedId = `${entry.name}@${marketplace.name}`
-  const listed = jsonCommand(codexCommand(['plugin', 'list', '--json'], { env }), env)
-  if (!(listed.installed ?? []).some((item) => item.pluginId === expectedId)) {
-    fail(`${entry.name}: the receipt exists but the plugin is no longer installed`)
-  }
-  if (receipt.pluginId !== expectedId || typeof receipt.installedPath !== 'string' || !existsSync(receipt.installedPath)) {
-    fail(`${entry.name}: installed-checkpoint receipt is stale or invalid`)
-  }
-  return { env, installedPath: realpathSync(receipt.installedPath), pluginId: expectedId }
-}
-
-function installCandidate(entry, targetHome, { consumer = false } = {}) {
+function installCandidate(entry, targetHome) {
   const env = { ...process.env, CODEX_HOME: targetHome }
   mkdirSync(targetHome, { recursive: true })
   const listed = jsonCommand(codexCommand(['plugin', 'list', '--json'], { env }), env)
   const installed = listed.installed ?? []
-  if (!consumer) {
-    const unrelated = installed.filter((item) => item.marketplaceName !== marketplace.name)
-    if (unrelated.length) fail(`black-box home contains unrelated plugins: ${unrelated.map((item) => item.pluginId).join(', ')}`)
-  }
+  const unrelated = installed.filter((item) => item.marketplaceName !== marketplace.name)
+  if (unrelated.length) fail(`black-box home contains unrelated plugins: ${unrelated.map((item) => item.pluginId).join(', ')}`)
   for (const item of installed) {
-    if (consumer && item.pluginId !== `${entry.name}@${marketplace.name}`) continue
     jsonCommand(codexCommand(['plugin', 'remove', item.pluginId, '--json'], { env }), env)
   }
   const sources = jsonCommand(codexCommand(['plugin', 'marketplace', 'list', '--json'], { env }), env)
@@ -566,54 +503,20 @@ async function runInstalled(entries = selectedPlugins()) {
   const entry = entries[0]
   runContract(entries)
   if (!packageOnly) runUnit(entries)
-  const blackboxHome = join(stateRoot(), 'blackbox')
-  const installed = flag('resume-after-trust')
-    ? installedFromReceipt(entry, blackboxHome)
-    : installCandidate(entry, blackboxHome)
-  if (!flag('resume-after-trust')) writeInstallReceipt(blackboxHome, entry, installed)
+  const blackboxHome = join(stateRoot(), 'blackbox', entry.name)
+  const installed = installCandidate(entry, blackboxHome)
   compareInventory(pluginRoot(entry), installed.installedPath, entry.name)
   const manifest = manifestFor(entry)
   if (typeof manifest.hooks === 'string') {
-    let hooks
-    try { hooks = await hookTrust(installed.env, installed.pluginId) } catch (error) { fail(`${entry.name}: ${error.message}`) }
-    if (!hooks.length) fail(`${entry.name}: installed plugin declared hooks but app-server discovered none`)
-    const pending = hooks.filter((hook) => hook.trustStatus !== 'trusted')
-    if (!packageOnly && pending.length) {
-      console.error(`Hook trust is not complete for ${installed.pluginId}.`)
-      console.error(`Run: ${trustCommand(blackboxHome, repoRoot, { env: installed.env })}`)
-      console.error('Open /hooks, review this plugin, trust it, then reply done.')
-      console.error('After confirmation, rerun this checkpoint with --resume-after-trust.')
-      fail('installed hook smoke paused for trust review', 78)
-    }
+    try {
+      const hooks = await ensurePluginHookTrust({
+        repo: repoRoot, home: blackboxHome, pluginId: installed.pluginId,
+        installedPath: installed.installedPath, required: true, env: installed.env,
+      })
+      console.log(`${entry.name}: verified trust for ${hooks.length} installed hook(s).`)
+    } catch (error) { fail(`${entry.name}: ${error.message}`) }
   }
   console.log(`${entry.name}: clean installed-copy checkpoint passed at ${installed.installedPath}${packageOnly ? ' (package/discovery only)' : ''}`)
-}
-
-function installLocal(entries = selectedPlugins(), targetHome = option('target-home')) {
-  if (!targetHome) fail('install:local requires --target-home <path>; it never defaults to ~/.codex')
-  const resolvedHome = resolve(targetHome)
-  const env = { ...process.env, CODEX_HOME: resolvedHome }
-  mkdirSync(resolvedHome, { recursive: true })
-  const installed = jsonCommand(codexCommand(['plugin', 'list', '--json'], { env }), env).installed ?? []
-  for (const entry of entries) {
-    const pluginId = `${entry.name}@${marketplace.name}`
-    if (installed.some((item) => item.pluginId === pluginId)) {
-      jsonCommand(codexCommand(['plugin', 'remove', pluginId, '--json'], { env }), env)
-    }
-  }
-  const sources = jsonCommand(codexCommand(['plugin', 'marketplace', 'list', '--json'], { env }), env)
-  if (!configuredMarketplace(sources, marketplace.name)) {
-    jsonCommand(codexCommand(['plugin', 'marketplace', 'add', repoRoot, '--json'], { env }), env)
-  }
-  for (const entry of entries) {
-    const result = jsonCommand(codexCommand(['plugin', 'add', `${entry.name}@${marketplace.name}`, '--json'], { env }), env)
-    if (typeof result.installedPath !== 'string' || !existsSync(result.installedPath)) {
-      fail(`${entry.name}: install did not return a usable installedPath`)
-    }
-    console.log(`${entry.name}: installed at ${realpathSync(result.installedPath)}`)
-  }
-  console.log('Installation only: no tests or skill evaluations were run. Start a new Codex session before using updated components.')
-  console.log('If the selected plugins contain hooks, review them explicitly with /hooks.')
 }
 
 function runVerify() {
@@ -640,5 +543,7 @@ else if (command === 'eval') runEval()
 else if (command === 'installed') await runInstalled()
 else if (command === 'verify') runVerify()
 else if (command === 'release') await runRelease()
-else if (command === 'install-local') installLocal()
+else if (command === 'install-local') {
+  try { await runInstallLocal(['--repo', repoRoot, ...process.argv.slice(3)]) } catch (error) { fail(error.message) }
+}
 else fail(`unknown command: ${command ?? '(missing)'}`)

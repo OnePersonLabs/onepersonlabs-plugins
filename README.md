@@ -44,7 +44,18 @@ That command performs no tests and no skill evaluations. `--plugin all` is an
 explicit opt-in for installing the complete marketplace. The full skill corpus
 runs only under `npm run release:verify`.
 
+With OPL installed, use
+[$refresh-local-plugins](plugins/opl/skills/refresh-local-plugins/SKILL.md) from
+any local Codex marketplace checkout. For example: "Use
+$refresh-local-plugins to refresh `my-plugin` from `/work/my-marketplace` into
+`/absolute/path/to/codex-home`." The skill and `install:local` share the bundled
+installer, which uses native `codex plugin add` to refresh and enable selected
+plugins without changing their versions, then trusts their current installed
+hooks through Codex's API. No terminal, sign-in, or sandbox setup is needed for
+this operation. Add `--dry-run` to the command above
+to preview the sources, selection, and destination.
+
 See [Local plugin development](docs/local-plugin-development.md) for the command
-matrix, authoring/black-box isolation, hook trust continuation, and CI/release
+matrix, authoring/black-box isolation, automatic hook trust, and CI/release
 gates. The design rationale is in
 [the research report](docs/research/codex-plugin-local-development-workflow.md).

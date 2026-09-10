@@ -13,7 +13,7 @@ the entire marketplace.
 - `tests/evals/cases/<name>.jsonl` contains retained behavioral cases.
 - `tools/plugin-dev.mjs` is the finite command façade.
 - `.work/` contains disposable authoring hosts and eval receipts.
-- `OPL_PLUGIN_DEV_STATE` selects persistent Codex authoring and black-box state;
+- `OPL_PLUGIN_DEV_STATE` selects persistent Codex authoring and per-plugin black-box state;
   it defaults outside the checkout under the user's local state directory.
 
 ## Native runtimes
@@ -28,8 +28,8 @@ specific Python environment.
 On Windows, the driver resolves standard npm Codex shims to the adjacent
 `@openai/codex/bin/codex.js` and launches it with Node, passing arguments directly.
 Skill evaluation hosts use directory junctions on Windows and directory
-symlinks elsewhere. Printed hook-trust commands use the host shell's quoting
-and environment-assignment syntax.
+symlinks elsewhere. Installed checks and local refreshes use Codex's app-server
+API for hook trust, without opening a Codex terminal.
 
 Windows skill evaluations explicitly select `windows.sandbox="elevated"`
 while retaining `--sandbox read-only`: `--ignore-user-config` would otherwise
@@ -79,20 +79,23 @@ npm run test:installed -- --plugin opl
 ```
 
 The driver validates and deterministically tests that plugin, removes any prior
-One-Person Labs plugin from the isolated black-box home, installs the selected
+One-Person Labs plugin from its isolated black-box home, installs the selected
 candidate, compares every installed file digest to source, and confirms hook
 discovery when hooks are declared.
 
-Hook trust is deliberately interactive. Exit status 78 means the copied hook
-definitions were discovered but need review. Run the printed Codex command,
-open `/hooks`, trust the selected plugin, and reply `done`. Then continue with:
+The home is `blackbox/<plugin-name>` under `OPL_PLUGIN_DEV_STATE`. Hook trust is
+automatic: the driver discovers the selected plugin's installed hook definitions,
+saves their current hashes through `config/batchWrite`, and queries them again
+to verify trusted status. It checks that the definitions belong to the installed
+bundle and that configuration writes target that isolated home. Unrelated hook
+state is preserved.
 
-```bash
-npm run test:installed -- --plugin opl --resume-after-trust
-```
-
-The continuation reads the saved install receipt. It verifies the same
-installed path and does not reinstall.
+This checkpoint requires no login, sandbox onboarding, model turn, terminal, or
+manual confirmation. It does not bypass hook trust or change sandbox settings.
+Discovery and trust failures fail the command. Trust verification establishes
+the current approval state; deterministic tests separately cover hook behavior.
+`--package-only` skips the deterministic tests, as in CI, but still verifies the
+installed copy and selected hook trust.
 
 ## Installation is not verification
 
@@ -102,10 +105,39 @@ Updating a consumer profile is an explicit, installation-only operation:
 npm run install:local -- --plugin opl --target-home /absolute/codex/home
 ```
 
-It removes and adds only the selected plugin. It does not invoke any contract,
-unit, installed, MCP, UI, or model-evaluation command. Use `--plugin all` only
-when intentionally installing the complete marketplace. Start a new Codex
-session after installation and review selected hooks through `/hooks`.
+It calls native `codex plugin add` to atomically refresh and enable only the
+selected plugins, including when the version is unchanged. It does not invoke
+any contract, unit, installed, MCP, UI, or model-evaluation command. Repeat
+`--plugin <name>` for multiple selections, or use `--plugin all` alone when
+explicitly installing the complete marketplace. Add `--dry-run` to preview
+the local sources, selection, and destination without invoking Codex or changing
+files; registration is checked when installing. Authorized local installs also
+trust the selected plugins' current hooks through the same app-server API and
+verify the result. Start a new Codex session after installation to load updates;
+there is no manual hook-review step.
+
+The command shares its installer with OPL's
+[$refresh-local-plugins](../plugins/opl/skills/refresh-local-plugins/SKILL.md).
+Once OPL is installed, the skill can refresh plugins from another local
+marketplace without adding this repository's npm tooling to that checkout:
+
+```text
+Use $refresh-local-plugins to refresh my-plugin from /work/my-marketplace into /absolute/codex/home.
+```
+
+The standalone helper is `scripts/install-local.mjs` under the loaded skill's
+directory. It accepts `--repo <checkout>` (defaulting to the current directory),
+`--plugin <name>` selections, a required absolute `--target-home`, `--dry-run`,
+and `--help`. It needs Node.js 22 or newer and Codex, and uses only Node built-ins.
+The repository's development commands retain the Node.js 24 requirement.
+
+Manifest discovery follows Codex's precedence: `.agents/plugins/marketplace.json`,
+`.agents/plugins/api_marketplace.json`, `.claude-plugin/marketplace.json`, then
+`.cursor-plugin/marketplace.json`. Selected entries must have local sources,
+resolved from the marketplace root. Preflight checks an existing marketplace
+registration against that checkout and fails on a same-name different-root
+conflict; it does not silently rebind the marketplace. The source checkout
+must be outside the installed plugin cache.
 
 ## Repository and release gates
 
@@ -123,5 +155,5 @@ checks for every plugin and the complete retained behavioral evaluation corpus.
 It is the only standard command that evaluates every shipped skill.
 
 CI runs `npm ci`, `npm run verify`, and package/discovery-only clean installs.
-Model evaluations and interactive hook trust stay in the explicit release
-workflow.
+Model evaluations stay in the explicit release workflow. Hook trust is verified
+headlessly during installed checkpoints, including CI and release checks.

@@ -41,6 +41,23 @@ cherry-picking skills, and diagnostics.
 
 [`handoff`](skills/handoff/SKILL.md) compacts the current conversation into a temporary handoff document so the user can manually continue the work in a new session.
 
+## Refresh Local Plugins
+
+[$refresh-local-plugins](skills/refresh-local-plugins/SKILL.md) installs or
+refreshes selected plugins from any local Codex marketplace checkout into an
+authorized Codex home. It is available through normal skill discovery and
+explicit invocation. For example: "Use $refresh-local-plugins to refresh
+`my-plugin` from `/work/my-marketplace` into `/absolute/codex/home`."
+
+Its bundled Node.js 22+ helper also powers this repository's `install:local`
+command. Native `codex plugin add` atomically refreshes and enables selected
+plugins without version bumps; `--dry-run` provides a read-only preview. The
+helper preflights local sources and the registered marketplace root, trusts
+only the selected plugins' installed hooks through Codex's app-server API,
+and verifies their trusted status. It performs no tests and supports refreshing
+OPL itself from a source checkout. There is no interactive sign-in, sandbox
+onboarding, or hook-review step; start a fresh Codex session afterward.
+
 ## Debugging
 
 [`$debug`](skills/debug/SKILL.md) is the canonical debugging workflow. It combines

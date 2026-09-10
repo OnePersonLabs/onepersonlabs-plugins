@@ -57,7 +57,9 @@ Focused tests exercise real Windows manifest commands with spaced paths,
 UTF-8 stdin/output, native command wrappers, provider subprocesses, and skill
 helpers. Deterministic suites and activation evaluations run only for affected
 plugins and skills. The installed checkpoint compares file digests, discovers
-hooks, and requires the user's interactive `/hooks` review before completion.
+hooks, approves only the selected plugin's current hook hashes through Codex's
+app-server API, and verifies trusted status. It runs without a terminal,
+sign-in, sandbox onboarding, or a manual `/hooks` step.
 
 The native deterministic checkpoint passes 149 tests: 14 driver tests,
 68 OPL Node tests, 23 OPL Python tests, 37 OpenSpec tests, and 7 Superpowers Lite
@@ -71,9 +73,10 @@ installed path.
 Matt's installed check passed at the preceding package checkpoint. Superpowers
 Lite also passed after interactive trust, without reinstalling. OPL's refreshed
 context-hook package matches the source inventory and its hooks are discovered;
-the checkpoint pauses for interactive hook trust and requires resuming afterward.
-OpenSpec's earlier inventory matched and hooks were discovered, but its
-separate black-box profile still requires interactive hook review.
+that earlier checkpoint paused at the former interactive trust gate.
+OpenSpec's earlier inventory also matched and hooks were discovered. Current
+checkpoints use automatic trust verification in persistent per-plugin homes;
+neither requires that earlier manual continuation.
 
 Thirty scoped activation-case receipts were recorded. Eighteen retained model
 responses also pass rescoring with the corrected immediate-target detector;

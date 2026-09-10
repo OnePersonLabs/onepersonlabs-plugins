@@ -26,16 +26,20 @@ Cross capability boundaries only when the change crosses them:
 - Package-visible files at a coherent checkpoint: run
   `npm run test:installed -- --plugin <plugin-name>`.
 
-`test:installed` uses a separate black-box Codex home and installs only the
-selected plugin. If it exits with status 78, open the printed Codex command,
-review the plugin in `/hooks`, and ask the user to reply `done`. After that
-confirmation, resume with the same command plus `--resume-after-trust`; the
-resume path verifies the existing installed copy and does not reinstall it.
+`test:installed` uses a persistent, separate black-box Codex home for each
+selected plugin. After comparing the installed files to source, it uses
+Codex's app-server API to trust that plugin's current hook hashes and verify
+their trusted status. This is an automated checkpoint: do not open a terminal
+or require sign-in, sandbox onboarding, or a manual `/hooks` confirmation.
+Surface discovery or trust failures instead of skipping them.
 
 `npm run install:local -- --plugin <plugin-name> --target-home <path>` is an
 installation-only consumer operation. It never runs unit tests, contract
-checks, installed checks, or skill evaluations. Use `--plugin all` only when
-the user explicitly asks to install every marketplace plugin. Never choose a
+checks, installed checks, or skill evaluations. An authorized local refresh
+also trusts the selected installed plugins' current hooks through the shared
+installer; leave unrelated hooks and sandbox settings unchanged. Use
+`--plugin all` only when the user explicitly asks to install every marketplace
+plugin. Never choose a
 user's default `~/.codex` implicitly; require the target home.
 
 The full skill corpus is not a routine update check. Only the explicit
