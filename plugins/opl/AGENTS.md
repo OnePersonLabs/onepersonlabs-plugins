@@ -35,6 +35,7 @@
 ## Style
 
 - Write `--` instead of an em dash.
+- Always double-quote Mermaid node labels: `CP["Existing TypeScript control-plane services"]`.
 
 ## Request User Input
 
@@ -62,6 +63,8 @@ retry; ask the blocker in the final response.
 ## Shell Output Discipline
 
 Before broad `rg`, `find`, `tree`, `ls -R`, or multi-file reads, list files first and narrow targets. Prefer `rg -l` for match discovery.
+
+Write file contents with `apply_patch` or a file-writing API. Never splice file contents into shell commands.
 
 ## Skill Reference Sigil
 

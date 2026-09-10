@@ -17,6 +17,15 @@ Read the user's request, destination instructions, and any existing campaign
 landing file before investigating donors. On resume, follow the recovery
 procedure in [references/campaign-state.md](references/campaign-state.md).
 
+In every receiving Git repository where this skill is used, ensure the root
+`.gitignore` covers the root `.borg/` directory before starting work, for both
+contained tasks and campaigns. Reuse an effective rule already in that file;
+otherwise, add `/.borg/`, creating `.gitignore` if needed. Preserve existing
+entries and avoid duplicates. A global ignore or `.git/info/exclude` alone does
+not satisfy this requirement. From the repository root, verify with
+`git check-ignore -v -- .borg/STATE.md`. This does not require creating `.borg/`
+or changing donor repositories used only as reference material.
+
 Establish the desired outcomes, donor scope, receiving systems, constraints the
 user rejects, behaviors already worth preserving, and the authorized endpoint
 (investigation, design, or implemented assimilation). Infer these from available
@@ -171,8 +180,10 @@ Close at the authorized endpoint only when:
 
 Report what was gained, where it now belongs, what was intentionally rejected,
 what proved it, and any remaining work. Preserve the resume landing file if the
-mission is incomplete. At completion, archive temporary campaign coordination
-as appropriate; retain the evidence and rationale needed to maintain the result.
+mission is incomplete. At completion, follow
+[campaign cleanup](references/campaign-state.md#close-and-clean-up) to preserve
+maintenance evidence and delete disposable campaign state, unless an explicit
+retention policy requires an archive.
 
 When Borg itself is an authorized recipient, apply the same process to its
 assimilation methods. Evaluate a candidate method on a separate representative
