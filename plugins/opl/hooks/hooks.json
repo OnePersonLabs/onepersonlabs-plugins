@@ -64,13 +64,25 @@
         ]
       },
       {
-        "matcher": "startup|resume|clear",
+        "matcher": "startup|resume|clear|compact",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-tdd-skill-conflict-warning-hook.py\"",
-            "timeout": 20,
-            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-tdd-skill-conflict-warning-hook.py\""
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-compatibility-check.py\"",
+            "timeout": 45,
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-compatibility-check.py\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-compatibility-check.py\"",
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-compatibility-check.py\"",
+            "timeout": 45
           }
         ]
       }

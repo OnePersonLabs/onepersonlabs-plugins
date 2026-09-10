@@ -29,6 +29,14 @@ global-file preservation, refreshed bundled content, and Windows launch paths.
 The [native runtime record](../../docs/native-plugin-runtime.md) distinguishes
 this deterministic coverage from the installed-copy checkpoint.
 
+## Codex Compatibility
+
+OPL checks enabled plugins, skills, and MCP servers against shipped conflict
+rules and optional repository policy in `.opl/config.json`. It supports
+conditional requirements, recommendations, and session acknowledgments. See
+the [compatibility guide](compatibility/README.md) for configuration,
+cherry-picking skills, and diagnostics.
+
 ## User-Invoked Workflow
 
 [`handoff`](skills/handoff/SKILL.md) compacts the current conversation into a temporary handoff document so the user can manually continue the work in a new session.

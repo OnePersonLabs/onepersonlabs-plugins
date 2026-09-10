@@ -1,6 +1,6 @@
 {
   "name": "opl-superpowers-lite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Evidence-first verification before completion claims.",
   "author": {
     "name": "One-Person Labs",
@@ -15,7 +15,6 @@
     "lightweight"
   ],
   "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "OPL Superpowers Lite",
     "shortDescription": "Evidence-first verification discipline",

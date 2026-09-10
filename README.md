@@ -10,6 +10,10 @@ debugging. It replaces `diagnosing-bugs` in Matt Pocock Skills and
 `systematic-debugging` in Superpowers Lite. Superpowers Lite retains
 `verification-before-completion`.
 
+OPL's [compatibility checker](plugins/opl/compatibility/README.md) reports
+conflicting enabled components and repository requirements for plugins, skills,
+and MCP servers, with optional session acknowledgments.
+
 For an ordinary change, validate only the affected plugin:
 
 ```bash

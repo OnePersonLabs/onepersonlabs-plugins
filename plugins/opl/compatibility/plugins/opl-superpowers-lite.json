@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "opl-superpowers-lite.verification.alternatives",
+      "whenEnabled": { "kind": "skill", "name": "verification-before-completion", "plugin": "opl-superpowers-lite@onepersonlabs-plugins" },
+      "reason": "Multiple verification-before-completion skills compete for the same completion checks. Disable either skill to choose your preferred workflow.",
+      "disallowed": [
+        { "kind": "skill", "name": "verification-before-completion" }
+      ]
+    }
+  ]
+}
