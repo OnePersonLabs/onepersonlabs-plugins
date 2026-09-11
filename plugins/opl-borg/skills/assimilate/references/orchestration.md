@@ -38,7 +38,7 @@ Own: exclusive output paths and permitted implementation paths
 Dependencies: accepted prerequisites; what to report if they are contradicted
 Verify: required experiment/check and evidence location
 Return: result path, findings, changed paths, checks, unresolved risks, next action
-Bounds: authorized side effects; stopping condition for this packet
+Bounds: authorized side effects; supplied resource limits; stopping condition
 ```
 
 State that the workspace is shared and other agents' changes must be preserved.
