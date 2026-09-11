@@ -35,6 +35,16 @@ an investigation into implementation or authorize publishing or donor deletion.
 Carry explicit time or resource limits into the mission; when they prevent the
 endpoint, preserve remaining work instead of silently lowering the success bar.
 
+Apply any supplied recipient or host resource policy; otherwise use proportionate
+local judgment. Before a costly research, delegation, or integration step, identify
+which outcome or uncertainty it can change and why that matters now. Compare the
+unchanged recipient and the simplest sufficient alternative without treating a
+weaker capability as an equivalent saving. Count model/quota use, repeated context,
+latency, integration, proof, and continuing maintenance. Qualitative estimates are
+acceptable; unavailable cost or quota information is unknown, not zero. Cheap,
+reversible work needs no separate assessment artifact. Economic analysis is itself
+work and must not become a campaign of its own.
+
 Choose the working scale:
 
 - **Contained:** the relevant evidence, comparison, implementation, and proof fit
@@ -98,6 +108,12 @@ Research is sufficient when the mechanism, necessary dependencies, and survival
 test support a design decision. Track unresolved questions that could reverse
 that decision. Avoid both premature extraction and unbounded donor archaeology.
 
+Before extending research, name the decision that missing evidence could change.
+Prefer the least costly adequate check of that uncertainty, with a stopping point;
+an experiment is not mandatory when existing evidence suffices. Stop optional
+investigation when its likely contribution no longer justifies its cost. Preserve
+unread scope and unresolved claims honestly; stopping is not proof of coverage.
+
 ## 3. Refract across donors and collective boundaries
 
 Compare **capabilities across donors**, not just donors as packages. Identify
@@ -123,16 +139,24 @@ and the recipient's coherence. Direct reuse is reasonable when evidence supports
 the fit; novelty and rewriting are not goals.
 
 Before implementation, map every selected capability to its native owner,
-observable contract, dependencies, and verification plan. Give other examined
+observable contract, dependencies, and verification plan. A principle, instruction,
+check, or change at an existing seam may capture the value without a new subsystem;
+preserve the survival test when choosing the lighter form. Give other examined
 capabilities an explicit disposition: already satisfied, rejected with reason,
-or deferred with consequence. Deferral cannot silently shrink agreed completion.
+or deferred with consequence and a meaningful reactivation condition where known.
+Distinguish not worthwhile from worthwhile later. Deferral cannot silently shrink
+agreed completion or turn an unread capability into a rejected one.
 
 ## 4. Integrate in coherent slices
 
-Order slices by uncertainty and dependency. Prove a risky cross-boundary mechanism
-early, then deliver vertical slices through real entrypoints, callers, behavior,
-and tests. Set shared interfaces before parallel writes. One coordinator owns
-cross-collective decisions and integration; delegates own bounded work packets.
+Order slices by uncertainty, dependency, useful downstream work unblocked, and
+cost of delay. At meaningful checkpoints, revise optional work when new evidence
+changes the value of its next increment; previous expenditure alone is not a
+reason to continue. Preserve required proof and the authorized completion boundary.
+Prove a risky cross-boundary mechanism early, then deliver vertical slices through
+real entrypoints, callers, behavior, and tests. Set shared interfaces before
+parallel writes. One coordinator owns cross-collective decisions and integration;
+delegates own bounded work packets.
 
 Use the recipient's native architecture, terminology, instructions, and validation
 workflow. Carry required attribution with reused material. Migrate actual callers,
@@ -179,8 +203,11 @@ Close at the authorized endpoint only when:
   are recoverable in the receiving system's normal documentation or work record.
 
 Report what was gained, where it now belongs, what was intentionally rejected,
-what proved it, and any remaining work. Preserve the resume landing file if the
-mission is incomplete. At completion, follow
+what proved it, and any remaining work. For material economic choices, retain the
+spend/timing rationale, observations that changed it, and useful actual costs
+already available in the normal work record. Separate predictions from measurements;
+do not create a second ledger. Preserve the resume landing file if the mission is
+incomplete. At completion, follow
 [campaign cleanup](references/campaign-state.md#close-and-clean-up) to preserve
 maintenance evidence and delete disposable campaign state, unless an explicit
 retention policy requires an archive.
