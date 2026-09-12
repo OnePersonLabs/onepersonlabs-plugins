@@ -1,6 +1,6 @@
 ---
 name: agent-instructions
-description: Write, edit, review, audit, score, or restructure agent instructions. Use for skills, SKILL.md, AGENTS.md, CLAUDE.md, agents/openai.yaml, hooks, rules, reference docs, and instruction-surface ownership.
+description: Write, edit, review, audit, score, or restructure agent instructions. Use when (or after) creating or updating a Codex skill, AGENTS.md files, hooks, rules, reference docs, and instruction-surface ownership.
 disable-model-invocation: false
 ---
 
@@ -34,14 +34,14 @@ Prefer installed source and executable help for local tool behavior.
 Place each meaning at the narrowest surface that still loads whenever it is
 needed:
 
-| Behavior | Owning surface |
-| --- | --- |
-| Baseline stance or constraint needed on every in-scope task | The nearest applicable `AGENTS.md` or `CLAUDE.md` |
-| Reusable task-specific judgment or semantic workflow | A model-invoked skill when automatic discovery is valuable; otherwise a user-invoked skill |
-| Conditional detail needed by only one branch | A routed reference loaded from its owning instruction file |
-| Mechanically checkable invariant or repeated deterministic operation | A hook, validator, test, or script, with prose only for non-obvious intent |
-| Skill discovery policy or UI metadata | Skill frontmatter and `agents/openai.yaml` |
-| Fact cheaply discoverable from code, config, or command output | The environment as source of truth; add prose only for the hidden reason or gotcha |
+| Behavior                                                             | Owning surface                                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Baseline stance or constraint needed on every in-scope task          | The nearest applicable `AGENTS.md` or `CLAUDE.md`                                          |
+| Reusable task-specific judgment or semantic workflow                 | A model-invoked skill when automatic discovery is valuable; otherwise a user-invoked skill |
+| Conditional detail needed by only one branch                         | A routed reference loaded from its owning instruction file                                 |
+| Mechanically checkable invariant or repeated deterministic operation | A hook, validator, test, or script, with prose only for non-obvious intent                 |
+| Skill discovery policy or UI metadata                                | Skill frontmatter and `agents/openai.yaml`                                                 |
+| Fact cheaply discoverable from code, config, or command output       | The environment as source of truth; add prose only for the hidden reason or gotcha         |
 
 Apply scope by meaning. Global preferences belong in global guidance;
 repository conventions belong at the repository root; module-specific rules
