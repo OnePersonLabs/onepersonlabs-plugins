@@ -403,7 +403,7 @@ function runEval(entries = selectedPlugins()) {
         '--ignore-user-config',
         '--sandbox',
         'read-only',
-        ...(process.platform === 'win32' ? ['-c', 'windows.sandbox="elevated"'] : []),
+        ...(process.platform === 'win32' ? ['-c', 'windows.sandbox="unelevated"'] : []),
         '-m',
         matrix.evaluation.model,
         '-c',

@@ -115,15 +115,15 @@ test('install-local installs only the selected plugin and runs no verification l
   })
 })
 
-test('install-local requires an explicit plugin instead of defaulting to the entire marketplace', () => {
+test('install-local without a plugin leaves absent installs untouched', () => {
   withFakeCodex(({ root, fakeCodex, log }) => {
     const result = spawnSync(process.execPath, [driver, 'install-local', '--target-home', join(root, 'consumer')], {
       encoding: 'utf8',
       env: { ...process.env, CODEX_BIN: fakeCodex, FAKE_CODEX_LOG: log, FAKE_INSTALLED_PATH: sourcePlugin },
     })
-    assert.equal(result.status, 1, result.stdout)
-    assert.match(result.stderr, /--plugin/u)
-    assert.equal(existsSync(log), false, 'invalid scope must not invoke Codex')
+    assert.equal(result.status, 0, result.stderr)
+    assert.match(result.stdout, /No modified plugins/u)
+    assert.equal(existsSync(log), false, 'no modified installs must not invoke Codex')
   })
 })
 
@@ -219,7 +219,7 @@ test('eval prepares readable skill links and launches a JS Codex fixture', () =>
     assert.equal(args[args.indexOf('--sandbox') + 1], 'read-only')
     if (process.platform === 'win32') {
       const overrides = args.flatMap((argument, index) => argument === '-c' ? [args[index + 1]] : [])
-      assert.ok(overrides.includes('windows.sandbox="elevated"'), 'Windows read-only evaluations must enable their native sandbox backend')
+      assert.ok(overrides.includes('windows.sandbox="unelevated"'), 'Windows read-only evaluations must avoid administrator sandbox setup')
     }
     const host = args[args.indexOf('-C') + 1]
     assert.equal(realpathSync(join(host, '.agents', 'skills', 'adhd')), realpathSync(join(sourcePlugin, 'skills', 'adhd')))
