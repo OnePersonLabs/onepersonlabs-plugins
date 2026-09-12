@@ -67,7 +67,20 @@ function installedCopy(home, marketplace, name, source) {
   return join(home, 'plugins', 'cache', marketplace, name, version)
 }
 
-function installationPlan({ repo = process.cwd(), plugins, targetHome }) {
+function preparationFor(repo) {
+  const manifest = join(realpathSync(repo), 'package.json')
+  if (!existsSync(manifest)) return undefined
+  const pkg = readJson(manifest)
+  if (pkg.scripts?.['plugin:prepare-local'] === undefined) return undefined
+  if (typeof pkg.scripts['plugin:prepare-local'] !== 'string' || !pkg.scripts['plugin:prepare-local'].trim()) {
+    throw new Error('plugin:prepare-local must be a nonempty package script')
+  }
+  const manager = (pkg.packageManager ?? 'npm').split('@')[0]
+  if (!['npm', 'pnpm', 'yarn', 'bun'].includes(manager)) throw new Error(`Unsupported preparation package manager: ${manager}`)
+  return { command: `${manager} run plugin:prepare-local` }
+}
+
+function installationPlan({ repo = process.cwd(), plugins, targetHome, beforePreparation = false }) {
   if (!Array.isArray(plugins) || !plugins.length) plugins = ['modified']
   if (!targetHome) {
     targetHome = join(homedir(), '.codex')
@@ -100,9 +113,9 @@ function installationPlan({ repo = process.cwd(), plugins, targetHome }) {
     if ((!cursor && path !== '.' && !path.startsWith('./')) || path.split(/[\\/]/u).includes('..')) {
       throw new Error(`${name}: local source path must stay beneath the marketplace root and use ./ (optional for Cursor): ${path}`)
     }
-    const source = realpathSync(resolve(root, path))
+    const source = beforePreparation ? canonicalDestination(resolve(root, path)) : realpathSync(resolve(root, path))
     if (!within(root, source)) throw new Error(`${name}: plugin source escapes marketplace root: ${source}`)
-    if (!statSync(source).isDirectory()) throw new Error(`${name}: plugin source is not a directory: ${source}`)
+    if ((!beforePreparation || existsSync(source)) && !statSync(source).isDirectory()) throw new Error(`${name}: plugin source is not a directory: ${source}`)
     if (within(source, home)) throw new Error(`${name}: the Codex home must not be inside the plugin source: ${home}`)
     if (within(cache, source) || within(source, cache)) throw new Error(`${name}: target cache must not overlap the plugin source: ${cache}`)
     return { name, pluginId: `${name}@${marketplace.name}`, source }
@@ -111,7 +124,7 @@ function installationPlan({ repo = process.cwd(), plugins, targetHome }) {
     ? selected.filter((plugin) => {
       const installedPlugin = join(home, 'plugins', 'cache', marketplace.name, plugin.name)
       return existsSync(installedPlugin) && statSync(installedPlugin).isDirectory()
-        && !sameContents(plugin.source, installedCopy(home, marketplace.name, plugin.name, plugin.source))
+        && (beforePreparation || !sameContents(plugin.source, installedCopy(home, marketplace.name, plugin.name, plugin.source)))
     })
     : selected
   return { root, home, marketplace: marketplace.name, plugins: changed }
@@ -235,9 +248,10 @@ export async function refreshUserHomes({ repo = process.cwd(), plugins = [], dry
 }
 
 export async function installLocal(options) {
-  const plan = installationPlan(options)
+  const preparation = preparationFor(options.repo ?? process.cwd())
+  let plan = installationPlan({ ...options, beforePreparation: Boolean(preparation) })
   if (options.dryRun) {
-    console.log(JSON.stringify({ ...plan, dryRun: true }, null, 2))
+    console.log(JSON.stringify({ ...plan, ...(preparation ? { preparation, selectionPendingPreparation: true } : {}), dryRun: true }, null, 2))
     return plan
   }
   if (!plan.plugins.length) {
@@ -253,7 +267,24 @@ export async function installLocal(options) {
     if (typeof registered.root !== 'string' || !existsSync(registered.root) || realpathSync(registered.root) !== plan.root) {
       throw new Error(`Marketplace ${plan.marketplace} is registered at ${registered.root ?? '(unknown root)'}, not ${plan.root}. Refresh from the registered checkout or resolve that registration before refreshing.`)
     }
-  } else {
+  }
+  if (preparation) {
+    console.log(`Preparing ${plan.marketplace} in ${plan.root}: ${preparation.command}`)
+    // The shell receives only this fixed, allowlisted command. Repository paths
+    // travel through cwd, and the package manager owns package-script execution.
+    const result = spawnSync(preparation.command, { cwd: plan.root, env, shell: true, stdio: 'inherit', windowsHide: true })
+    if (result.error || result.status !== 0) {
+      throw new Error(`Plugin preparation failed (${result.status ?? result.signal ?? 'spawn'}): ${result.error?.message ?? preparation.command}`, { cause: result.error })
+    }
+    const preparedPlan = installationPlan(options)
+    if (preparedPlan.marketplace !== plan.marketplace) throw new Error('Preparation changed the marketplace identity; refresh requires a stable marketplace')
+    plan = preparedPlan
+    if (!plan.plugins.length) {
+      console.log(`No modified plugins for ${plan.home} after preparation.`)
+      return plan
+    }
+  }
+  if (!registered) {
     codexJson(['plugin', 'marketplace', 'add', plan.root, '--json'], plan, env)
   }
   // Codex stages fresh local bytes and atomically replaces even same-version installs.
@@ -281,7 +312,7 @@ export async function installLocal(options) {
     }
   }
   if (trustFailures.length) throw new Error(`Automatic hook trust failed for ${plan.home}: ${trustFailures.join('; ')}`)
-  console.log('Installation only: no tests or skill evaluations were run. Start a new Codex session before using updated components.')
+  console.log('Refresh complete. Preparation runs only the repository-declared command; the installer adds no tests or skill evaluations. Start a new Codex session before using updated components.')
   return plan
 }
 
@@ -299,6 +330,7 @@ export async function runInstallLocal(args = process.argv.slice(2)) {
     console.log('Usage: node install-local.mjs [--repo DIR] [--plugin NAME ... | --plugin all | --plugin modified] [--target-home ABSOLUTE_PATH] [--dry-run]')
     console.log('No --plugin selects source bundles changed from each installed copy. No --target-home refreshes existing user-level Windows and WSL homes. Use --plugin all explicitly for every plugin.')
     console.log('Authorized installs also trust and verify the selected plugins\' current hooks through Codex, without interactive onboarding.')
+    console.log('A declared plugin:prepare-local package script runs before comparison and installation; preparation failure stops that home. Dry runs report preparation without executing it.')
     console.log('--dry-run validates local sources and prints the plan without invoking Codex or changing files; registrations are checked on installation.')
     console.log('Requires Node.js 22+ and Codex with plugin commands (verified with 0.151.0). CODEX_BIN can select a native executable or JS entrypoint.')
     return

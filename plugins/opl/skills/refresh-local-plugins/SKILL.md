@@ -6,9 +6,9 @@ disable-model-invocation: false
 
 # Refresh Local Plugins
 
-Refresh changed shipping bundles from the source checkout through Codex's native
-installer. The bundled helper works across local marketplace repositories;
-the target checkout needs no OPL scripts, package matrix, or npm setup.
+Prepare and refresh changed shipping bundles from the source checkout through
+Codex's native installer. The bundled helper works across local marketplace
+repositories; shipping-source checkouts need no build setup.
 
 ## Select source and destinations
 
@@ -51,6 +51,16 @@ and explicit exceptional requests; a normal skill invocation does not use it.
 The helper validates selected sources and existing marketplace registration
 before installation. A same-name marketplace pointing elsewhere is a conflict,
 not permission to rebind it; report the conflict for that environment.
+
+If the checkout declares `scripts["plugin:prepare-local"]` in `package.json`,
+the helper runs that script with the declared package manager (npm by default)
+before comparing bundles with installed copies. That command owns compilation
+and bundle assembly. Preparation failure stops installation for that home;
+never substitute an older bundle. Each host prepares its registered checkout.
+Repositories without this script install their shipping sources directly.
+`--dry-run` never builds: it reports required preparation and marks plugin
+selection pending when a build is needed. Use the helper for the whole refresh;
+do not separately run the preparation command first.
 
 The helper calls native `codex plugin add` to atomically refresh and enable
 each selected plugin, including unchanged versions. Do not add uninstall steps,

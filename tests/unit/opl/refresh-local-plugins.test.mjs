@@ -83,6 +83,71 @@ if (args.join(' ') === 'app-server --stdio') {
   return { root, repo, home, userProfile, log, registration, selected, helper, fakeCodex, sibling, entries, marketplacePath, invoke, calls }
 }
 
+function prepareFixture(f, { fail = false } = {}) {
+  writeJson(join(f.repo, 'package.json'), { scripts: { 'plugin:prepare-local': 'node prepare.mjs' } })
+  writeFileSync(join(f.repo, 'input.txt'), 'fresh compiled source')
+  writeFileSync(join(f.repo, 'prepare.mjs'), `
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+writeFileSync('prepared.txt', 'ran')
+if (${fail}) process.exit(17)
+mkdirSync('components/alpha/.codex-plugin', { recursive: true })
+writeFileSync('components/alpha/.codex-plugin/plugin.json', JSON.stringify({ name: 'alpha', version: '1.0.0' }))
+writeFileSync('components/alpha/content.txt', readFileSync('input.txt'))
+`)
+}
+
+test('modified selection prepares source before comparing an unchanged old bundle', (t) => {
+  const f = fixture(t)
+  cpSync(join(f.repo, 'components', 'beta'), join(f.home, 'plugins', 'cache', 'example-market', 'beta', '1.0.0'), { recursive: true })
+  // The prepared bundle and installed copy are identical before the source edit.
+  cpSync(join(f.repo, 'components', 'alpha'), f.selected, { recursive: true })
+  cpSync(dirname(f.helper), join(f.repo, 'components', 'alpha', 'skills', 'refresh-local-plugins', 'scripts'), { recursive: true })
+  prepareFixture(f)
+  const result = f.invoke([])
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(readFileSync(join(f.selected, 'content.txt'), 'utf8'), 'fresh compiled source')
+  assert.deepEqual(f.calls().filter(({ args }) => args[1] === 'add').map(({ args }) => args[2]), ['alpha@example-market'])
+})
+
+test('preparation creates a missing bundle on a fresh checkout', (t) => {
+  const f = fixture(t)
+  prepareFixture(f)
+  rmSync(join(f.repo, 'components', 'alpha'), { recursive: true })
+  const result = f.invoke()
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(readFileSync(join(f.selected, 'content.txt'), 'utf8'), 'fresh compiled source')
+})
+
+test('failed preparation preserves installed bytes and performs no installation', (t) => {
+  const f = fixture(t)
+  prepareFixture(f, { fail: true })
+  const result = f.invoke()
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /prepar.*failed/iu)
+  assert.ok(existsSync(f.helper))
+  assert.ok(f.calls().every(({ args }) => args.join(' ') === 'plugin marketplace list --json'))
+})
+
+test('preview reports required preparation without building a missing bundle', (t) => {
+  const f = fixture(t)
+  prepareFixture(f)
+  rmSync(join(f.repo, 'components', 'alpha'), { recursive: true })
+  const result = f.invoke(['--dry-run', '--plugin', 'alpha'])
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(JSON.parse(result.stdout).preparation.command, 'npm run plugin:prepare-local')
+  assert.equal(existsSync(join(f.repo, 'prepared.txt')), false)
+  assert.deepEqual(f.calls(), [])
+})
+
+test('registration conflict prevents preparation as well as installation', (t) => {
+  const f = fixture(t)
+  prepareFixture(f)
+  writeJson(f.registration, [{ name: 'example-market', root: f.root }])
+  const result = f.invoke()
+  assert.equal(result.status, 1)
+  assert.equal(existsSync(join(f.repo, 'prepared.txt')), false)
+})
+
 for (const [manifest, source] of [
   ['.agents/plugins/marketplace.json', { source: 'local', path: './components/alpha' }],
   ['.agents/plugins/api_marketplace.json', { source: 'local', path: './components/alpha' }],
@@ -146,13 +211,16 @@ test('counterpart refresh uses its own registered checkout', (t) => {
   const f = fixture(t)
   const peer = join(f.root, 'peer checkout')
   cpSync(f.repo, peer, { recursive: true })
-  writeFileSync(join(peer, 'components', 'alpha', 'content.txt'), 'peer new bytes')
+  prepareFixture({ ...f, repo: peer })
+  writeFileSync(join(peer, 'input.txt'), 'peer new bytes')
   writeJson(f.registration, [{ name: 'example-market', root: peer }])
   const result = f.invoke(['--plugin', 'alpha', '--local-only', '--registered-source'], { MARKETPLACE_ROOT: peer }, false)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(readFileSync(join(f.userProfile, '.codex', 'plugins', 'cache', 'example-market', 'alpha', '1.0.0', 'content.txt'), 'utf8'), 'peer new bytes')
   assert.equal(f.calls()[0].cwd, f.repo)
   assert.equal(f.calls()[1].cwd, peer)
+  assert.equal(existsSync(join(f.repo, 'prepared.txt')), false)
+  assert.equal(readFileSync(join(peer, 'prepared.txt'), 'utf8'), 'ran')
 })
 
 test('dry run validates and prints sources without invoking Codex or creating the target home', (t) => {
