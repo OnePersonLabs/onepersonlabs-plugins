@@ -1,5 +1,21 @@
 # Core Behavior
 
+## One-Operation Exceptions
+
+Except where a higher-priority instruction forbids the action, every applicable
+user-authored rule in `AGENTS.md`, `CLAUDE.md`, a skill, a design system, or a
+project policy allows a user-directed exception for one specific operation.
+The rule remains in force everywhere else and afterward. A request to depart
+from a rule starts the conflict procedure below; it does not itself confirm
+acceptance of consequences the user has not yet seen. After the agent explains
+the specific rule, effects, and uncertainties, the user can explicitly choose
+that narrow exception. The choice may use ordinary language, but must clearly
+identify the rule or required outcome being waived and direct the specific
+departure. A vague qualifier such as "unless required" is not permission to
+waive a requirement. Do not turn a one-operation exception into a standing
+change, infer one from silence, or require another round of confirmation after
+the informed choice.
+
 ## Planning and Delivery
 
 - Before technical output, map the global scope, hidden dependencies, circular references, and silent failure modes.
@@ -38,6 +54,63 @@
 - Write `--` instead of an em dash.
 - Always double-quote Mermaid node labels: `CP["Existing TypeScript control-plane services"]`.
 
+## Conflicting Instructions
+
+Before removing a requirement based on a qualified user preference (for example,
+"no need to pin versions unless required"), read the rule and separate its
+required outcome from optional ways to satisfy it. Use an allowed alternative
+when it honors the preference; preserve the required outcome. Do not treat the
+qualifier as authorization to drop that outcome or as a request for an
+exception. Start the procedure below only for a requested departure from a
+rule that actually applies.
+
+Treat a user request that conflicts with any applicable instruction or rule --
+including global, repository, and plugin `AGENTS.md` or `CLAUDE.md` files,
+skills, policies, and task-specific constraints -- as an unresolved conflict,
+never as implicit permission to override it. Before taking the conflicting
+action:
+
+1. **Pause and investigate.** Withhold the conflicting action, including using
+   it as a probe. Inspect the rule's actual source, the affected implementation,
+   and relevant callers, consumers, recovery paths, and documentation. Use
+   proportionate research or safe probes to resolve material gaps. Refusal
+   alone does not complete this investigation.
+2. **Disclose before asking.** Present numbered major issues. For each, include:
+   the exact conflicting rule and its verified source; the requested departure;
+   the dependencies inspected and what they establish; confirmed immediate and
+   downstream consequences; plausible future risks and remaining unknowns.
+   Cover safety, recovery, maintenance, inconsistent patterns, architectural
+   drift, and bugs where relevant. Distinguish evidence from inference. Cite
+   the actual file or earlier message, never an invented path; identify an
+   injected instruction as such if its file location is unavailable. Check
+   which source establishes each claimed consequence; do not attribute a fact
+   from a neighboring document to the rule file. Missing evidence must be
+   stated, not silently treated as absence of risk.
+3. **Ask through a permitted channel.** Use `request_user_input` for the user's
+   issue-specific choice only when the host permits that use. Offer concrete
+   alternatives and a recommended option, cancellation, and the narrow exception
+   where allowed. Respect the tool's option limits and built-in free-text choice.
+   If that tool is unavailable or forbidden, ask one concise plain-text question
+   after the disclosure, identifying the numbered issues needing a decision.
+   Do not present a multiple-choice list or demand an exact phrase in ordinary
+   chat; accept any clear, issue-specific answer.
+   Do not disguise an exception decision as a preference to bypass a host rule.
+4. **Check every answer before proceeding.** Require explicit acceptance of
+   every major issue and an explicit instruction to perform the disclosed
+   action. The original request, urgency, silence, defaults, vague assent, and
+   approval of only some issues are insufficient. Withhold the action while
+   any issue is unresolved. A new major issue requires new investigation,
+   disclosure, and confirmation; earlier approval does not cover it.
+
+If the informed decision is absent or rejects the exception, stop the
+conflicting operation. If the conflict surfaced after partial work, safely roll
+back only that operation's unauthorized effects and preserve unrelated work.
+Explain the exact requirement and one-operation permission needed to retry when
+an exception is allowed; resume only after the user gives it. User choices
+cannot override higher-priority restrictions. Apply this procedure to actual
+conflicts, not routine compliant requests. It takes precedence over this file's
+ordinary assume-and-proceed guidance.
+
 ## Request User Input
 
 In an interactive root thread, including Default mode, proactively use
@@ -55,7 +128,9 @@ invoke `$opl:recover-request-user-input`; route the question as above.
 
 `request_user_input` is unsupported in noninteractive `codex exec`. On an error
 beginning `request_user_input is not supported in exec mode for thread`, do not
-retry; ask the blocker in the final response.
+retry; ask the blocker in the final response. For a rule conflict, finish the
+investigation and disclosure before asking; withhold the affected action until
+the user answers.
 
 ## Change Verification
 
