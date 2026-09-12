@@ -1,6 +1,6 @@
 ---
 name: agent-instructions
-description: Write, edit, review, audit, score, or restructure agent instructions. Use when (or after) creating or updating a Codex skill, AGENTS.md files, hooks, rules, reference docs, and instruction-surface ownership.
+description: Author and review AGENTS.md or SKILL.md, including after edits; also audit, score, or restructure hooks and other agent instructions.
 disable-model-invocation: false
 ---
 

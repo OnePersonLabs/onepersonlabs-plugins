@@ -90,31 +90,6 @@ function writeTranscript(records) {
   return { dir, file }
 }
 
-function runSkillReviewGate(records) {
-  const transcript = writeTranscript(records)
-  try {
-    return runHookStatus('codex-skill-review-gate.py', {
-      transcript_path: transcript.file,
-    })
-  } finally {
-    rmSync(transcript.dir, { recursive: true, force: true })
-  }
-}
-
-function skillReviewDecision(records) {
-  const result = runSkillReviewGate(records)
-  assert.equal(result.status, 0, result.stderr)
-  return JSON.parse(result.stdout)
-}
-
-function skillEdit(filePath = '/tmp/example-skill/SKILL.md') {
-  return { name: 'Edit', file_path: filePath }
-}
-
-function skillInvocation(skill) {
-  return { name: 'Skill', skill }
-}
-
 function assistant(text) {
   return { message: { role: 'assistant', content: [{ type: 'text', text }] } }
 }
@@ -165,46 +140,36 @@ test('response blocks an ephemeral deferral without a durable sink', () => {
   assert.match(decision.reason, /defer/i)
 })
 
-test('skill review blocks stop after an unreviewed skill edit', () => {
-  const decision = skillReviewDecision([skillEdit()])
-  assert.equal(decision.decision, 'block')
-  assert.match(decision.reason, /\$agent-instructions/u)
+test('post-tool skill and AGENTS edits cue an immediate agent-instructions review', () => {
+  for (const path of ['C:\\work\\skills\\example\\SKILL.md', 'C:\\work\\AGENTS.md', 'SKILL.md', 'AGENTS.md']) {
+    const result = runHookStatus('codex-skill-review-gate.py', {
+      hook_event_name: 'PostToolUse',
+      tool_name: 'apply_patch',
+      tool_input: { command: `*** Begin Patch\n*** Update File: ${path}\n@@\n+Updated\n*** End Patch` },
+      tool_response: { exit_code: 0 },
+    })
+    assert.equal(result.status, 0, result.stderr)
+    assert.match(JSON.parse(result.stdout).hookSpecificOutput.additionalContext, /\$opl:agent-instructions/u)
+  }
+  for (const tool_name of ['Edit', 'Write']) {
+    const result = runHookStatus('codex-skill-review-gate.py', {
+      hook_event_name: 'PostToolUse', tool_name,
+      tool_input: { file_path: 'AGENTS.md' },
+    })
+    assert.match(JSON.parse(result.stdout).hookSpecificOutput.additionalContext, /\$opl:agent-instructions/u)
+  }
 })
 
-test('skill review releases stop when agent-instructions follows the latest edit', () => {
-  const decision = skillReviewDecision([
-    skillEdit(),
-    skillInvocation('agent-instructions'),
-  ])
-  assert.equal(decision.continue, true)
-})
-
-test('skill review re-arms when an edit follows a review', () => {
-  const decision = skillReviewDecision([
-    skillInvocation('agent-instructions'),
-    skillEdit(),
-  ])
-  assert.equal(decision.decision, 'block')
-})
-
-test('skill review recognizes Windows paths and a native review skill read', () => {
-  const edit = skillEdit('C:\\work\\.agents\\skills\\example\\SKILL.md')
-  assert.equal(skillReviewDecision([edit]).decision, 'block')
-  assert.equal(skillReviewDecision([
-    edit,
-    {
-      name: 'exec_command',
-      arguments: JSON.stringify({ cmd: 'rtk proxy powershell -Command "Get-Content C:\\work\\.agents\\skills\\agent-instructions\\SKILL.md"' }),
-    },
-  ]).continue, true)
-})
-
-test('skill review recognizes Codex apply_patch skill edits', () => {
-  const decision = skillReviewDecision([{
-    name: 'functions.apply_patch',
-    input: '*** Begin Patch\n*** Update File: C:\\work\\skills\\example\\SKILL.md\n@@\n+New instruction\n*** End Patch',
-  }])
-  assert.equal(decision.decision, 'block')
+test('post-tool reads and unrelated edits do not cue an instruction review', () => {
+  for (const input of [
+    { tool_name: 'Bash', tool_input: { command: 'Get-Content C:\\work\\AGENTS.md' } },
+    { tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: C:\\work\\README.md\n@@\n+Updated\n*** End Patch' } },
+    { tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: SKILL.md\n@@\n+Updated\n*** End Patch' }, tool_response: { exit_code: 1 } },
+  ]) {
+    const result = runHookStatus('codex-skill-review-gate.py', { hook_event_name: 'PostToolUse', ...input })
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(JSON.parse(result.stdout).hookSpecificOutput, undefined)
+  }
 })
 
 test('dangerous shell blocks PowerShell root, home, parent, and glob removals', () => {

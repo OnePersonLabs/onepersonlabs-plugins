@@ -30,6 +30,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-skill-review-gate.py\"",
+            "timeout": 20,
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-skill-review-gate.py\""
+          },
+          {
+            "type": "command",
             "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-artifact-discipline-gate.py\"",
             "timeout": 20,
             "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-artifact-discipline-gate.py\""
@@ -51,12 +57,6 @@
             "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-response-discipline-gate.py\"",
             "timeout": 20,
             "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-response-discipline-gate.py\""
-          },
-          {
-            "type": "command",
-            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-skill-review-gate.py\"",
-            "timeout": 20,
-            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-skill-review-gate.py\""
           }
         ]
       }
