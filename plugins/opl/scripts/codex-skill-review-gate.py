@@ -38,7 +38,11 @@ def decision(hook):
     names = ', '.join(sorted({path.replace('\\', '/').rsplit('/', 1)[-1] for path in paths}))
     return {'hookSpecificOutput': {
         'hookEventName': 'PostToolUse',
-        'additionalContext': f'{names} changed. Use $opl:agent-instructions now to review the edited instruction file.',
+        'additionalContext': (
+            f'{names} changed. If this edit is part of an active $opl:agent-instructions '
+            'workflow, continue it. Otherwise, finish related files and dependencies, then invoke '
+            '$opl:agent-instructions to review the completed instruction change and fix any findings before finishing.'
+        ),
     }}
 
 

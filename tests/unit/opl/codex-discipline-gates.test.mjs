@@ -140,7 +140,7 @@ test('response blocks an ephemeral deferral without a durable sink', () => {
   assert.match(decision.reason, /defer/i)
 })
 
-test('post-tool skill and AGENTS edits cue an immediate agent-instructions review', () => {
+test('post-tool skill and AGENTS edits cue a review after related changes', () => {
   for (const path of ['C:\\work\\skills\\example\\SKILL.md', 'C:\\work\\AGENTS.md', 'SKILL.md', 'AGENTS.md']) {
     const result = runHookStatus('codex-skill-review-gate.py', {
       hook_event_name: 'PostToolUse',
