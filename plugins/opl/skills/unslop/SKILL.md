@@ -361,6 +361,16 @@ The rule that passes at the **broadest wording** wins. If two rules pass at the 
 
 Cap at 8 iterations. If no rule converges, the failure mode may need a PreToolUse hook instead of a prose rule.
 
+After the unslop workflow concludes and the final trace contains the evidence
+needed to assess the result, the forged session files (including copies in
+`.unslop/replay/`) and replay-generated sessions may be deleted. Keep them while
+replays or comparisons are still in progress. Before deleting, identify the
+synthetic session IDs and their descendants so the original failure session
+and unrelated sessions remain untouched. "Never overwrite an existing trace"
+and the Step 6c instruction to retain trial transcripts apply to the trace
+and evidence during the workflow; they do not require permanent retention of
+synthetic session rollouts.
+
 ### 6f: Present the Rule
 
 Show the user:
