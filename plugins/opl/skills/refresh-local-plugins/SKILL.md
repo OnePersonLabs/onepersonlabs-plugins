@@ -1,6 +1,6 @@
 ---
 name: refresh-local-plugins
-description: Refresh locally modified Codex plugins in existing user-level Windows and WSL Codex homes. Use after local edits or pulls, for stale installed copies, or to preview a refresh; not for publishing.
+description: Refresh locally modified Codex plugins in existing user-level Windows and WSL Codex homes. Use after local edits or pulls, for stale installed copies, or to preview a refresh. For isolated tests, pass --target-home "<absolute-path>"; not for publishing.
 disable-model-invocation: false
 ---
 
