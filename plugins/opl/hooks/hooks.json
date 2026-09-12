@@ -15,6 +15,17 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-marketplace-refresh-hook.py\"",
+            "timeout": 20,
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-marketplace-refresh-hook.py\""
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|ApplyPatch|apply_patch",
         "hooks": [
           {
