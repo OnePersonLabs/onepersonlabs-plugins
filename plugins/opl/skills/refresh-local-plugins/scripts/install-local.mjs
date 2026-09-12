@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync, statSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -40,10 +41,41 @@ function canonicalDestination(path) {
   return join(canonicalDestination(dirname(absolute)), basename(absolute))
 }
 
+function sameContents(source, installed) {
+  if (!existsSync(installed)) return false
+  const sourceStat = lstatSync(source)
+  const installedStat = lstatSync(installed)
+  if (sourceStat.isSymbolicLink() || installedStat.isSymbolicLink()) {
+    return sourceStat.isSymbolicLink() && installedStat.isSymbolicLink() && readlinkSync(source) === readlinkSync(installed)
+  }
+  if (sourceStat.isDirectory() || installedStat.isDirectory()) {
+    if (!sourceStat.isDirectory() || !installedStat.isDirectory()) return false
+    const sourceNames = readdirSync(source).sort()
+    const installedNames = readdirSync(installed).sort()
+    return sourceNames.length === installedNames.length && sourceNames.every((name, index) =>
+      name === installedNames[index] && sameContents(join(source, name), join(installed, name)))
+  }
+  return sourceStat.isFile() && installedStat.isFile() && sourceStat.size === installedStat.size && readFileSync(source).equals(readFileSync(installed))
+}
+
+function installedCopy(home, marketplace, name, source) {
+  const manifest = ['.codex-plugin/plugin.json', '.claude-plugin/plugin.json', '.cursor-plugin/plugin.json']
+    .map((path) => join(source, path)).find(existsSync)
+  if (!manifest) throw new Error(`${name}: no plugin manifest found in ${source}`)
+  const version = readJson(manifest).version
+  if (typeof version !== 'string' || !version || !validName(version)) throw new Error(`${name}: invalid plugin version in ${manifest}`)
+  return join(home, 'plugins', 'cache', marketplace, name, version)
+}
+
 function installationPlan({ repo = process.cwd(), plugins, targetHome }) {
-  if (!Array.isArray(plugins) || !plugins.length) throw new Error('--plugin NAME is required; use --plugin all only for the entire marketplace')
-  if (!targetHome || !isAbsolute(targetHome)) throw new Error('--target-home requires an explicit absolute Codex home path; it never defaults to ~/.codex')
+  if (!Array.isArray(plugins) || !plugins.length) plugins = ['modified']
+  if (!targetHome) {
+    targetHome = join(homedir(), '.codex')
+    if (!existsSync(targetHome) || !statSync(targetHome).isDirectory()) throw new Error(`User-level Codex home does not exist: ${targetHome}`)
+  }
+  if (!isAbsolute(targetHome)) throw new Error('--target-home requires an absolute Codex home path')
   if (plugins.includes('all') && plugins.length !== 1) throw new Error('--plugin all must be used alone')
+  if (plugins.includes('modified') && plugins.length !== 1) throw new Error('--plugin modified must be used alone')
   const root = realpathSync(repo)
   const home = canonicalDestination(targetHome)
   const cache = canonicalDestination(join(home, 'plugins', 'cache'))
@@ -58,7 +90,7 @@ function installationPlan({ repo = process.cwd(), plugins, targetHome }) {
     if (!validName(entry?.name) || entries.has(entry.name)) throw new Error(`Invalid or duplicate plugin name in ${manifestPath}: ${entry?.name}`)
     entries.set(entry.name, entry)
   }
-  const names = plugins[0] === 'all' ? [...entries.keys()] : [...new Set(plugins)]
+  const names = ['all', 'modified'].includes(plugins[0]) ? [...entries.keys()] : [...new Set(plugins)]
   const selected = names.map((name) => {
     const entry = entries.get(name)
     if (!entry) throw new Error(`Unknown plugin ${name}; available: ${[...entries.keys()].join(', ')}`)
@@ -75,7 +107,14 @@ function installationPlan({ repo = process.cwd(), plugins, targetHome }) {
     if (within(cache, source) || within(source, cache)) throw new Error(`${name}: target cache must not overlap the plugin source: ${cache}`)
     return { name, pluginId: `${name}@${marketplace.name}`, source }
   })
-  return { root, home, marketplace: marketplace.name, plugins: selected }
+  const changed = plugins[0] === 'modified'
+    ? selected.filter((plugin) => {
+      const installedPlugin = join(home, 'plugins', 'cache', marketplace.name, plugin.name)
+      return existsSync(installedPlugin) && statSync(installedPlugin).isDirectory()
+        && !sameContents(plugin.source, installedCopy(home, marketplace.name, plugin.name, plugin.source))
+    })
+    : selected
+  return { root, home, marketplace: marketplace.name, plugins: changed }
 }
 
 function codexJson(args, { root, home }, environment) {
@@ -92,10 +131,117 @@ function codexJson(args, { root, home }, environment) {
   }
 }
 
+function command(executable, args) {
+  const result = spawnSync(executable, args, { encoding: 'utf8', windowsHide: true })
+  if (result.error) throw new Error(`${executable} could not run: ${result.error.message}`, { cause: result.error })
+  return result
+}
+
+function wslPath(path) {
+  const result = command('wsl.exe', ['--exec', 'wslpath', '-u', path])
+  if (result.status !== 0) throw new Error(`WSL could not access ${path}: ${result.stderr.trim() || result.stdout.trim()}`)
+  return result.stdout.trim()
+}
+
+function windowsPath(path) {
+  const result = command('wslpath', ['-w', path])
+  if (result.status !== 0) throw new Error(`Windows could not access ${path}: ${result.stderr.trim() || result.stdout.trim()}`)
+  return result.stdout.trim()
+}
+
+function powershellLiteral(value) { return `'${value.replaceAll("'", "''")}'` }
+function posixLiteral(value) { return `'${value.replaceAll("'", "'\\''")}'` }
+
+export function counterpartInvocation({ platform, script, repo, plugins = [], dryRun = false, translate }) {
+  const extra = [...plugins.flatMap((name) => ['--plugin', name]), ...(dryRun ? ['--dry-run'] : []), '--local-only', '--registered-source']
+  if (platform === 'win32') {
+    const args = [translate(script), '--repo', translate(repo), ...extra]
+    return { executable: 'wsl.exe', args: ['--exec', 'bash', '-lc', `node ${args.map(posixLiteral).join(' ')}`] }
+  }
+  const args = [translate(script), '--repo', translate(repo), ...extra]
+  const invocation = `& node ${args.map(powershellLiteral).join(' ')}; exit $LASTEXITCODE`
+  return {
+    executable: 'powershell.exe',
+    args: ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(invocation, 'utf16le').toString('base64')],
+  }
+}
+
+function registeredSource(repo, env) {
+  const root = realpathSync(repo)
+  const manifestPath = marketplaceFiles.map((path) => join(root, path)).find(existsSync)
+  if (!manifestPath) throw new Error(`No local marketplace manifest found in ${root}`)
+  const marketplace = readJson(manifestPath)
+  const home = join(homedir(), '.codex')
+  const listed = codexJson(['plugin', 'marketplace', 'list', '--json'], { root, home }, env)
+  const registered = listed.marketplaces.find((item) => item.name === marketplace.name)
+  return registered?.root ?? root
+}
+
+function runCounterpart({ repo, plugins, dryRun }) {
+  const script = fileURLToPath(import.meta.url)
+  if (process.platform === 'win32') {
+    let available
+    try { available = command('wsl.exe', ['--exec', 'sh', '-lc', 'test -d "$HOME/.codex"']) }
+    catch (error) {
+      if (error.cause?.code === 'ENOENT') return { skipped: 'WSL is unavailable' }
+      throw error
+    }
+    if (available.status !== 0) return { skipped: 'WSL user-level ~/.codex is absent or unavailable' }
+    const invocation = counterpartInvocation({ platform: 'win32', script, repo, plugins, dryRun, translate: wslPath })
+    return command(invocation.executable, invocation.args)
+  }
+  if (!process.env.WSL_DISTRO_NAME) return { skipped: 'No Windows counterpart outside WSL' }
+  let available
+  try { available = command('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', "if (Test-Path -LiteralPath (Join-Path $env:USERPROFILE '.codex') -PathType Container) { exit 0 } else { exit 1 }"]) }
+  catch (error) {
+    if (error.cause?.code === 'ENOENT') return { skipped: 'Windows interop is unavailable' }
+    throw error
+  }
+  if (available.status !== 0) return { skipped: 'Windows user-level ~/.codex is absent or unavailable' }
+  const invocation = counterpartInvocation({ platform: 'linux', script, repo, plugins, dryRun, translate: windowsPath })
+  return command(invocation.executable, invocation.args)
+}
+
+export async function refreshUserHomes({ repo = process.cwd(), plugins = [], dryRun = false, localOnly = false, useRegisteredSource = false, env = process.env } = {}) {
+  if (localOnly) return installLocal({ repo: useRegisteredSource ? registeredSource(repo, env) : repo, plugins, dryRun, env })
+  const outcomes = []
+  const home = join(homedir(), '.codex')
+  if (existsSync(home) && statSync(home).isDirectory()) {
+    try {
+      const plan = await installLocal({ repo, plugins, dryRun, env })
+      outcomes.push({ environment: process.platform === 'win32' ? 'Windows' : 'WSL', home: plan.home, ok: true })
+    } catch (error) {
+      outcomes.push({ environment: process.platform === 'win32' ? 'Windows' : 'WSL', home, ok: false, error: error.message })
+      console.error(`${process.platform === 'win32' ? 'Windows' : 'WSL'}: ${error.message}`)
+    }
+  } else console.log(`${process.platform === 'win32' ? 'Windows' : 'WSL'}: no user-level .codex directory; skipped.`)
+  try {
+    const other = runCounterpart({ repo, plugins, dryRun })
+    if (other.skipped) console.log(`${process.platform === 'win32' ? 'WSL' : 'Windows'}: ${other.skipped}; skipped.`)
+    else {
+      console.log(`${process.platform === 'win32' ? 'WSL' : 'Windows'}:`)
+      if (other.stdout) process.stdout.write(other.stdout)
+      if (other.stderr) process.stderr.write(other.stderr)
+      outcomes.push({ environment: process.platform === 'win32' ? 'WSL' : 'Windows', ok: other.status === 0 })
+      if (other.status !== 0) console.error(`${process.platform === 'win32' ? 'WSL' : 'Windows'}: refresh failed (${other.status ?? other.signal}).`)
+    }
+  } catch (error) {
+    outcomes.push({ environment: process.platform === 'win32' ? 'WSL' : 'Windows', ok: false, error: error.message })
+    console.error(`${process.platform === 'win32' ? 'WSL' : 'Windows'}: ${error.message}`)
+  }
+  if (outcomes.some(({ ok }) => !ok)) throw new Error('One or more user-level Codex environments could not be refreshed; see environment results above')
+  if (!outcomes.length) console.log('No accessible user-level Codex home was found.')
+  return outcomes
+}
+
 export async function installLocal(options) {
   const plan = installationPlan(options)
   if (options.dryRun) {
     console.log(JSON.stringify({ ...plan, dryRun: true }, null, 2))
+    return plan
+  }
+  if (!plan.plugins.length) {
+    console.log(`No modified plugins for ${plan.home}.`)
     return plan
   }
   const env = options.env ?? process.env
@@ -105,13 +251,14 @@ export async function installLocal(options) {
   const registered = listed.marketplaces.find((item) => item.name === plan.marketplace)
   if (registered) {
     if (typeof registered.root !== 'string' || !existsSync(registered.root) || realpathSync(registered.root) !== plan.root) {
-      throw new Error(`Marketplace ${plan.marketplace} is registered at ${registered.root ?? '(unknown root)'}, not ${plan.root}. Resolve that registration or choose a separate --target-home before refreshing.`)
+      throw new Error(`Marketplace ${plan.marketplace} is registered at ${registered.root ?? '(unknown root)'}, not ${plan.root}. Refresh from the registered checkout or resolve that registration before refreshing.`)
     }
   } else {
     codexJson(['plugin', 'marketplace', 'add', plan.root, '--json'], plan, env)
   }
   // Codex stages fresh local bytes and atomically replaces even same-version installs.
   // All modules are already loaded; OPL can replace the cache containing this script.
+  const trustFailures = []
   for (const plugin of plan.plugins) {
     const result = codexJson(['plugin', 'add', plugin.pluginId, '--json'], plan, env)
     if (typeof result?.installedPath !== 'string' || !existsSync(result.installedPath)) {
@@ -122,12 +269,18 @@ export async function installLocal(options) {
     const manifest = ['.codex-plugin/plugin.json', '.claude-plugin/plugin.json', '.cursor-plugin/plugin.json']
       .map((path) => join(plugin.installedPath, path)).find(existsSync)
     const required = existsSync(join(plugin.installedPath, 'hooks', 'hooks.json')) || Boolean(manifest && readJson(manifest).hooks)
-    const hooks = await ensurePluginHookTrust({
-      repo: plan.root, home: plan.home, pluginId: plugin.pluginId,
-      installedPath: plugin.installedPath, required, env,
-    })
-    if (hooks.length) console.log(`${plugin.name}: verified trust for ${hooks.length} installed hook(s).`)
+    try {
+      const hooks = await ensurePluginHookTrust({
+        repo: plan.root, home: plan.home, pluginId: plugin.pluginId,
+        installedPath: plugin.installedPath, required, env,
+      })
+      if (hooks.length) console.log(`${plugin.name}: verified trust for ${hooks.length} installed hook(s).`)
+    } catch (error) {
+      trustFailures.push(`${plugin.pluginId}: ${error.message}`)
+      console.error(`${plugin.name}: installed, but automatic hook trust failed: ${error.message}`)
+    }
   }
+  if (trustFailures.length) throw new Error(`Automatic hook trust failed for ${plan.home}: ${trustFailures.join('; ')}`)
   console.log('Installation only: no tests or skill evaluations were run. Start a new Codex session before using updated components.')
   return plan
 }
@@ -137,18 +290,21 @@ export async function runInstallLocal(args = process.argv.slice(2)) {
     repo: { type: 'string' },
     plugin: { type: 'string', multiple: true },
     'target-home': { type: 'string' },
+    'local-only': { type: 'boolean' },
+    'registered-source': { type: 'boolean' },
     'dry-run': { type: 'boolean' },
     help: { type: 'boolean', short: 'h' },
   } })
   if (values.help) {
-    console.log('Usage: node install-local.mjs [--repo DIR] --plugin NAME [--plugin NAME ...] --target-home ABSOLUTE_PATH [--dry-run]')
-    console.log('Use --plugin all explicitly for every plugin. --repo defaults to the working directory.')
+    console.log('Usage: node install-local.mjs [--repo DIR] [--plugin NAME ... | --plugin all | --plugin modified] [--target-home ABSOLUTE_PATH] [--dry-run]')
+    console.log('No --plugin selects source bundles changed from each installed copy. No --target-home refreshes existing user-level Windows and WSL homes. Use --plugin all explicitly for every plugin.')
     console.log('Authorized installs also trust and verify the selected plugins\' current hooks through Codex, without interactive onboarding.')
     console.log('--dry-run validates local sources and prints the plan without invoking Codex or changing files; registrations are checked on installation.')
     console.log('Requires Node.js 22+ and Codex with plugin commands (verified with 0.151.0). CODEX_BIN can select a native executable or JS entrypoint.')
     return
   }
-  return installLocal({ repo: values.repo, plugins: values.plugin, targetHome: values['target-home'], dryRun: values['dry-run'] })
+  if (values['target-home']) return installLocal({ repo: values.repo, plugins: values.plugin, targetHome: values['target-home'], dryRun: values['dry-run'] })
+  return refreshUserHomes({ repo: values.repo, plugins: values.plugin, dryRun: values['dry-run'], localOnly: values['local-only'], useRegisteredSource: values['registered-source'] })
 }
 
 if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { counterpartInvocation } from '../../../plugins/opl/skills/refresh-local-plugins/scripts/install-local.mjs'
 
 const scripts = fileURLToPath(new URL('../../../plugins/opl/skills/refresh-local-plugins/scripts', import.meta.url))
 
@@ -18,6 +19,8 @@ function fixture(t, manifest = '.agents/plugins/marketplace.json') {
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const repo = join(root, 'another marketplace')
   const home = join(root, 'consumer home')
+  const userProfile = join(root, 'isolated user')
+  mkdirSync(join(userProfile, '.codex'), { recursive: true })
   const log = join(root, 'commands.jsonl')
   const registration = join(root, 'marketplaces.json')
   const selected = join(home, 'plugins', 'cache', 'example-market', 'alpha', '1.0.0')
@@ -74,10 +77,10 @@ if (args.join(' ') === 'app-server --stdio') {
   ], {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, CODEX_BIN: fakeCodex, COMMAND_LOG: log, REGISTRATION: registration, MARKETPLACE_ROOT: repo, ...extraEnv },
+    env: { ...process.env, USERPROFILE: userProfile, HOME: userProfile, CODEX_BIN: fakeCodex, COMMAND_LOG: log, REGISTRATION: registration, MARKETPLACE_ROOT: repo, ...extraEnv },
   })
   const calls = () => existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map(JSON.parse) : []
-  return { root, repo, home, log, registration, selected, helper, sibling, entries, marketplacePath, invoke, calls }
+  return { root, repo, home, userProfile, log, registration, selected, helper, fakeCodex, sibling, entries, marketplacePath, invoke, calls }
 }
 
 for (const [manifest, source] of [
@@ -139,6 +142,19 @@ test('a different checkout registered under the same name stops before any mutat
   assert.equal(existsSync(f.helper), true)
 })
 
+test('counterpart refresh uses its own registered checkout', (t) => {
+  const f = fixture(t)
+  const peer = join(f.root, 'peer checkout')
+  cpSync(f.repo, peer, { recursive: true })
+  writeFileSync(join(peer, 'components', 'alpha', 'content.txt'), 'peer new bytes')
+  writeJson(f.registration, [{ name: 'example-market', root: peer }])
+  const result = f.invoke(['--plugin', 'alpha', '--local-only', '--registered-source'], { MARKETPLACE_ROOT: peer }, false)
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(readFileSync(join(f.userProfile, '.codex', 'plugins', 'cache', 'example-market', 'alpha', '1.0.0', 'content.txt'), 'utf8'), 'peer new bytes')
+  assert.equal(f.calls()[0].cwd, f.repo)
+  assert.equal(f.calls()[1].cwd, peer)
+})
+
 test('dry run validates and prints sources without invoking Codex or creating the target home', (t) => {
   const f = fixture(t)
   const absentHome = join(f.root, 'preview only')
@@ -174,8 +190,6 @@ for (const path of ['components/alpha', './components/../components/alpha']) {
 }
 
 for (const [label, args, withHome, expected] of [
-  ['missing plugin', [], true, /--plugin/u],
-  ['missing home', ['--plugin', 'alpha'], false, /--target-home/u],
   ['relative home', ['--plugin', 'alpha', '--target-home', 'relative'], false, /absolute/u],
   ['unknown plugin', ['--plugin', 'missing'], true, /Unknown plugin/u],
   ['all combined with a name', ['--plugin', 'all', '--plugin', 'alpha'], true, /must be used alone/u],
@@ -188,6 +202,80 @@ for (const [label, args, withHome, expected] of [
     assert.deepEqual(f.calls(), [])
   })
 }
+
+test('no plugin selects every source that differs from its installed copy', (t) => {
+  const f = fixture(t)
+  const betaSource = join(f.repo, 'components', 'beta')
+  const betaInstalled = join(f.home, 'plugins', 'cache', 'example-market', 'beta', '1.0.0')
+  cpSync(betaSource, betaInstalled, { recursive: true })
+  const result = f.invoke(['--dry-run'])
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout).plugins.map(({ name }) => name), ['alpha'])
+  assert.deepEqual(f.calls(), [])
+})
+
+test('modified selection does not install a plugin absent from that home', (t) => {
+  const f = fixture(t)
+  const result = f.invoke(['--dry-run'])
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout).plugins.map(({ name }) => name), ['alpha'])
+})
+
+test('no target home uses an existing user-level Codex home', (t) => {
+  const f = fixture(t)
+  const result = f.invoke(['--plugin', 'alpha', '--dry-run', '--local-only'], {}, false)
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(JSON.parse(result.stdout).home, join(f.userProfile, '.codex'))
+  assert.deepEqual(f.calls(), [])
+})
+
+test('unchanged plugins require no marketplace registration or install', (t) => {
+  const f = fixture(t)
+  for (const name of ['alpha', 'beta']) {
+    const target = join(f.home, 'plugins', 'cache', 'example-market', name, '1.0.0')
+    rmSync(target, { recursive: true, force: true })
+    cpSync(join(f.repo, 'components', name), target, { recursive: true })
+  }
+  const result = spawnSync(process.execPath, [join(scripts, 'install-local.mjs'), '--repo', f.repo, '--target-home', f.home], {
+    cwd: f.root,
+    encoding: 'utf8',
+    env: { ...process.env, USERPROFILE: f.userProfile, HOME: f.userProfile, CODEX_BIN: f.fakeCodex, COMMAND_LOG: f.log, REGISTRATION: f.registration, MARKETPLACE_ROOT: f.repo },
+  })
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stdout, /No modified plugins/u)
+  assert.deepEqual(f.calls(), [])
+})
+
+test('an absent user-level Codex home stops before mutation', (t) => {
+  const f = fixture(t)
+  const result = f.invoke(['--plugin', 'alpha', '--local-only'], { USERPROFILE: join(f.root, 'absent user'), HOME: join(f.root, 'absent user') }, false)
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /User-level Codex home does not exist/u)
+  assert.deepEqual(f.calls(), [])
+})
+
+test('one helper invocation routes Windows to WSL with translated paths and local-only recursion', () => {
+  const invocation = counterpartInvocation({
+    platform: 'win32', script: 'C:\\skill\\install-local.mjs', repo: 'C:\\source',
+    plugins: ['alpha', 'beta'], dryRun: true,
+    translate: (path) => path.replace('C:\\', '/mnt/c/').replaceAll('\\', '/'),
+  })
+  assert.deepEqual(invocation, {
+    executable: 'wsl.exe',
+    args: ['--exec', 'bash', '-lc', "node '/mnt/c/skill/install-local.mjs' '--repo' '/mnt/c/source' '--plugin' 'alpha' '--plugin' 'beta' '--dry-run' '--local-only' '--registered-source'"],
+  })
+})
+
+test('one helper invocation routes WSL to Windows with safe quoted paths', () => {
+  const invocation = counterpartInvocation({
+    platform: 'linux', script: "/mnt/c/skill's helper/install-local.mjs", repo: '/mnt/c/source',
+    plugins: ['alpha'], translate: (path) => path.replace('/mnt/c/', 'C:\\').replaceAll('/', '\\'),
+  })
+  assert.equal(invocation.executable, 'powershell.exe')
+  assert.deepEqual(invocation.args.slice(0, 3), ['-NoProfile', '-NonInteractive', '-EncodedCommand'])
+  const decoded = Buffer.from(invocation.args[3], 'base64').toString('utf16le')
+  assert.equal(decoded, "& node 'C:\\skill''s helper\\install-local.mjs' '--repo' 'C:\\source' '--plugin' 'alpha' '--local-only' '--registered-source'; exit $LASTEXITCODE")
+})
 
 test('all preflights every selected source before installing any plugin', (t) => {
   const f = fixture(t)
@@ -262,4 +350,17 @@ test('a plugin declaring hooks must have those hooks discovered and trusted', (t
   const result = f.invoke()
   assert.equal(result.status, 1, result.stdout)
   assert.match(result.stderr, /declares hooks but Codex discovered none/u)
+})
+
+test('failed automatic hook trust still refreshes later plugins and names the affected home', (t) => {
+  const f = fixture(t)
+  const source = join(f.repo, 'components', 'alpha')
+  const manifestPath = join(source, '.codex-plugin', 'plugin.json')
+  writeJson(manifestPath, { ...JSON.parse(readFileSync(manifestPath, 'utf8')), hooks: './hooks/hooks.json' })
+  writeJson(join(source, 'hooks', 'hooks.json'), { hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'echo ready' }] }] } })
+  const result = f.invoke(['--plugin', 'all'])
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /Automatic hook trust failed for/u)
+  assert.match(result.stderr, /alpha@example-market/u)
+  assert.equal(existsSync(join(f.home, 'plugins', 'cache', 'example-market', 'beta', '1.0.0', 'content.txt')), true)
 })

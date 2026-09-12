@@ -97,16 +97,6 @@ diagnostic.
 
 Store MCP API keys in Windows user environment variables; they pass through to WSL.
 
-## Cross-Environment Operations
-
-When work spans Windows and WSL, run each operation in its native environment:
-use `wsl.exe` from Windows and `powershell.exe` from WSL. Let each side resolve
-its own user-level home. Attempt the smallest target operation; skip and report
-that side only when its launcher or target home is unavailable. Surface failures
-after the operation starts. Convert only paths passed across the boundary with
-WSL's `wslpath`; do not hardcode mounts, distro names, or user profiles. Put
-repeated bridge logic in one owning helper, not in each leaf script.
-
 ## Browser Routing
 
 Use Windows Chrome for browser work. Route signed-in tabs and profile state to Playwright MCP, shared connected tabs to Kapture, DevTools and performance inspection to Chrome DevTools MCP, and repeatable CLI testing to `agent-browser`. Use `agent-browser-win --auto-connect` for the running Windows profile or `--profile Default` only when Chrome is closed; use the Linux browser only when isolation is intentional.

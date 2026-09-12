@@ -1,69 +1,82 @@
 ---
 name: refresh-local-plugins
-description: Install or refresh selected Codex plugins from a local marketplace checkout into an authorized Codex home. Use after local plugin edits, for stale installed copies, or to preview a local refresh; not for publishing or general plugin questions.
+description: Refresh locally modified Codex plugins in existing user-level Windows and WSL Codex homes. Use after local edits or pulls, for stale installed copies, or to preview a refresh; not for publishing.
 disable-model-invocation: false
 ---
 
 # Refresh Local Plugins
 
-Refresh selected plugins from their source checkout through Codex's native
+Refresh changed shipping bundles from the source checkout through Codex's native
 installer. The bundled helper works across local marketplace repositories;
-the target repository needs no OPL scripts, package matrix, or npm setup.
+the target checkout needs no OPL scripts, package matrix, or npm setup.
 
-## Resolve the request
+## Select source and destinations
 
-Infer the source checkout and selected plugins from the user's request and
-existing session context. Inspect the marketplace when names or layout are
-unclear. Select every plugin only when the user explicitly requests all.
+Resolve the source checkout from the request and session context. Run the helper
+from this **loaded skill's actual directory**, including when this skill is in
+Codex's installed cache. Never use the installed cache as the source checkout.
 
-Use the Codex home authorized by the user or established session context,
-resolved to an absolute path. An environment variable or a default `~/.codex`
-location alone does not authorize changing that home. Clarify only material
-missing scope or destination information; existing refresh authorization
-does not require another confirmation.
+By default, refresh every marketplace plugin whose source bundle differs from
+the installed copy in each destination. This comparison is per Codex home, so
+it catches committed changes after a pull as well as uncommitted edits. Do not
+select every marketplace plugin unless the user explicitly asks for all. Honor
+explicit plugin selections when supplied.
 
-Keep discovery or preview requests read-only. Inspect available sources and,
-when the inputs are known, use `--dry-run`; do not turn a preview into an install.
+The helper handles the native user-level `~/.codex` and the other accessible
+Windows or WSL user-level `~/.codex` in one invocation. It translates paths
+between environments as needed, uses each environment's registered checkout
+for that marketplace, and invokes its normal `node` and Codex CLI. It skips
+missing homes and reports unavailable environments. Do not ask
+the user to specify a target home for a normal refresh or substitute
+`CODEX_HOME`, an isolated test home, or another profile.
+
+Keep discovery and preview requests read-only: use `--dry-run`, which checks
+both accessible homes without installing.
 
 ## Run the bundled helper
 
-Resolve `scripts/install-local.mjs` relative to this **loaded skill's actual
-directory**, including when this skill is installed in Codex's plugin cache.
-Do not look for the helper in the target repository. Use Node.js 22 or newer
-and the installed Codex CLI; `CODEX_BIN` can select a native executable or a
-JavaScript entrypoint.
+Use `--repo` when the checkout is not the current directory. No `--plugin` and
+no `--target-home` refreshes modified plugins in both existing user-level homes:
 
 ```text
-node <loaded-skill-directory>/scripts/install-local.mjs --repo <source-checkout> --plugin <name> --target-home <absolute-codex-home>
+node <loaded-skill-directory>/scripts/install-local.mjs --repo <source-checkout>
 ```
 
-Repeat `--plugin <name>` for multiple selections. Use `--plugin all` by itself
-only for an explicit whole-marketplace request. `--repo` defaults to the current
-directory; pass it explicitly when the source checkout is elsewhere. Add
-`--dry-run` for read-only preflight or use `--help` for the full CLI contract.
-Dry-run checks local inputs; the registration check runs when installing.
+Repeat `--plugin <name>` for explicitly selected plugins. Use `--plugin all`
+alone only for an explicit whole-marketplace request. `--dry-run` prints the
+per-home plan without mutation. `CODEX_BIN` can select a native Codex executable
+or JavaScript entrypoint. The helper retains `--target-home` for isolated tests
+and explicit exceptional requests; a normal skill invocation does not use it.
 
-Use a source checkout outside the installed plugin cache. The helper validates
-the selected local sources and existing marketplace root before installation;
-a same-name marketplace pointing elsewhere is an error, not permission to
-rebind it. Resolve that conflict with the user instead of removing its entry.
+The helper validates selected sources and existing marketplace registration
+before installation. A same-name marketplace pointing elsewhere is a conflict,
+not permission to rebind it; report the conflict for that environment.
 
 The helper calls native `codex plugin add` to atomically refresh and enable
-each selected plugin, including unchanged versions. An authorized refresh also
-authorizes trusting that local plugin's current installed hooks. The helper
-uses Codex's app-server API to save only those hook hashes and verify their
-trusted status. It preserves unrelated hooks and sandbox settings. Do not open
-a new terminal or ask for sign-in, sandbox setup, or manual `/hooks` approval.
+each selected plugin, including unchanged versions. Do not add uninstall steps,
+version cachebusters, or verification commands. Run tests separately only when
+requested or required by a development task.
 
-It can refresh OPL itself: its modules are loaded before installation and Codex
-runs from the checkout.
-Do not add uninstall steps, version cachebusters, or verification commands.
-Run tests separately only when requested or required by the development task.
+## Hook trust and handoff
+
+An authorized refresh also authorizes trusting the refreshed plugins' current
+installed hooks in each environment. The helper uses that environment's Codex
+app-server API to save only selected hook hashes and verify trusted status. It
+preserves unrelated hooks and sandbox settings. A hook trust failure does not
+stop later selected plugins from refreshing. Do not ask for sign-in, sandbox
+setup, or manual hook approval when automatic trust succeeds.
+
+If automatic hook trust fails in either environment, finish the other reachable
+refreshes, then tell the user exactly which environment(s) and plugin(s) need
+manual trust. Ask them to open a fresh Codex session in each affected
+environment, review and trust those plugin hooks with `/hooks`, and reply
+`done`. Wait for that reply before treating the refresh as complete. Do not
+claim hook trust was verified for an affected environment until it has been
+checked again after the reply.
 
 ## Report the result
 
-Report the refreshed plugin IDs and installed paths, or the preflight result.
-Surface failures with the affected plugin and completed progress. After an
-install, report verified hook trust and tell the user to start a fresh Codex
-session to load updated components. Installation and trust verification do not
-prove the plugin's tests pass or that its hooks execute correctly.
+Report refreshed plugin IDs and installed paths by environment, or the
+preflight result. Surface failures with completed progress. Tell the user to
+start a fresh Codex session to load updated components. Installation and trust
+verification do not prove that plugin tests pass or hooks execute correctly.
