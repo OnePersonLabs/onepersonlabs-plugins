@@ -169,6 +169,39 @@ test('instruction review waits until the turn attempts to stop', () => {
   }
 })
 
+test('a later instruction edit in the same turn queues another review', () => {
+  const home = makeProject()
+  const turn = { session_id: 'review-session', turn_id: 'review-turn' }
+  const environment = { CODEX_HOME: home }
+  const postTool = (tool_name, command) => JSON.parse(runHookStatus('codex-skill-review-gate.py', {
+    ...turn,
+    hook_event_name: 'PostToolUse',
+    tool_name,
+    tool_input: { command },
+    tool_response: { exit_code: 0 },
+  }, environment).stdout)
+  const stop = () => JSON.parse(runHookStatus('codex-skill-review-gate.py', {
+    ...turn, hook_event_name: 'Stop',
+  }, environment).stdout)
+  const patch = (path) => `*** Begin Patch\n*** Update File: ${path}\n@@\n+Updated\n*** End Patch`
+  try {
+    assert.deepEqual(postTool('apply_patch', patch('SKILL.md')), { continue: true })
+    assert.deepEqual(postTool('apply_patch', patch('README.md')), { continue: true })
+    assert.equal(stop().decision, 'block')
+
+    assert.deepEqual(postTool('Read', 'Read SKILL.md for the requested review'), { continue: true })
+    assert.deepEqual(postTool('apply_patch', patch('README.md')), { continue: true })
+    assert.deepEqual(stop(), { continue: true })
+
+    assert.deepEqual(postTool('apply_patch', patch('AGENTS.md')), { continue: true })
+    assert.deepEqual(postTool('apply_patch', patch('README.md')), { continue: true })
+    assert.equal(stop().decision, 'block')
+    assert.deepEqual(stop(), { continue: true })
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
 test('post-tool skill and AGENTS edits are recorded for final review', () => {
   const home = makeProject()
   const environment = { CODEX_HOME: home }

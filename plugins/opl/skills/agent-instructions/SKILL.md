@@ -109,6 +109,10 @@ Treat size as an attention cost, not a quality signal.
 
 ## Complete the Work
 
+For updates, review every touched instruction file and its dependencies after
+editing. Fix unresolved references, placeholders, and duplicate or conflicting
+rules, including defects that predate the edit.
+
 For an audit or update, report findings ordered by consequence with file
 evidence, then validation, residual risk, and a concise change summary when
 files changed. For authoring work, explain any consequential surface-placement
