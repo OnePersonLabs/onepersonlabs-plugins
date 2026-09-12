@@ -1,4 +1,7 @@
-"""Cue $opl:agent-instructions immediately after an instruction-file edit."""
+"""Prompt for a completed instruction review when the editing turn ends."""
+import hashlib
+import os
+from pathlib import Path
 import re
 
 from codex_discipline_policy import emit_json, read_input
@@ -23,8 +26,28 @@ def edited_paths(tool_name, tool_input):
     return set()
 
 
+def pending_file(hook):
+    session = hook.get('session_id')
+    turn = hook.get('turn_id')
+    if not isinstance(session, str) or not session or not isinstance(turn, str) or not turn:
+        return None
+    home = Path(os.environ.get('CODEX_HOME') or Path.home() / '.codex')
+    key = hashlib.sha256(f'{session}\0{turn}'.encode('utf-8')).hexdigest()
+    return home / 'tmp' / 'opl-agent-instructions-review' / key
+
+
 def decision(hook):
-    if hook.get('hook_event_name') != 'PostToolUse':
+    pending = pending_file(hook)
+    if hook.get('hook_event_name') == 'Stop':
+        if pending is None or not pending.is_file():
+            return {'continue': True}
+        pending.unlink()
+        return {'decision': 'block', 'reason': (
+            'An AGENTS.md or SKILL.md file changed during this turn. Before finishing, use '
+            '$opl:agent-instructions to review the completed instruction change and fix any findings. '
+            'If that skill already guided this work and you reviewed the final change, do not invoke it again.'
+        )}
+    if hook.get('hook_event_name') != 'PostToolUse' or pending is None:
         return {'continue': True}
     tool_input = hook.get('tool_input')
     if not isinstance(tool_input, dict):
@@ -35,15 +58,9 @@ def decision(hook):
     paths = edited_paths(hook.get('tool_name'), tool_input)
     if not paths:
         return {'continue': True}
-    names = ', '.join(sorted({path.replace('\\', '/').rsplit('/', 1)[-1] for path in paths}))
-    return {'hookSpecificOutput': {
-        'hookEventName': 'PostToolUse',
-        'additionalContext': (
-            f'{names} changed. If this edit is part of an active $opl:agent-instructions '
-            'workflow, continue it. Otherwise, finish related files and dependencies, then invoke '
-            '$opl:agent-instructions to review the completed instruction change and fix any findings before finishing.'
-        ),
-    }}
+    pending.parent.mkdir(parents=True, exist_ok=True)
+    pending.touch()
+    return {'continue': True}
 
 
 if __name__ == '__main__':

@@ -140,35 +140,88 @@ test('response blocks an ephemeral deferral without a durable sink', () => {
   assert.match(decision.reason, /defer/i)
 })
 
-test('post-tool skill and AGENTS edits cue a review after related changes', () => {
-  for (const path of ['C:\\work\\skills\\example\\SKILL.md', 'C:\\work\\AGENTS.md', 'SKILL.md', 'AGENTS.md']) {
-    const result = runHookStatus('codex-skill-review-gate.py', {
+test('instruction review waits until the turn attempts to stop', () => {
+  const home = makeProject()
+  const turn = { session_id: 'review-session', turn_id: 'review-turn' }
+  const environment = { CODEX_HOME: home }
+  try {
+    const edit = runHookStatus('codex-skill-review-gate.py', {
+      ...turn,
       hook_event_name: 'PostToolUse',
       tool_name: 'apply_patch',
-      tool_input: { command: `*** Begin Patch\n*** Update File: ${path}\n@@\n+Updated\n*** End Patch` },
+      tool_input: { command: '*** Begin Patch\n*** Update File: SKILL.md\n@@\n+Updated\n*** End Patch' },
       tool_response: { exit_code: 0 },
-    })
-    assert.equal(result.status, 0, result.stderr)
-    assert.match(JSON.parse(result.stdout).hookSpecificOutput.additionalContext, /\$opl:agent-instructions/u)
-  }
-  for (const tool_name of ['Edit', 'Write']) {
-    const result = runHookStatus('codex-skill-review-gate.py', {
-      hook_event_name: 'PostToolUse', tool_name,
-      tool_input: { file_path: 'AGENTS.md' },
-    })
-    assert.match(JSON.parse(result.stdout).hookSpecificOutput.additionalContext, /\$opl:agent-instructions/u)
+    }, environment)
+    assert.deepEqual(JSON.parse(edit.stdout), { continue: true })
+
+    const stop = runHookStatus('codex-skill-review-gate.py', {
+      ...turn, hook_event_name: 'Stop',
+    }, environment)
+    assert.equal(JSON.parse(stop.stdout).decision, 'block')
+    assert.match(JSON.parse(stop.stdout).reason, /\$opl:agent-instructions/u)
+
+    const repeated = runHookStatus('codex-skill-review-gate.py', {
+      ...turn, hook_event_name: 'Stop',
+    }, environment)
+    assert.deepEqual(JSON.parse(repeated.stdout), { continue: true })
+  } finally {
+    rmSync(home, { recursive: true, force: true })
   }
 })
 
-test('post-tool reads and unrelated edits do not cue an instruction review', () => {
-  for (const input of [
-    { tool_name: 'Bash', tool_input: { command: 'Get-Content C:\\work\\AGENTS.md' } },
-    { tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: C:\\work\\README.md\n@@\n+Updated\n*** End Patch' } },
-    { tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: SKILL.md\n@@\n+Updated\n*** End Patch' }, tool_response: { exit_code: 1 } },
-  ]) {
-    const result = runHookStatus('codex-skill-review-gate.py', { hook_event_name: 'PostToolUse', ...input })
-    assert.equal(result.status, 0, result.stderr)
-    assert.equal(JSON.parse(result.stdout).hookSpecificOutput, undefined)
+test('post-tool skill and AGENTS edits are recorded for final review', () => {
+  const home = makeProject()
+  const environment = { CODEX_HOME: home }
+  try {
+    for (const [index, path] of ['C:/work/skills/example/SKILL.md', 'C:/work/AGENTS.md', 'SKILL.md', 'AGENTS.md'].entries()) {
+      const turn = { session_id: 'review-session', turn_id: 'patch-' + index }
+      const result = runHookStatus('codex-skill-review-gate.py', {
+        ...turn,
+        hook_event_name: 'PostToolUse',
+        tool_name: 'apply_patch',
+        tool_input: { command: '*** Begin Patch\n*** Update File: ' + path + '\n@@\n+Updated\n*** End Patch' },
+        tool_response: { exit_code: 0 },
+      }, environment)
+      assert.equal(result.status, 0, result.stderr)
+      assert.deepEqual(JSON.parse(result.stdout), { continue: true })
+      const stop = runHookStatus('codex-skill-review-gate.py', { ...turn, hook_event_name: 'Stop' }, environment)
+      assert.equal(JSON.parse(stop.stdout).decision, 'block')
+    }
+    for (const tool_name of ['Edit', 'Write']) {
+      const turn = { session_id: 'review-session', turn_id: tool_name }
+      const result = runHookStatus('codex-skill-review-gate.py', {
+        ...turn, hook_event_name: 'PostToolUse', tool_name,
+        tool_input: { file_path: 'AGENTS.md' },
+      }, environment)
+      assert.deepEqual(JSON.parse(result.stdout), { continue: true })
+      const stop = runHookStatus('codex-skill-review-gate.py', { ...turn, hook_event_name: 'Stop' }, environment)
+      assert.equal(JSON.parse(stop.stdout).decision, 'block')
+    }
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('unrelated and failed edits do not queue an instruction review', () => {
+  const home = makeProject()
+  const environment = { CODEX_HOME: home }
+  try {
+    for (const [index, input] of [
+      { tool_name: 'Bash', tool_input: { command: 'Get-Content C:/work/AGENTS.md' } },
+      { tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: C:/work/README.md\n@@\n+Updated\n*** End Patch' } },
+      { tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: SKILL.md\n@@\n+Updated\n*** End Patch' }, tool_response: { exit_code: 1 } },
+    ].entries()) {
+      const turn = { session_id: 'review-session', turn_id: 'negative-' + index }
+      const result = runHookStatus('codex-skill-review-gate.py', {
+        ...turn, hook_event_name: 'PostToolUse', ...input,
+      }, environment)
+      assert.equal(result.status, 0, result.stderr)
+      assert.deepEqual(JSON.parse(result.stdout), { continue: true })
+      const stop = runHookStatus('codex-skill-review-gate.py', { ...turn, hook_event_name: 'Stop' }, environment)
+      assert.deepEqual(JSON.parse(stop.stdout), { continue: true })
+    }
+  } finally {
+    rmSync(home, { recursive: true, force: true })
   }
 })
 
