@@ -2451,9 +2451,10 @@ mod tests {
             ),
         ] {
             let output = std::process::Command::new("bash")
-                .arg(root.join(script))
+                .arg(script)
                 .arg("plan.json")
                 .arg("receipts.json")
+                .current_dir(root)
                 .env_remove(variable)
                 .output()
                 .unwrap();

@@ -105,7 +105,7 @@ test('install-local installs only the selected plugin and runs no verification l
       },
     })
     assert.equal(result.status, 0, result.stderr)
-    assert.match(result.stdout, /Installation only: no tests or skill evaluations were run[.]/u)
+    assert.match(result.stdout, /the installer adds no tests or skill evaluations[.]/u)
     assert.doesNotMatch(result.stdout, /Contract checks|unit checks|clean installed-copy|PASS .*:/u)
     assert.deepEqual(commands(log).map((args) => args.slice(0, 2)), [
       ['plugin', 'marketplace'],

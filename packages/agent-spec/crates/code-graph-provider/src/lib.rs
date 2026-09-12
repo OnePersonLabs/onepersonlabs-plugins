@@ -1697,28 +1697,26 @@ mod tests {
     }
 
     fn process_fixture(name: &str) -> (PathBuf, PathBuf) {
-        use std::os::unix::fs::PermissionsExt;
-
         let dir =
             std::env::temp_dir().join(format!("agent-spec-provider-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("provider.sh");
+        let script = dir.join("provider.mjs");
         std::fs::write(
             &script,
-            r#"#!/bin/sh
-IFS= read -r request
-case "$1" in
-  emit) cat "$2" ;;
-  stdout) i=0; while [ "$i" -lt 300 ]; do printf x; i=$((i + 1)); done ;;
-  stderr) i=0; while [ "$i" -lt 300 ]; do printf x >&2; i=$((i + 1)); done ;;
-  sleep) while :; do :; done ;;
-  *) exit 17 ;;
-esac
+            r#"import { readFileSync } from 'node:fs'
+
+readFileSync(0, 'utf8')
+switch (process.argv[2]) {
+  case 'emit': process.stdout.write(readFileSync(process.argv[3])); break
+  case 'stdout': process.stdout.write('x'.repeat(300)); break
+  case 'stderr': process.stderr.write('x'.repeat(300)); break
+  case 'sleep': setInterval(() => {}, 1000); break
+  default: process.exitCode = 17
+}
 "#,
         )
         .unwrap();
-        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
         (dir, script)
     }
 
@@ -1727,8 +1725,8 @@ esac
             schema: PROVIDER_REGISTRATION_SCHEMA.to_string(),
             provider_id: "fixture-extractor".to_string(),
             enabled: true,
-            executable: script.to_string_lossy().into_owned(),
-            args,
+            executable: "node".to_string(),
+            args: [vec![script.to_string_lossy().into_owned()], args].concat(),
             cwd: None,
         }
     }

@@ -420,12 +420,13 @@ pub fn lint_live_wiki(root: &Path, wiki_dir: &Path) -> WikiCheckReport {
     let (expected_index, index_diagnostics) = render_wiki_index(wiki_dir);
     diagnostics.extend(index_diagnostics);
     match std::fs::read_to_string(wiki_dir.join("_index.md")) {
-        Ok(actual_index) if actual_index != expected_index => diagnostics.push(WikiDiagnostic {
-            code: "wiki-index-stale".into(),
-            severity: "error".into(),
-            path: Some(PathBuf::from("_index.md")),
-            message: "live wiki index is stale; run `agent-spec wiki index`".into(),
-        }),
+        Ok(actual_index) if actual_index.replace("\r\n", "\n") != expected_index => diagnostics
+            .push(WikiDiagnostic {
+                code: "wiki-index-stale".into(),
+                severity: "error".into(),
+                path: Some(PathBuf::from("_index.md")),
+                message: "live wiki index is stale; run `agent-spec wiki index`".into(),
+            }),
         Ok(_) => {}
         Err(_) => {}
     }
@@ -531,12 +532,14 @@ fn compare_project_map_artifact(
 ) {
     let path = wiki_dir.join(relative);
     match std::fs::read_to_string(&path) {
-        Ok(actual) if actual != expected => diagnostics.push(WikiDiagnostic {
-            code: drift_code.into(),
-            severity: "error".into(),
-            path: Some(PathBuf::from(relative)),
-            message: format!("derived project-map artifact drifted: {relative}"),
-        }),
+        Ok(actual) if actual.replace("\r\n", "\n") != expected => {
+            diagnostics.push(WikiDiagnostic {
+                code: drift_code.into(),
+                severity: "error".into(),
+                path: Some(PathBuf::from(relative)),
+                message: format!("derived project-map artifact drifted: {relative}"),
+            })
+        }
         Ok(_) => {}
         Err(_) => diagnostics.push(WikiDiagnostic {
             code: missing_code.into(),
@@ -1185,8 +1188,10 @@ fn parse_article_frontmatter(path: &Path, content: &str) -> Option<WikiArticle> 
 }
 
 fn frontmatter_body(content: &str) -> Option<&str> {
-    let rest = content.strip_prefix("---\n")?;
-    let end = rest.find("\n---\n")?;
+    let rest = content
+        .strip_prefix("---\n")
+        .or_else(|| content.strip_prefix("---\r\n"))?;
+    let end = rest.find("\n---\n").or_else(|| rest.find("\r\n---\r\n"))?;
     Some(&rest[..end])
 }
 

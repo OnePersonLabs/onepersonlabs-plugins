@@ -55,7 +55,10 @@ hooks through Codex's API. No terminal, sign-in, or sandbox setup is needed for
 this operation. Add `--dry-run` to the command above
 to preview the sources, selection, and destination.
 
+Run `npm ci` to install the Husky pre-push hook. It runs the repository's
+deterministic suite and package/discovery checks locally before each push.
+
 See [Local plugin development](docs/local-plugin-development.md) for the command
-matrix, authoring/black-box isolation, automatic hook trust, and CI/release
+matrix, authoring/black-box isolation, automatic hook trust, and release
 gates. The design rationale is in
 [the research report](docs/research/codex-plugin-local-development-workflow.md).

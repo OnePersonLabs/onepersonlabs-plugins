@@ -8364,7 +8364,9 @@ name: "退款"
 
         assert!(json.contains("REQ-NOTE-CREATE"));
         assert!(json.contains("feat/wu-req-note-create"));
-        assert!(json.contains("../agent-spec-worktrees/wu-req-note-create"));
+        assert!(manifest.entries.iter().any(|entry| {
+            entry.path == Path::new("../agent-spec-worktrees").join("wu-req-note-create")
+        }));
         assert!(!json.contains("REQ-NOTE-EXPORT"));
     }
 
@@ -8439,41 +8441,42 @@ name: "退款"
         let golden_dir = root.join("fixtures/requirements-noteapp/.agent-spec");
 
         let plan = crate::spec_knowledge::build_requirement_plan(&knowledge, &specs);
-        assert_eq!(
-            pretty_json(&plan),
-            fs::read_to_string(golden_dir.join("requirements-plan.json")).unwrap()
-        );
+        assert_golden_json(&plan, &golden_dir.join("requirements-plan.json"));
 
         let obligations = crate::spec_knowledge::build_test_obligations(&knowledge, &specs);
-        assert_eq!(
-            pretty_json(&obligations),
-            fs::read_to_string(golden_dir.join("test_obligations.json")).unwrap()
-        );
+        assert_golden_json(&obligations, &golden_dir.join("test_obligations.json"));
 
         let worktrees = crate::spec_knowledge::build_worktree_manifest(
             &plan,
             "main",
             Path::new("../agent-spec-worktrees"),
         );
-        assert_eq!(
-            pretty_json(&worktrees),
-            fs::read_to_string(golden_dir.join("worktrees.json")).unwrap()
-        );
+        assert_golden_json(&worktrees, &golden_dir.join("worktrees.json"));
 
         let lint_diagnostics =
             crate::spec_knowledge::collect_clarification_lint_diagnostics(&knowledge);
         let questions =
             crate::spec_knowledge::build_clarification_questions(&plan, &lint_diagnostics);
-        assert_eq!(
-            pretty_json(&questions),
-            fs::read_to_string(golden_dir.join("questions.json")).unwrap()
-        );
+        assert_golden_json(&questions, &golden_dir.join("questions.json"));
     }
 
-    fn pretty_json<T: serde::Serialize>(value: &T) -> String {
-        let mut json = serde_json::to_string_pretty(value).unwrap();
-        json.push('\n');
-        json
+    fn assert_golden_json<T: serde::Serialize>(value: &T, path: &Path) {
+        let mut actual = serde_json::to_value(value).unwrap();
+        let mut expected: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        fn normalize_paths(value: &mut serde_json::Value) {
+            match value {
+                serde_json::Value::String(text) => *text = text.replace('\\', "/"),
+                serde_json::Value::Array(items) => items.iter_mut().for_each(normalize_paths),
+                serde_json::Value::Object(fields) => {
+                    fields.values_mut().for_each(normalize_paths);
+                }
+                _ => {}
+            }
+        }
+        normalize_paths(&mut actual);
+        normalize_paths(&mut expected);
+        assert_eq!(actual, expected, "{}", path.display());
     }
 
     fn sample_requirement_trace_record(
@@ -11237,7 +11240,9 @@ Scenario: verification metadata stays visible
         .unwrap();
         assert_eq!(tracked_map, map);
         assert_eq!(
-            fs::read_to_string(wiki.join("architecture/project-map.mmd")).unwrap(),
+            fs::read_to_string(wiki.join("architecture/project-map.mmd"))
+                .unwrap()
+                .replace("\r\n", "\n"),
             crate::spec_wiki::render_project_map_mermaid(&map)
         );
         for project_id in ["agent-spec", "codewiki", "symposium"] {
@@ -11493,9 +11498,11 @@ Scenario: verification metadata stays visible
         assert!(wiki.join("concepts/knowledge-liveness-layer.md").exists());
 
         let (expected_index, index_diagnostics) = crate::spec_wiki::render_wiki_index(&wiki);
-        assert!(index_diagnostics.is_empty());
+        assert!(index_diagnostics.is_empty(), "{index_diagnostics:?}");
         assert_eq!(
-            fs::read_to_string(wiki.join("_index.md")).unwrap(),
+            fs::read_to_string(wiki.join("_index.md"))
+                .unwrap()
+                .replace("\r\n", "\n"),
             expected_index
         );
 
@@ -11850,7 +11857,11 @@ Scenario: verification metadata stays visible
                 "live runtime authority boundary is missing `{authority}`"
             );
         }
-        assert!(roadmap.contains("#### D3. 可选 watch 与 daemon mode\n\n状态：已交付"));
+        assert!(
+            roadmap
+                .replace("\r\n", "\n")
+                .contains("#### D3. 可选 watch 与 daemon mode\n\n状态：已交付")
+        );
     }
 
     #[test]

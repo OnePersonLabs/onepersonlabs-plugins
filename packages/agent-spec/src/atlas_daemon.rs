@@ -2259,7 +2259,7 @@ mod tests {
         assert_eq!(live.pid, stale.pid);
         let second =
             serve_with_options(&code, &graph, ServeOptions::test_no_runtime(), None).unwrap_err();
-        assert!(second.to_string().contains("already active"));
+        assert!(second.to_string().contains("already active"), "{second}");
         assert_eq!(read_registry(&graph).unwrap(), live);
 
         stop_server(&code, &graph, handle);

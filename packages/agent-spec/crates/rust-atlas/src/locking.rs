@@ -348,7 +348,8 @@ fn reject_symlink(path: &Path) -> Result<(), AtlasError> {
 }
 
 fn is_contention(error: &std::io::Error) -> bool {
-    error.kind() == std::io::ErrorKind::WouldBlock || matches!(error.raw_os_error(), Some(11 | 35))
+    error.kind() == std::io::ErrorKind::WouldBlock
+        || matches!(error.raw_os_error(), Some(11 | 33 | 35))
 }
 
 fn lock_io(error: std::io::Error) -> AtlasError {

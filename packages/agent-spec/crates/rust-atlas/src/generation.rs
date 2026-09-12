@@ -645,10 +645,25 @@ fn collect_artifacts(
     Ok(())
 }
 
+#[cfg(unix)]
 fn sync_directory(path: &Path) -> Result<(), AtlasError> {
     fs::File::open(path)
         .and_then(|directory| directory.sync_all())
         .map_err(io_error)
+}
+
+#[cfg(windows)]
+fn sync_directory(path: &Path) -> Result<(), AtlasError> {
+    // Windows does not allow std::fs::File::open on directories. Artifact files
+    // are synced by the atomic writer; verify the directory still exists.
+    if fs::metadata(path).map_err(io_error)?.is_dir() {
+        Ok(())
+    } else {
+        Err(AtlasError::Invariant(format!(
+            "generation sync target is not a directory: {}",
+            path.display()
+        )))
+    }
 }
 
 fn io_error(error: std::io::Error) -> AtlasError {

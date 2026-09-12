@@ -212,7 +212,7 @@ pub(crate) enum RepoPathIssue {
 }
 
 pub(crate) fn repo_path_issue(root: &Path, path: &Path) -> Option<RepoPathIssue> {
-    if path.is_absolute() {
+    if path.is_absolute() || path.to_string_lossy().starts_with('/') {
         return Some(RepoPathIssue::Absolute);
     }
     if path

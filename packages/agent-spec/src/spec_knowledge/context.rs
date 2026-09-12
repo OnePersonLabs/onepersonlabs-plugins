@@ -94,7 +94,7 @@ fn collect(root: &Path, dir: &Path, out: &mut Vec<String>) {
             && let Ok(rel) = p.strip_prefix(root)
             && let Some(s) = rel.to_str()
         {
-            out.push(s.to_string());
+            out.push(s.replace('\\', "/"));
         }
     }
 }

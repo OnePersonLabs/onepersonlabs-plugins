@@ -3408,7 +3408,10 @@ mod tests {
         let path = std::env::temp_dir().join(format!(
             "atlas-eval-corpus-{}-{}.json",
             std::process::id(),
-            std::thread::current().name().unwrap_or("test")
+            std::thread::current()
+                .name()
+                .unwrap_or("test")
+                .replace(':', "-")
         ));
         let expected = valid_corpus(3);
         std::fs::write(&path, serde_json::to_vec(&expected).unwrap()).unwrap();

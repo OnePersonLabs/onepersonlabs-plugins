@@ -16,7 +16,6 @@ specs:
 source_files:
   - knowledge/requirements/req-code-live-wiki.md
   - src/spec_wiki/live.rs
-  - skills/agent-spec-wiki/SKILL.md
 external_sources:
   - rust-agents/codewiki
 tags:

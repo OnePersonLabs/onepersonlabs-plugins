@@ -154,6 +154,9 @@ checks where applicable. It performs no model evaluation.
 checks for every plugin and the complete retained behavioral evaluation corpus.
 It is the only standard command that evaluates every shipped skill.
 
-CI runs `npm ci`, `npm run verify`, and package/discovery-only clean installs.
-Model evaluations stay in the explicit release workflow. Hook trust is verified
-headlessly during installed checkpoints, including CI and release checks.
+Install dependencies with `npm ci` to configure Husky's local Git hooks. Before
+each push, `.husky/pre-push` runs `npm run verify` and then
+`npm run test:installed -- --plugin all --package-only`. A failed check blocks
+the push. The hook requires the same Node.js, Rust, Python, and Codex runtimes
+as those commands. Model evaluations remain in the explicit release gate. Hook
+trust is verified headlessly during installed checkpoints.

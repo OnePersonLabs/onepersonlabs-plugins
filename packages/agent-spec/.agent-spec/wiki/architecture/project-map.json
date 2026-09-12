@@ -90,8 +90,7 @@
       ],
       "source_files": [
         "knowledge/requirements/req-code-live-wiki.md",
-        "src/spec_wiki/live.rs",
-        "skills/agent-spec-wiki/SKILL.md"
+        "src/spec_wiki/live.rs"
       ],
       "external_sources": [
         "rust-agents/codewiki"
