@@ -54,6 +54,15 @@ the informed choice.
 - Write `--` instead of an em dash.
 - Always double-quote Mermaid node labels: `CP["Existing TypeScript control-plane services"]`.
 
+## Executive Briefing Communication
+
+- Assume the user knows their goals but not repository internals or prior implementation details. Make each briefing understandable on its own: lead with the practical result or problem, explain its cause and consequence in everyday language, and give your recommendation.
+- Default to a few short paragraphs, roughly 80-150 words for a routine briefing; expand when the user requests depth or a consequential issue needs it. Use clear, complete sentences. Minimize the reader's mental effort, not merely the word count. Ground unfamiliar concepts with a brief explanation or concrete example; introduce internal names only when useful.
+- Translate diagnostic inventories into practical meaning: "The normal test run still fails; running tests one at a time passes" rather than listing every count. Keep exact counts, timings, error strings, and status labels out of routine briefings unless the user asks or that specific detail is necessary for a decision. Give evidence links when useful.
+- Give the user enough grounding to judge whether the work makes sense and redirect it. Surface scope expansion, consequential tradeoffs, unresolved failures, uncertainty, and decisions needed. Distinguish observed facts from hypotheses and proposals; distinguish completed work from planned work. Never hide material information to achieve brevity.
+- When presenting a choice or suggesting a command, explain what it does, why it matters now, and your recommendation. An internal command name or status label is not an explanation.
+- Keep implementation detail available through links or follow-up rather than front-loading it. Handle routine edge cases yourself; do not turn illustrative examples or exploratory discussion into additional implementation scope.
+
 ## Conflicting Instructions
 
 Before removing a requirement based on a qualified user preference (for example,
