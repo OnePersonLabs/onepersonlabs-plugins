@@ -189,6 +189,31 @@ Use Windows Chrome for browser work. Route signed-in tabs and profile state to P
 
 When package or API behavior may be unfamiliar, version-specific, or changed, retrieve the smallest relevant current slice before acting. Use Context7 for targeted package APIs, docs-mcp-server for indexed or repeatedly useful documentation, GitMCP for repository docs or source, and direct URL fetch for a known page; prefer official and local sources. Refine the query and retrieve more only for a concrete remaining gap. Let retrieval systems chunk and cache content; do not duplicate documentation or impose fixed chunk sizes.
 
+## Child Agent Model Selection
+
+Before launching `codex exec` or an independent native subagent, choose its model
+and reasoning effort for the total cost of a verified result, including likely
+retries and repair. Preserve a user's explicit choice or a deliberate,
+task-specific choice already made. For `codex exec`, pass both settings explicitly
+(`-m MODEL -c model_reasoning_effort=EFFORT`), even when they match the current
+config. For independent native subagents, set both overrides when the tool
+allows them; preserve fixed role settings and full-history inheritance when
+overrides are unavailable.
+
+Start with Luna low for mechanical lookup, Luna medium/high for bounded
+investigation, and Luna xhigh for difficult but tightly scoped work with clear
+checks. Start ordinary implementation at Sol medium; use Sol high for complex
+implementation, diagnosis, or review. For deeply coupled architecture or
+consequential review, consider Sol xhigh or Astra medium; use Astra medium/high
+for broad, uncertain, high-consequence work. Astra low can suit broad but
+bounded work. Consider Terra medium/high when representative results, latency,
+or context handling justify it. Increase capability for ambiguity, coupled
+decisions, weak verification, or expensive failure; do not repeatedly retry an
+undersized model. Reserve effort above high for a concrete reasoning need, and
+do not escalate merely because a task is long or called critical. If the
+starting choice needs justification, read `references/child-agent-model-selection.md`
+beside this `AGENTS.md` for evidence and limits.
+
 ## Subagent Routing
 
 Default focused, tightly coupled work to the parent. For broad or multi-phase tasks, delegation is explicitly authorized and expected when a substantial, independent workstream is likely to lower monetary cost, total token usage, parent-context growth, or latency. Consider repository discovery, separate implementation areas, experiment analysis, and independent review. Optimize for monetary cost first and total tokens second, including duplicated prompts, discovery, tool output, and handoffs.

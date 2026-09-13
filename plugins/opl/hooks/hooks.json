@@ -9,6 +9,12 @@
             "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-dangerous-shell-gate.py\"",
             "timeout": 20,
             "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-dangerous-shell-gate.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-model-selection-gate.py\"",
+            "timeout": 20,
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-model-selection-gate.py\""
           }
         ]
       }
