@@ -57,8 +57,9 @@ the informed choice.
 ## Executive Briefing Communication
 
 - Assume the user knows their goals but not repository internals or prior implementation details. Make each briefing understandable on its own: lead with the practical result or problem, explain its cause and consequence in everyday language, and give your recommendation.
-- Default to a few short paragraphs, roughly 80-150 words for a routine briefing; expand when the user requests depth or a consequential issue needs it. Use clear, complete sentences. Minimize the reader's mental effort, not merely the word count. Ground unfamiliar concepts with a brief explanation or concrete example; introduce internal names only when useful.
-- Translate diagnostic inventories into practical meaning: "The normal test run still fails; running tests one at a time passes" rather than listing every count. Keep exact counts, timings, error strings, and status labels out of routine briefings unless the user asks or that specific detail is necessary for a decision. Give evidence links when useful.
+- Translate diagnostic inventories into practical meaning: "Test run still fails; one at a time passes" rather than listing every count. Only include specific details necessary for a decision. Give evidence links when useful.
+- Minimize the reader's mental effort, not merely the word count.
+- Introduce concepts with a brief explanation or concrete example; introduce internal names with a (short description in parentheses, like this).
 - Give the user enough grounding to judge whether the work makes sense and redirect it. Surface scope expansion, consequential tradeoffs, unresolved failures, uncertainty, and decisions needed. Distinguish observed facts from hypotheses and proposals; distinguish completed work from planned work. Never hide material information to achieve brevity.
 - When presenting a choice or suggesting a command, explain what it does, why it matters now, and your recommendation. An internal command name or status label is not an explanation.
 - Keep implementation detail available through links or follow-up rather than front-loading it. Handle routine edge cases yourself; do not turn illustrative examples or exploratory discussion into additional implementation scope.
@@ -138,10 +139,13 @@ of the turn and stop until the answer arrives. This timing rule does not bypass
 the conflict procedure: investigate and disclose the conflict, withhold the
 affected action, and then ask after independent work is exhausted.
 
-Subagents send `/root` a blocking question, 2--3 mutually exclusive options,
-and recommendation with `send_message`; they never invoke `request_user_input`.
-On `request_user_input can only be used by the root thread`, do not retry or
-invoke `$opl:recover-request-user-input`; route the question as above.
+Non-root agents never invoke `request_user_input`. When messaging is available,
+send a blocking question, 2--3 mutually exclusive options, and a recommendation
+to the immediate parent agent. If messaging is unavailable, finish all safe
+independent work and return a clearly marked BLOCKED report with the question,
+options, recommendation, and evidence. Withhold the blocked action. On
+`request_user_input can only be used by the root thread`, do not retry or invoke
+`$opl:recover-request-user-input`; use this same parent-escalation route.
 
 `request_user_input` is unsupported in noninteractive `codex exec`. On an error
 beginning `request_user_input is not supported in exec mode for thread`, do not
@@ -163,28 +167,6 @@ Write file contents with `apply_patch` or a file-writing API. Never splice file 
 
 Write skill references and invocations as `$skill-name` instead of `skill-name` or `/skill-name`.
 
-## Cross-Agent Skill Invocation
-
-For skills in this repository, treat Claude's `SKILL.md`
-`disable-model-invocation` and Codex's `agents/openai.yaml`
-`policy.allow_implicit_invocation` as one explicit inverse pair:
-
-| Invocation mode   | `disable-model-invocation` | `policy.allow_implicit_invocation` |
-| ----------------- | -------------------------- | ---------------------------------- |
-| User-invoked only | `true`                     | `false`                            |
-| Model-invoked     | `false`                    | `true`                             |
-
-Always set both values explicitly. The intended invocation mode is the source of
-truth. When either value is added or changed, resolve the intended mode once and
-write both values in the same change; do not treat that synchronization edit as
-a new invocation-mode change.
-
-The skill-creator `quick_validate.py` validator does not recognize Claude's
-`disable-model-invocation` frontmatter key. Ignore only its
-`disable-model-invocation` unexpected-key diagnostic when the inverse pair above
-is present and correct. Retain the Claude field, and act on every other validator
-diagnostic.
-
 ## MCP API Keys
 
 Store MCP API keys in Windows user environment variables; they pass through to WSL.
@@ -197,46 +179,54 @@ Use Windows Chrome for browser work. Route signed-in tabs and profile state to P
 
 When package or API behavior may be unfamiliar, version-specific, or changed, retrieve the smallest relevant current slice before acting. Use Context7 for targeted package APIs, docs-mcp-server for indexed or repeatedly useful documentation, GitMCP for repository docs or source, and direct URL fetch for a known page; prefer official and local sources. Refine the query and retrieve more only for a concrete remaining gap. Let retrieval systems chunk and cache content; do not duplicate documentation or impose fixed chunk sizes.
 
-## Child Agent Model Selection
+## Agent Orchestration
 
-Before launching `codex exec` or an independent native subagent, choose its model
-and reasoning effort for the total cost of a verified result, including likely
-retries and repair. Preserve a user's explicit choice or a deliberate,
-task-specific choice already made. For `codex exec`, pass both settings explicitly
-(`-m MODEL -c model_reasoning_effort=EFFORT`), even when they match the current
-config. For independent native subagents, set both overrides when the tool
-allows them; preserve fixed role settings and full-history inheritance when
-overrides are unavailable.
+Use native Codex subagents when delegation materially improves the result,
+protects a valuable context window, isolates substantial investigation or
+execution noise, or gives a separable responsibility a cleaner owner. Otherwise,
+work directly. Do not delegate merely because capacity exists.
 
-Start with Luna low for mechanical lookup, Luna medium/high for bounded
-investigation, and Luna xhigh for difficult but tightly scoped work with clear
-checks. Start ordinary implementation at Sol medium; use Sol high for complex
-implementation, diagnosis, or review. For deeply coupled architecture or
-consequential review, consider Sol xhigh or Astra medium; use Astra medium/high
-for broad, uncertain, high-consequence work. Astra low can suit broad but
-bounded work. Consider Terra medium/high when representative results, latency,
-or context handling justify it. Increase capability for ambiguity, coupled
-decisions, weak verification, or expensive failure; do not repeatedly retry an
-undersized model. Reserve effort above high for a concrete reasoning need, and
-do not escalate merely because a task is long or called critical. If the
-starting choice needs justification, read `references/child-agent-model-selection.md`
-beside this `AGENTS.md` for evidence and limits.
+The root owns the user's overall objective, global constraints, cross-workstream
+decisions, integration, user communication, and final acceptance.
 
-## Subagent Routing
+For substantial separable work, a child may be assigned as a workstream lead.
+A lead owns its outcome end to end and may create descendants within an explicit
+descendant budget. Ordinary workers do not gain coordination authority merely
+because their task becomes complicated.
 
-Default focused, tightly coupled work to the parent. For broad or multi-phase tasks, delegation is explicitly authorized and expected when a substantial, independent workstream is likely to lower monetary cost, total token usage, parent-context growth, or latency. Consider repository discovery, separate implementation areas, experiment analysis, and independent review. Optimize for monetary cost first and total tokens second, including duplicated prompts, discovery, tool output, and handoffs.
+Configured roles are:
 
-At the start of a broad task, delegate qualifying workstreams or state why delegation is not worthwhile. Reassess after significant checkpoints and delegate newly separable work when scope or parent context grows. The user need not request subagents explicitly.
+- `workstream_lead`: Sol/medium coordinator for a substantial separable outcome.
+- `scout`: Terra/medium non-writing investigator.
+- `implementer`: Sol/medium implementation worker.
+- `reviewer`: Sol/medium non-writing independent reviewer for consequential
+  architecture, diagnosis, plans, or patches.
 
-The parent agent retains ownership of architectural decisions, experiment selection, integration, and final validation. Delegate bounded workstreams, not the overall objective. Keep tightly coupled experiment-selection loops in the parent; delegate experiment execution or result analysis only when it is substantial and independently separable.
+Role model/effort settings are intentional defaults. Use a generic native child
+with an explicit model and effort when a different configuration better fits the
+task. Optimize for the total cost of a verified result, including retries and
+repair; do not require a cheaper or lower-effort attempt to fail first.
 
-Do not delegate trivial conversation, known-target work limited to one or two files, straightforward commands, or tasks likely to finish within a few focused tool calls. A slow command alone is not a reason to delegate. Run ordinary Python, Gradle, test, build, lint, migration, and generator commands directly with bounded output. Delegate runner work only for substantial iterative diagnosis, output analysis, or genuinely independent parallel execution.
+Choose inherited context deliberately. Use a focused handoff when the child can
+work independently, limited history when recent conversation state matters, and
+full history when continuity materially outweighs duplicated context. A context
+fork is not workspace, browser, process, or permission isolation.
 
-When delegation is justified:
+Parallelize only work that can safely proceed independently. Delegation may also
+be useful sequentially when it protects parent context or isolates a substantial
+responsibility. Preserve unrelated and concurrent work and assign clear ownership
+when multiple agents can write.
 
-- Use `fork_turns="none"` unless parent conversation context is genuinely required.
-- Prefer one subagent per task. Add more only for non-overlapping work that materially saves time; never fill concurrency slots automatically.
-- Reuse agents, completed discovery, and cited evidence for related follow-ups.
-- Give task-local prompts and request decision-ready reports of at most 300 words: findings, evidence locations, risks, and next action. Exclude narration, raw dumps, and repeated context.
-- For parallel implementation, assign explicit, non-overlapping file or module ownership in every subagent prompt. State that the workspace is shared, other agents may edit concurrently, and each agent must preserve and accommodate others' changes.
-- Trust cited findings unless verification is necessary. For weak or failed results, retry with a narrower task before switching roles or repeating discovery.
+Use `codex exec` only when a genuinely separate noninteractive process or
+workspace boundary is useful. When using it, set model and
+`model_reasoning_effort` explicitly. Do not use it to bypass missing native
+capabilities or permissions.
+
+Each agent owns verification of its assigned outcome. Return concise,
+decision-ready results with material evidence, checks actually run, consequential
+assumptions or decisions, unresolved risks, and blockers. Protect higher-level
+contexts from volume, not from important facts.
+
+For consequential work, independent review should test the proposed approach and
+the strongest plausible alternative. Agreement is valid. Resolve disagreements
+with evidence rather than recursive debate.

@@ -217,8 +217,6 @@ def main():
     labels = ', '.join(missing)
     reason = (
         f'codex exec needs an explicit {labels} for this child task. '
-        'Choose for the total cost of a verified result, including likely repair, '
-        'using the OPL Child Agent Model Selection guidance. '
         'Retry with: codex exec -m gpt-5.6-sol -c model_reasoning_effort=medium '
         '"<task prompt>" (adjust both settings to the task).'
     )
