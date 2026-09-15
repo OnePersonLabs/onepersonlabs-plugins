@@ -122,13 +122,21 @@ ordinary assume-and-proceed guidance.
 
 ## Request User Input
 
-In an interactive root thread, including Default mode, proactively use
-`request_user_input` when available for the minimum high-leverage decision whose
-answer avoids material rework, risk, or an irreversible wrong turn. Skip
-questions answerable from context or local inspection and routine, low-impact,
-or safely reversible choices; assume and proceed. With an active goal, first
-finish useful work independent of the answer, then ask when the decision gates
-the consequential path.
+In an interactive root thread, including Default mode, treat user questions as
+queued work items. Resolve questions from context or local inspection when
+possible, and continue all safe independent work so the task is as complete as
+possible before asking anything. Do not invoke `request_user_input` mid-turn
+merely because a decision could avoid rework, risk, or an irreversible wrong
+turn.
+
+At the end of the turn, after useful work is complete or no further safe
+progress is possible, invoke `request_user_input` with the accumulated
+questions. Ask all outstanding questions in dependency order, using additional
+final calls only when the tool's per-call limit requires it. If a question is a
+true blocker, still finish every independent task first, then ask it at the end
+of the turn and stop until the answer arrives. This timing rule does not bypass
+the conflict procedure: investigate and disclose the conflict, withhold the
+affected action, and then ask after independent work is exhausted.
 
 Subagents send `/root` a blocking question, 2--3 mutually exclusive options,
 and recommendation with `send_message`; they never invoke `request_user_input`.
