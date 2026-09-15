@@ -8,7 +8,6 @@ description: >
   dissect it. Trigger on: "log this", "log that", "that was slop", "you missed X", "/unslop-log".
   For tracing a failure to its root and developing a fix, use /unslop (one live failure, fix
   proven by replay) or /unslop-session-audit (whole session, fix proven by reasoning) instead.
-disable-model-invocation: true
 ---
 
 # Unslop Log

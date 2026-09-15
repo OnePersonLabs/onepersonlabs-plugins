@@ -2,7 +2,6 @@
 name: unslop
 description: >
   Trace ONE specific AI agent failure in the CURRENT live session to its causal depth (the instruction vulnerability, not just the agent behavior), then develop a corrective rule and PROVE it empirically -- by forging a truncated copy of the failure session and replaying it under candidate rules until one passes. Use when a single mistake just happened and you can still reach the session that produced it: your reply begins with acknowledging a mistake like "You're right." "Agreed. (x) is vague and useless. Recommendations: (...)", "You're right. I made the wrong inference. The correct read was: (...)", or the user catches a mistake you made, calls something slop, or after an adversarial review surfaces a mistake, or when the agent catches its own mistake. The replay loop needs the failing session to be reachable and reproducible.
-disable-model-invocation: true
 ---
 
 # Unslop Replay

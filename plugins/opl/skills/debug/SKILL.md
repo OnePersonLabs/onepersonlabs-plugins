@@ -1,7 +1,6 @@
 ---
 name: debug
 description: Diagnose bugs, failing tests, build failures, performance regressions, and unexpected behavior; implement and verify a causal fix when requested. Use for concrete failures that need investigation, not general code review or speculative optimization.
-disable-model-invocation: false
 ---
 
 # Debug

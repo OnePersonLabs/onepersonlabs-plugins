@@ -3,7 +3,6 @@ name: caveman-commit
 description: >
   Draft a concise Conventional Commits message for a provided change. Use for
   "commit message" or /caveman-commit, not requests to run git commit.
-disable-model-invocation: false
 ---
 
 Write commit messages terse and exact. Conventional Commits format. No fluff. Why over what.

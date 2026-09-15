@@ -3,7 +3,6 @@ name: caveman-review
 description: >
   Write terse, paste-ready code review comments with location, problem, and fix.
   Use for /caveman-review or requests for concise PR review comments.
-disable-model-invocation: false
 ---
 
 Write code review comments terse and actionable. One line per finding. Location, problem, fix. No throat-clearing.

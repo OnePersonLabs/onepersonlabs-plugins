@@ -1,7 +1,6 @@
 ---
 name: openspec-x-reverse-uncommitted
 description: Reverse-engineer an OpenSpec change from the uncommitted changes that occurred outside of the OpenSpec workflow skills and fix drift between OpenSpec files and the code they describe.
-disable-model-invocation: true
 ---
 
 ## Workflow

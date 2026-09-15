@@ -1,7 +1,6 @@
 ---
 name: distill-self-improvements
 description: Scan recent conversations, find repeated manual work, then suggest whether it should become a Skill, subagent, automation or nothing.
-disable-model-invocation: true
 ---
 
 Look back over my recent work from the last 30 days, or all available history if shorter, (or, if the user requested a different scope, go with that instead) and identify repeated manual workflows worth packaging.

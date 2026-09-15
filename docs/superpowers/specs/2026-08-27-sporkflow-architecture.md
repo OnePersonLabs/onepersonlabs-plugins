@@ -1297,7 +1297,6 @@ The plugin publishes one skill named `sporkflow`. It is model-invoked:
 ```yaml
 # SKILL.md frontmatter
 name: sporkflow
-disable-model-invocation: false
 ```
 
 ```yaml

@@ -132,8 +132,7 @@ and `--help`. It needs Node.js 22 or newer and Codex, and uses only Node built-i
 The repository's development commands retain the Node.js 24 requirement.
 
 Manifest discovery follows Codex's precedence: `.agents/plugins/marketplace.json`,
-`.agents/plugins/api_marketplace.json`, `.claude-plugin/marketplace.json`, then
-`.cursor-plugin/marketplace.json`. Selected entries must have local sources,
+then `.agents/plugins/api_marketplace.json`. Selected entries must have local sources,
 resolved from the marketplace root. Preflight checks an existing marketplace
 registration against that checkout and fails on a same-name different-root
 conflict; it does not silently rebind the marketplace. The source checkout

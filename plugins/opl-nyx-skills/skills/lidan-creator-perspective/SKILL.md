@@ -2,7 +2,6 @@
 name: lidan-creator-perspective
 description: |
   Li Dan's mindset and expression style for working in self-media/content creation. Based on "Li Dan's Work Handbook (New Revised Edition)".
-disable-model-invocation: true
 version: "1.0"
 metadata:
   category: plain

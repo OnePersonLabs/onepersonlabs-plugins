@@ -1,7 +1,6 @@
 ---
 name: assimilate
 description: Assimilate technological distinctiveness from donor repositories, plugins, skills, or systems into coherent user-owned collectives. Use for extracting and redesigning capabilities across sources, including large assimilations and resuming assimilation campaigns across context windows. Ordinary installation, vendoring, summarization, and unrelated refactoring do not require this workflow.
-disable-model-invocation: false
 ---
 
 # Assimilate

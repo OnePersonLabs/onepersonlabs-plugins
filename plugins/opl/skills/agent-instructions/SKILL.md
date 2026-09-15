@@ -1,7 +1,6 @@
 ---
 name: agent-instructions
 description: Author, update, or review AGENTS.md and SKILL.md; audit, score, or restructure hooks and other agent instructions.
-disable-model-invocation: false
 ---
 
 # Agent Instructions

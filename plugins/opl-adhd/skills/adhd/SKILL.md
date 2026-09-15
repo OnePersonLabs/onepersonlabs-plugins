@@ -1,7 +1,6 @@
 ---
 name: adhd
 description: ADHD project-work assistance for overwhelm, trouble starting, interruption recovery, too many choices, scope creep, perfectionistic overrun, repeated unproductive iteration, or running ragged. Use to reduce executive load to one active path, preserve task state, and make the stopping point visible.
-disable-model-invocation: false
 ---
 
 # ADHD

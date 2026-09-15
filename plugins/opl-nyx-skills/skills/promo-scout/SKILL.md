@@ -1,7 +1,6 @@
 ---
 name: promo-scout
 description: Verify-first promotion intelligence for ANY repo or org. Pulls live GitHub state, runs sshx multi-perspective consensus over it, and returns an evidence-backed board of what is genuinely promotable, how items connect, and what is unverifiable. Use when an agent or operator asks "what's worth promoting / what connects / what's real" for a target repo or org.
-disable-model-invocation: true
 version: "2.0"
 license: MIT
 metadata:

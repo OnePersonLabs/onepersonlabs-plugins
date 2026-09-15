@@ -13,8 +13,6 @@ import { ensurePluginHookTrust } from './codex-hooks.mjs'
 const marketplaceFiles = [
   '.agents/plugins/marketplace.json',
   '.agents/plugins/api_marketplace.json',
-  '.claude-plugin/marketplace.json',
-  '.cursor-plugin/marketplace.json',
 ]
 
 function readJson(path) {
@@ -59,7 +57,7 @@ function sameContents(source, installed) {
 }
 
 function installedCopy(home, marketplace, name, source) {
-  const manifest = ['.codex-plugin/plugin.json', '.claude-plugin/plugin.json', '.cursor-plugin/plugin.json']
+  const manifest = ['.codex-plugin/plugin.json']
     .map((path) => join(source, path)).find(existsSync)
   if (!manifest) throw new Error(`${name}: no plugin manifest found in ${source}`)
   const version = readJson(manifest).version
@@ -109,9 +107,8 @@ function installationPlan({ repo = process.cwd(), plugins, targetHome, beforePre
     if (!entry) throw new Error(`Unknown plugin ${name}; available: ${[...entries.keys()].join(', ')}`)
     const path = typeof entry.source === 'string' ? entry.source : entry.source?.source === 'local' ? entry.source.path : undefined
     if (typeof path !== 'string' || !path || isAbsolute(path)) throw new Error(`${name}: refresh requires a relative local plugin source`)
-    const cursor = manifestPath === join(root, '.cursor-plugin', 'marketplace.json')
-    if ((!cursor && path !== '.' && !path.startsWith('./')) || path.split(/[\\/]/u).includes('..')) {
-      throw new Error(`${name}: local source path must stay beneath the marketplace root and use ./ (optional for Cursor): ${path}`)
+    if ((path !== '.' && !path.startsWith('./')) || path.split(/[\\/]/u).includes('..')) {
+      throw new Error(`${name}: local source path must stay beneath the marketplace root and use ./ (optional for the marketplace root): ${path}`)
     }
     const source = beforePreparation ? canonicalDestination(resolve(root, path)) : realpathSync(resolve(root, path))
     if (!within(root, source)) throw new Error(`${name}: plugin source escapes marketplace root: ${source}`)
@@ -297,7 +294,7 @@ export async function installLocal(options) {
     }
     plugin.installedPath = realpathSync(result.installedPath)
     console.log(`${plugin.name}: installed and enabled at ${plugin.installedPath}`)
-    const manifest = ['.codex-plugin/plugin.json', '.claude-plugin/plugin.json', '.cursor-plugin/plugin.json']
+    const manifest = ['.codex-plugin/plugin.json']
       .map((path) => join(plugin.installedPath, path)).find(existsSync)
     const required = existsSync(join(plugin.installedPath, 'hooks', 'hooks.json')) || Boolean(manifest && readJson(manifest).hooks)
     try {

@@ -4,7 +4,6 @@ description: >
   Terse communication mode for an ongoing conversation, preserving technical
   accuracy. Use for /caveman, "caveman mode", or sustained output compression;
   a one-off request to be brief does not change the session mode.
-disable-model-invocation: false
 ---
 
 Respond terse like smart caveman. All technical substance stay. Only fluff die.

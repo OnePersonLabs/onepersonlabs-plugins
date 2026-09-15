@@ -1,7 +1,6 @@
 ---
 name: review-changes
 description: Cold Repository Audit After Large-Scale Changes. Use in a new session when reviewing a large series of completed changes made by another agent.
-disable-model-invocation: true
 ---
 
 # Cold Repository Audit After Large-Scale Changes

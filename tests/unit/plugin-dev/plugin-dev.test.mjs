@@ -206,6 +206,30 @@ test('contract validates default and Windows hook targets using either path sepa
   })
 })
 
+test('contract accepts Codex skill metadata without a second invocation frontmatter field', () => {
+  withFakeCodex(({ root }) => {
+    const fixtureDriver = fixtureRepository(root)
+    const plugin = join(root, 'plugins', 'fixture')
+    const manifestPath = join(plugin, '.codex-plugin', 'plugin.json')
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    manifest.skills = './skills'
+    writeFileSync(manifestPath, JSON.stringify(manifest))
+    const skill = join(plugin, 'skills', 'fixture-skill')
+    mkdirSync(join(skill, 'agents'), { recursive: true })
+    writeFileSync(join(skill, 'SKILL.md'), '---\nname: fixture-skill\ndescription: A Codex-only fixture skill.\n---\n')
+    writeFileSync(join(skill, 'agents', 'openai.yaml'), 'policy:\n  allow_implicit_invocation: false\n')
+    const cases = join(root, 'tests', 'evals', 'cases')
+    mkdirSync(cases, { recursive: true })
+    writeFileSync(join(cases, 'fixture.jsonl'), [
+      { id: 'fixture-skill:direct', skill: 'fixture-skill', kind: 'direct', should_activate: true },
+      { id: 'fixture-skill:indirect', skill: 'fixture-skill', kind: 'indirect', should_activate: false },
+      { id: 'fixture-skill:negative', skill: 'fixture-skill', kind: 'negative', should_activate: false },
+    ].map((item) => JSON.stringify(item)).join('\n') + '\n')
+    const result = spawnSync(process.execPath, [fixtureDriver, 'contract', '--plugin', 'fixture'], { encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+  })
+})
+
 test('eval prepares readable skill links and launches a JS Codex fixture', () => {
   withFakeCodex(({ root, fakeCodex, log }) => {
     const result = spawnSync(process.execPath, [driver, 'eval', '--plugin', 'opl-adhd', '--skill', 'adhd', '--case', 'adhd:direct'], {

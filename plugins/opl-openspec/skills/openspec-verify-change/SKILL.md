@@ -8,7 +8,6 @@ metadata:
   author: openspec
   version: "1.0"
   generatedBy: "1.11.0"
-disable-model-invocation: false
 ---
 
 Verify that an implementation matches the change artifacts (specs, tasks, design).

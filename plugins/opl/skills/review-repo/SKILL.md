@@ -1,7 +1,6 @@
 ---
 name: review-repo
 description: Use when reviewing large or agent-generated changes, unfamiliar repositories, major refactors, or working code that feels unusually complex, inconsistent, nonidiomatic, difficult to navigate, or difficult to explain; especially before integration or when local patterns may have become self-reinforcing.
-disable-model-invocation: true
 ---
 
 # Auditing Repository Shape

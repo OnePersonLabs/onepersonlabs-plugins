@@ -29,21 +29,8 @@ function normalizeSkill(skill) {
 
   const openaiPath = join(skill.root, 'agents', 'openai.yaml')
   let openai = existsSync(openaiPath) ? readFileSync(openaiPath, 'utf8') : ''
-  const disabled = frontmatter[1].match(/^disable-model-invocation:\s*(true|false)/mu)?.[1]
   const existingAllow = openai.match(/allow_implicit_invocation:\s*(true|false)/u)?.[1]
-  const allow = disabled ? disabled === 'false' : existingAllow ? existingAllow === 'true' : true
-
-  let normalizedFrontmatter = frontmatter[1]
-  if (disabled) {
-    normalizedFrontmatter = normalizedFrontmatter.replace(
-      /^disable-model-invocation:\s*(?:true|false).*$/mu,
-      `disable-model-invocation: ${allow ? 'false' : 'true'}`,
-    )
-  } else {
-    normalizedFrontmatter = `${normalizedFrontmatter}\ndisable-model-invocation: ${allow ? 'false' : 'true'}`
-  }
-  text = text.replace(frontmatter[0], `---\n${normalizedFrontmatter}\n---`)
-  writeFileSync(skillPath, text)
+  const allow = existingAllow ? existingAllow === 'true' : true
 
   if (!openai) {
     openai = [
@@ -104,4 +91,4 @@ for (const entry of marketplace.plugins) {
   writeFileSync(join(casesRoot, `${entry.name}.jsonl`), cases.map((item) => JSON.stringify(item)).join('\n') + (cases.length ? '\n' : ''))
 }
 
-console.log(`Normalized invocation contracts and retained smoke cases for ${skillCount} shipped skills.`)
+console.log(`Normalized Codex invocation contracts and retained smoke cases for ${skillCount} shipped skills.`)

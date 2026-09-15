@@ -1,7 +1,6 @@
 ---
 name: investigate-first
 description: Diagnose ambiguous failures before editing. Use for unknown causes, intermittent behavior, performance regressions, or investigations needing evidence-ranked hypotheses.
-disable-model-invocation: false
 ---
 
 # Investigate first

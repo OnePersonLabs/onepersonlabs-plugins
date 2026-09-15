@@ -151,10 +151,8 @@ test('registration conflict prevents preparation as well as installation', (t) =
 for (const [manifest, source] of [
   ['.agents/plugins/marketplace.json', { source: 'local', path: './components/alpha' }],
   ['.agents/plugins/api_marketplace.json', { source: 'local', path: './components/alpha' }],
-  ['.claude-plugin/marketplace.json', './components/alpha'],
-  ['.cursor-plugin/marketplace.json', 'components/alpha'],
 ]) {
-  test(`installed helper refreshes a foreign ${manifest} marketplace and its own cache`, (t) => {
+  test(`installed helper refreshes a Codex ${manifest} marketplace and its own cache`, (t) => {
     const f = fixture(t, manifest)
     f.entries[0].source = source
     writeJson(f.marketplacePath, { name: 'example-market', plugins: f.entries })

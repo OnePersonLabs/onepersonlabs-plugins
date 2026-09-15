@@ -1,7 +1,6 @@
 ---
 name: test-driven-development
 description: Use when implementing features, fixing bugs, refactoring executable behavior, or changing an observable contract that needs regression protection.
-disable-model-invocation: false
 ---
 
 # Test-Driven Development

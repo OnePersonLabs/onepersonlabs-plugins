@@ -1,7 +1,6 @@
 ---
 name: lean-delivery
 description: Coordinate substantial implementation delivery, multi-phase or DAG work, and active review-fix loops with compact acceptance context, continuity review, bounded repair, and proportionate verification. Use for cross-cutting or long-running changes where repeated context loading and review churn are material; do not use for narrow edits, planning-only work, or standalone review.
-disable-model-invocation: false
 ---
 
 # Lean Delivery

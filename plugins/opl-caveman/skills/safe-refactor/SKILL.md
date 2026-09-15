@@ -1,7 +1,6 @@
 ---
 name: safe-refactor
 description: Restructure code while preserving behavior. Use for extraction, consolidation, ownership moves, or cleanup where verification must bracket structural edits.
-disable-model-invocation: false
 ---
 
 # Safe refactor

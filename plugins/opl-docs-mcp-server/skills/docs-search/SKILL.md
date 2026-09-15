@@ -9,7 +9,6 @@ description: >-
 compatibility: Requires Node.js 22+ and npx
 metadata:
   author: grounded.tools
-disable-model-invocation: false
 ---
 
 # Docs Search

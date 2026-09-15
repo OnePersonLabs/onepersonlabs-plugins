@@ -15,7 +15,7 @@ The inspected repository baseline is commit `c0b73c99e985556a28031a2bd2bff6500f5
 | `plugins/opl-borg/skills/assimilate/SKILL.md` | Mission boundary, causal value, refraction, native integration, survival tests | Expand source and recipient types; route intake, association, and spec-revision references |
 | `plugins/opl-borg/skills/assimilate/references/campaign-state.md` | Landing file, IDs, work states, invalidation, recovery, cleanup | Add source ancestry, evidence versus interpretation, recipient revision, inspection depth, and retention distinctions |
 | `plugins/opl-borg/skills/assimilate/references/orchestration.md` | Bounded packets, one writer, result acceptance, serial fallback, baton passes | Add evidence packs, resource discovery, total-cost accounting, recursion limits, and stale-result handling for designs |
-| `plugins/opl-borg/skills/assimilate/agents/openai.yaml` | Explicit model-invoked policy | Update discovery text if needed; retain the inverse frontmatter/metadata pair |
+| `plugins/opl-borg/skills/assimilate/agents/openai.yaml` | Explicit model-invoked policy | Update discovery text if needed |
 | `plugins/opl-borg/README.md` | Assimilation philosophy and usage | Explain mixed-source campaigns, design endpoints, durable evidence, and actual host capabilities |
 | `tests/evals/cases/opl-borg.jsonl` | Existing selection and lifecycle cases | Add representative branch, mixed-source, analogy, and design-only activation cases |
 

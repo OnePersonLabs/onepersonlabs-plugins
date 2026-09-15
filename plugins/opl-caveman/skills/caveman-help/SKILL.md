@@ -3,7 +3,6 @@ name: caveman-help
 description: >
   Quick-reference card for caveman modes, skills and commands.
   Trigger: /caveman-help or "caveman help".
-disable-model-invocation: false
 ---
 
 # Caveman Help

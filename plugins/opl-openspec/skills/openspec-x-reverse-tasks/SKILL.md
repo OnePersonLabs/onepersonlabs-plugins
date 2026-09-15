@@ -5,7 +5,6 @@ license: MIT
 metadata:
   author: openspec
   version: "1.0"
-disable-model-invocation: true
 ---
 
 Reverse-audit a tasks.md file against the current codebase. Cross-check each task's references (files, symbols, type names, exports) against what exists today. Produce a report classifying every task into one of four buckets, then optionally edit tasks.md to mark verified-completed tasks `[x]` with a "(landed silently)" parenthetical.

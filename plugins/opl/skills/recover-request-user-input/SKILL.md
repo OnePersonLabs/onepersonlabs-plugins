@@ -1,7 +1,6 @@
 ---
 name: recover-request-user-input
 description: Recover immediately when the native `request_user_input` tool returns the exact failure `request_user_input is unavailable in Default mode`. Invoke this skill for that observed tool-result scenario even when the user did not name a skill; do not invoke it for successful questions or unrelated tool errors.
-disable-model-invocation: false
 ---
 
 # Recover unavailable request input

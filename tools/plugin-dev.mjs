@@ -117,10 +117,8 @@ function parseSkillFrontmatter(path) {
   const text = readFileSync(path, 'utf8')
   const block = text.match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? ''
   return {
-    text,
     name: block.match(/^name:\s*["']?([^\r\n"']+)/mu)?.[1]?.trim(),
     description: block.match(/^description:\s*(?:>-?\s*)?([^\r\n]+)/mu)?.[1]?.trim(),
-    disabled: block.match(/^disable-model-invocation:\s*(true|false)/mu)?.[1],
   }
 }
 
@@ -213,9 +211,6 @@ function contractErrors(entry, root = pluginRoot(entry)) {
     const parsed = parseSkillFrontmatter(join(skill.root, 'SKILL.md'))
     if (parsed.name !== skill.name) errors.push(`${entry.name}/${skill.name}: frontmatter name differs`)
     if (!parsed.description) errors.push(`${entry.name}/${skill.name}: description is missing`)
-    if (!['true', 'false'].includes(parsed.disabled)) {
-      errors.push(`${entry.name}/${skill.name}: disable-model-invocation must be explicit`)
-    }
     const openaiPath = join(skill.root, 'agents', 'openai.yaml')
     if (!existsSync(openaiPath)) {
       errors.push(`${entry.name}/${skill.name}: agents/openai.yaml is missing`)
@@ -223,9 +218,6 @@ function contractErrors(entry, root = pluginRoot(entry)) {
     }
     const allow = readFileSync(openaiPath, 'utf8').match(/allow_implicit_invocation:\s*(true|false)/u)?.[1]
     if (!allow) errors.push(`${entry.name}/${skill.name}: allow_implicit_invocation must be explicit`)
-    if (parsed.disabled && allow && (parsed.disabled === allow)) {
-      errors.push(`${entry.name}/${skill.name}: invocation policy values are not inverse`)
-    }
     const skillCases = cases.filter((item) => item.skill === skill.name)
     for (const kind of ['direct', 'indirect', 'negative']) {
       if (!skillCases.some((item) => item.kind === kind)) {

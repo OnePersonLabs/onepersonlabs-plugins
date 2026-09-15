@@ -1,7 +1,6 @@
 ---
 name: last30days
 description: Research what people have said about a topic in the last 30 days across Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Use for recent reactions, recommendations, comparisons, source-health checks, and configuration diagnosis; do not use for generic timeless web research.
-disable-model-invocation: false
 ---
 
 # Last 30 Days

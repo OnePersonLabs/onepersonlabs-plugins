@@ -62,9 +62,7 @@ reference-injection mechanism is removed.
 
 ## Validation on 2026-09-09
 
-- `$debug` invocation policies are explicitly inverse and its references resolve.
-  The skill-creator validator reports only its known unsupported
-  `disable-model-invocation` key; the repository contract accepts and checks it.
+- `$debug` Codex invocation policy and its references resolve.
 - Native contract checks pass for `opl`, `opl-superpowers-lite`,
   `opl-matt-pocock-skills`, and `opl-openspec`.
 - Native deterministic checks pass: 14 repository-driver tests, OPL's 68 Node

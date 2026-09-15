@@ -1,7 +1,6 @@
 ---
 name: unslop-session-audit
 description: "Whole-session behavioral audit that traces AI agent failures to their systemic origins -- instruction vulnerabilities, training priors, architectural mistakes -- using iterative depth climbing and cross-domain root cause analysis, and proves each fix by REASONING (no replay). Use when the user says '/unslop-session-audit', 'audit this session', 'what went wrong', 'find all the slop', 'session postmortem', 'what could be better', or wants to analyze any session's quality. Also use when they want ALL slop in a session found at once rather than one at a time, or the session is old/unreachable so replay isn't practical."
-disable-model-invocation: true
 ---
 
 # Unslop Audit -- Whole-Session Behavioral Audit

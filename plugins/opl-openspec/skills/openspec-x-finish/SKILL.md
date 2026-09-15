@@ -1,7 +1,6 @@
 ---
 name: "openspec-x-finish"
 description: "Completes the OpenSpec workflow for an existing change or a described change to one-shot. Use when asked to complete a named change matching an active change folder name."
-disable-model-invocation: true
 ---
 
 Run the complete finish pipeline for an OpenSpec change. Execute the steps in sequence, stopping if any step surfaces unresolvable issues.
