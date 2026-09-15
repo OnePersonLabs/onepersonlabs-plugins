@@ -1,0 +1,7 @@
+interface:
+  display_name: "Caveman"
+  short_description: "Answer concisely while preserving accuracy"
+  default_prompt: "Use $caveman to answer concisely while preserving technical accuracy."
+
+policy:
+  allow_implicit_invocation: true

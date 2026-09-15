@@ -1,0 +1,39 @@
+# caveman-help
+
+Quick-reference card. One shot, no mode change.
+
+## What it does
+
+Prints a cheat sheet of caveman modes, sibling skills, and deactivation triggers. One-shot display -- does not change the active mode or persist anything. Use when you forget the commands.
+
+## How to invoke
+
+```
+/caveman-help
+```
+
+Also triggers on "caveman help", "what caveman commands", "how do I use caveman".
+
+## Example output
+
+```
+Modes:
+  /caveman              full (default)
+  /caveman lite         lighter
+  /caveman ultra        extreme
+  /caveman wenyan-full  classical Chinese
+
+Skills:
+  /caveman-commit       terse Conventional Commits
+  /caveman-review       one-line PR comments
+  /caveman-compress     compress supported prose with a backup
+  /caveman-help         show this card
+
+Deactivate:
+  "stop caveman" or "normal mode"
+```
+
+## See also
+
+- [`SKILL.md`](./SKILL.md) — full reference card
+- [Caveman README](../../README.md) — repo overview

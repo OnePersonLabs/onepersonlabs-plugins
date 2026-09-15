@@ -1,0 +1,7 @@
+interface:
+  display_name: "Caveman Review"
+  short_description: "Write concise actionable review comments"
+  default_prompt: "Use $caveman-review to review this change with concise actionable findings."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Caveman Compress"
+  short_description: "Compress prose files with a backup"
+  default_prompt: "Use $caveman-compress to compress this prose file and keep a backup."
+
+policy:
+  allow_implicit_invocation: true

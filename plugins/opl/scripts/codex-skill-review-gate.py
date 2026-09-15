@@ -42,11 +42,13 @@ def decision(hook):
         if pending is None or not pending.is_file():
             return {'continue': True}
         pending.unlink()
-        return {'decision': 'block', 'reason': (
-            'An AGENTS.md or SKILL.md file changed during this turn. Before finishing, use '
-            '$opl:agent-instructions to review the completed instruction change and fix any findings. '
-            'If that skill already guided this work and you reviewed the final change, do not invoke it again.'
-        )}
+        return {
+            'decision': 'block',
+            'reason': (
+                'Review this instruction change with $opl:agent-instructions before finishing; '
+                'skip it if you already did.'
+            ),
+        }
     if hook.get('hook_event_name') != 'PostToolUse' or pending is None:
         return {'continue': True}
     tool_input = hook.get('tool_input')

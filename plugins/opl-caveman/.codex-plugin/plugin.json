@@ -1,0 +1,22 @@
+{
+  "name": "opl-caveman",
+  "version": "0.1.0",
+  "description": "Concise communication and focused engineering skills from the caveman toolkit.",
+  "author": {
+    "name": "One-Person Labs",
+    "url": "https://github.com/OnePersonLabs"
+  },
+  "repository": "https://github.com/OnePersonLabs/onepersonlabs-plugins",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OPL Caveman",
+    "shortDescription": "Concise communication and focused engineering skills",
+    "longDescription": "Eleven skills for concise responses, commits, reviews, and memory files, plus focused investigation, implementation, migration, refactoring, and verification.",
+    "developerName": "One-Person Labs",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": [
+      "Use $caveman to answer concisely while preserving technical accuracy."
+    ]
+  }
+}

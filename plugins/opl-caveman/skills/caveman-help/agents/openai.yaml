@@ -1,0 +1,7 @@
+interface:
+  display_name: "Caveman Help"
+  short_description: "Show caveman modes and commands"
+  default_prompt: "Use $caveman-help to show the caveman quick reference."
+
+policy:
+  allow_implicit_invocation: true

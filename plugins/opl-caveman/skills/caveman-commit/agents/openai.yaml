@@ -1,0 +1,7 @@
+interface:
+  display_name: "Caveman Commit"
+  short_description: "Write concise Conventional Commits messages"
+  default_prompt: "Use $caveman-commit to write a concise Conventional Commits message."
+
+policy:
+  allow_implicit_invocation: true
