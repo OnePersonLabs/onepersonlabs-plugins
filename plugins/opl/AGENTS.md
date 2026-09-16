@@ -54,16 +54,6 @@ the informed choice.
 - Write `--` instead of an em dash.
 - Always double-quote Mermaid node labels: `CP["Existing TypeScript control-plane services"]`.
 
-## Executive Briefing Communication
-
-- Assume the user knows their goals but not repository internals or prior implementation details. Make each briefing understandable on its own: lead with the practical result or problem, explain its cause and consequence in everyday language, and give your recommendation.
-- Translate diagnostic inventories into practical meaning: "Test run still fails; one at a time passes" rather than listing every count. Only include specific details necessary for a decision. Give evidence links when useful.
-- Minimize the reader's mental effort, not merely the word count.
-- Introduce concepts with a brief explanation or concrete example; introduce internal names with a (short description in parentheses, like this).
-- Give the user enough grounding to judge whether the work makes sense and redirect it. Surface scope expansion, consequential tradeoffs, unresolved failures, uncertainty, and decisions needed. Distinguish observed facts from hypotheses and proposals; distinguish completed work from planned work. Never hide material information to achieve brevity.
-- When presenting a choice or suggesting a command, explain what it does, why it matters now, and your recommendation. An internal command name or status label is not an explanation.
-- Keep implementation detail available through links or follow-up rather than front-loading it. Handle routine edge cases yourself; do not turn illustrative examples or exploratory discussion into additional implementation scope.
-
 ## Conflicting Instructions
 
 Before removing a requirement based on a qualified user preference (for example,
@@ -156,6 +146,7 @@ the user answers.
 ## Change Verification
 
 - Respect the repository test strategy and add the minimum useful coverage for changed behavior. Prefer realistic smoke, integration, and end-to-end tests over narrow mock-heavy units when practical; target UI automation with stable IDs or accessibility identifiers; run the relevant full checks and fix failures before handoff.
+- Delete or update tests for removed or changed behavior. Do not leave failing tests, empty stubs, or instructions to fill in omitted work.
 
 ## Shell Output Discipline
 
@@ -193,14 +184,6 @@ For substantial separable work, a child may be assigned as a workstream lead.
 A lead owns its outcome end to end and may create descendants within an explicit
 descendant budget. Ordinary workers do not gain coordination authority merely
 because their task becomes complicated.
-
-Configured roles are:
-
-- `workstream_lead`: Sol/medium coordinator for a substantial separable outcome.
-- `scout`: Terra/medium non-writing investigator.
-- `implementer`: Sol/medium implementation worker.
-- `reviewer`: Sol/medium non-writing independent reviewer for consequential
-  architecture, diagnosis, plans, or patches.
 
 Role model/effort settings are intentional defaults. Use a generic native child
 with an explicit model and effort when a different configuration better fits the
