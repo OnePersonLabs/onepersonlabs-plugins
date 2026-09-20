@@ -41,6 +41,14 @@ cherry-picking skills, and diagnostics.
 
 [`handoff`](skills/handoff/SKILL.md) compacts the current conversation into a temporary handoff document so the user can manually continue the work in a new session.
 
+## Long Command Wakeup
+
+[`$long-command-wakeup`](skills/long-command-wakeup/SKILL.md) runs a known-long,
+unattended local command through a detached Python worker and queues one bounded
+continuation when the command succeeds, fails, cannot launch, or times out. It
+persists stdout, stderr, status, and queue-delivery evidence without copying
+tooling into the target repository or repeatedly waking the model to poll.
+
 ## Refresh Local Plugins
 
 [$refresh-local-plugins](skills/refresh-local-plugins/SKILL.md) installs or
