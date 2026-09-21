@@ -41,6 +41,30 @@ cherry-picking skills, and diagnostics.
 
 [`handoff`](skills/handoff/SKILL.md) compacts the current conversation into a temporary handoff document so the user can manually continue the work in a new session.
 
+## Codex Task Watchdog
+
+OPL records local Codex lifecycle activity in
+`$CODEX_HOME/codex-watch/state.sqlite3`. The observer hooks preserve lifecycle
+order, never continue a turn, and never inject a prompt. To watch active tasks
+in the foreground and send one notification after 25 minutes without activity:
+
+```powershell
+$env:CODEX_WATCH_NTFY_URL = "https://ntfy.example.com/my-topic"
+$env:CODEX_WATCH_NTFY_TOKEN = "optional-bearer-token"
+npm run codex-watch -- run
+```
+
+Run the command from this marketplace checkout. `CODEX_WATCH_NTFY_URL` must be
+a full HTTPS topic URL. The token is optional and is read only from the
+environment. Notifications include the last completed assistant response, so
+use an access-controlled ntfy topic when that text may be private.
+For an installed OPL plugin, run
+`python <plugin-root>/scripts/codex-task-watch.py run` (`python3` on POSIX)
+instead; the checkout wrapper is only a convenience.
+`status [--json]`, `test-notification`, and
+`prune [--older-than 30d]` are also available. The watchdog exits on Ctrl+C;
+it does not install a background service or a login task.
+
 ## Long Command Wakeup
 
 [`$long-command-wakeup`](skills/long-command-wakeup/SKILL.md) runs a known-long,

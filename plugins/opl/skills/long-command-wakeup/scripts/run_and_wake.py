@@ -20,6 +20,8 @@ import uuid
 SCHEMA_VERSION = 1
 QUEUE_TIMEOUT_SECONDS = 120
 TERMINATION_GRACE_SECONDS = 2
+FINAL_EXIT_WAIT_SECONDS = 2
+TASKKILL_TIMEOUT_SECONDS = 30
 
 
 def utc_now() -> str:
@@ -193,32 +195,72 @@ def start_worker(args: argparse.Namespace) -> int:
     return 0
 
 
-def terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
+def terminate_process_tree(process: subprocess.Popen[bytes]) -> str | None:
     if process.poll() is not None:
-        return
+        return None
     if os.name == "nt":
-        subprocess.run(
-            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-            timeout=30,
-        )
-        return
+        try:
+            result = subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+                timeout=TASKKILL_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            return "taskkill timed out while terminating the command tree"
+        except OSError as error:
+            return f"taskkill could not terminate the command tree: {error}"
+        if result.returncode != 0 and process.poll() is None:
+            return f"taskkill exited with code {result.returncode} while the command may still be running"
+        return None
     try:
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
-        return
+        return None
+    except OSError as error:
+        return f"SIGTERM could not terminate the command tree: {error}"
     try:
         process.wait(timeout=TERMINATION_GRACE_SECONDS)
-        return
+        return None
     except subprocess.TimeoutExpired:
         pass
+    except OSError as error:
+        return f"command wait failed after SIGTERM: {error}"
     try:
         os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError:
-        pass
+        return None
+    except OSError as error:
+        return f"SIGKILL could not terminate the command tree: {error}"
+    try:
+        process.wait(timeout=TERMINATION_GRACE_SECONDS)
+        return None
+    except subprocess.TimeoutExpired:
+        return "command did not exit after SIGKILL"
+    except OSError as error:
+        return f"command wait failed after SIGKILL: {error}"
+
+
+def wait_for_final_exit(process: subprocess.Popen[bytes]) -> str | None:
+    if process.poll() is not None:
+        return None
+    try:
+        process.wait(timeout=FINAL_EXIT_WAIT_SECONDS)
+        return None
+    except subprocess.TimeoutExpired:
+        return "command did not exit within the final cleanup wait"
+    except OSError as error:
+        return f"final command wait failed: {error}"
+
+
+def output_text(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
 
 
 def queue_message(codex_bin: str, thread: str, state: str, result_dir: Path) -> tuple[dict[str, object], str]:
@@ -240,14 +282,14 @@ def queue_message(codex_bin: str, thread: str, state: str, result_dir: Path) -> 
             check=False,
         )
     except subprocess.TimeoutExpired as error:
-        stdout = error.stdout or ""
-        stderr = error.stderr or ""
+        stdout = output_text(error.stdout)
+        stderr = output_text(error.stderr)
         return ({"state": "failed", "error": "codex queue timed out"}, f"{stdout}{stderr}")
     except OSError as error:
         return ({"state": "failed", "error": str(error)}, "")
     output = f"{result.stdout}{result.stderr}"
     if result.returncode == 0:
-        return ({"state": "delivered", "exitCode": 0}, output)
+        return ({"state": "submitted", "exitCode": 0}, output)
     return ({"state": "failed", "exitCode": result.returncode}, output)
 
 
@@ -263,6 +305,8 @@ def run_worker(args: argparse.Namespace) -> int:
     signal_number: int | None = None
     timed_out = False
     error: str | None = None
+    cleanup_error: str | None = None
+    command_pid: int | None = None
 
     with (result_dir / "stdout.log").open("wb") as stdout, (result_dir / "stderr.log").open("wb") as stderr:
         try:
@@ -279,6 +323,7 @@ def run_worker(args: argparse.Namespace) -> int:
             else:
                 command_options["start_new_session"] = True
             process = subprocess.Popen(command_argv, **command_options)
+            command_pid = process.pid
             write_json_atomic(
                 status_path,
                 {
@@ -294,8 +339,10 @@ def run_worker(args: argparse.Namespace) -> int:
                 process.wait(timeout=timeout_seconds)
             except subprocess.TimeoutExpired:
                 timed_out = True
-                terminate_process_tree(process)
-                process.wait()
+                cleanup_error = terminate_process_tree(process)
+                final_wait_error = wait_for_final_exit(process)
+                if cleanup_error is None:
+                    cleanup_error = final_wait_error
             exit_code = process.returncode if process.returncode is not None and process.returncode >= 0 else None
             signal_number = -process.returncode if process.returncode is not None and process.returncode < 0 else None
             state = "timed_out" if timed_out else ("success" if process.returncode == 0 else "failed")
@@ -310,13 +357,19 @@ def run_worker(args: argparse.Namespace) -> int:
         "exitCode": exit_code,
         "signal": signal_number,
         "timedOut": timed_out,
-        "queue": {"state": "pending"},
+        "queue": {"state": "pending-submission"},
     }
+    if command_pid is not None:
+        status["commandPid"] = command_pid
     if error is not None:
         status["error"] = error
+    if timed_out:
+        status["cleanup"] = ({"state": "root-exited"} if cleanup_error is None else {"state": "failed", "error": cleanup_error})
+    queue_log_path = result_dir / "queue.log"
+    queue_log_path.write_text("", encoding="utf-8")
     write_json_atomic(status_path, status)
     queue, queue_output = queue_message(args.codex_bin, args.thread, state, result_dir)
-    (result_dir / "queue.log").write_text(queue_output, encoding="utf-8")
+    queue_log_path.write_text(queue_output, encoding="utf-8")
     status["queue"] = queue
     write_json_atomic(status_path, status)
     return 0
