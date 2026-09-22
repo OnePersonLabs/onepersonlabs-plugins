@@ -162,13 +162,19 @@ Write skill references and invocations as `$skill-name` instead of `skill-name` 
 
 Store MCP API keys in Windows user environment variables; they pass through to WSL.
 
-## Browser Routing
+## Browser Tool Routing Rules
 
-Use Windows Chrome for browser work. Route signed-in tabs and profile state to Playwright MCP, shared connected tabs to Kapture, DevTools and performance inspection to Chrome DevTools MCP, and repeatable CLI testing to `agent-browser`. Use `agent-browser-win --auto-connect` for the running Windows profile or `--profile Default` only when Chrome is closed; use the Linux browser only when isolation is intentional.
+- Default tool for all browser tasks: `agent-browser` (CLI). Do not invoke MCP browser servers.
+- Use `agent-browser-win --auto-connect` when attaching to active Windows Chrome profiles, or `--profile Default` when Chrome is closed.
+- Target page elements strictly via returned `@ref` IDs using `agent-browser snapshot -i`.
+- Switch to `chrome-devtools-cli` ONLY for V8 heap snapshots, memory leak analysis, or deep performance profiling.
+- Switch to `puppeteer` ONLY when explicitly instructed to generate or run standalone Node.js automation scripts.
 
-## Documentation Routing
+## Documentation Tool Routing Rules
 
-When package or API behavior may be unfamiliar, version-specific, or changed, retrieve the smallest relevant current slice before acting. Use Context7 for targeted package APIs, docs-mcp-server for indexed or repeatedly useful documentation, GitMCP for repository docs or source, and direct URL fetch for a known page; prefer official and local sources. Refine the query and retrieve more only for a concrete remaining gap. Let retrieval systems chunk and cache content; do not duplicate documentation or impose fixed chunk sizes.
+- Use `Context7` as the primary source for package and framework API docs.
+- Use `docs-mcp-server` for local indexed docs. Use `gh` or local `git` for repository code inspection instead of GitMCP.
+- Retrieve only minimal version-specific slices necessary for the current task; do not pull full document sets unless requested.
 
 ## Agent Orchestration
 
