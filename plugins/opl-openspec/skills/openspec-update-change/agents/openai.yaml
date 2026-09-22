@@ -1,0 +1,7 @@
+interface:
+  display_name: "OpenSpec Update Change"
+  short_description: "Revise existing plans and reconcile change artifacts"
+  default_prompt: "Use $openspec-update-change to revise the selected change and reconcile its planning artifacts."
+
+policy:
+  allow_implicit_invocation: true

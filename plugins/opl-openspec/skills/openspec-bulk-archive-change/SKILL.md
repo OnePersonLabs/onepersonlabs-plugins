@@ -1,13 +1,12 @@
 ---
 name: openspec-bulk-archive-change
-description: Archive multiple completed changes at once. Use when archiving several parallel changes.
+description: Archive multiple completed OpenSpec changes at once. Use when archiving several parallel changes. Also use for a plural archive request - "openspec bulk-archive", "opsx bulk-archive", "openspec archive all", or "openspec archive these changes".
 allowed-tools: Bash(openspec:*)
 license: MIT
-compatibility: Requires openspec CLI.
 metadata:
   author: openspec
   version: "1.0"
-  generatedBy: "1.11.0"
+  generatedBy: "1.13.1"
 ---
 
 Archive multiple completed changes in a single operation.
@@ -15,6 +14,17 @@ Archive multiple completed changes in a single operation.
 This skill allows you to batch-archive changes, handling spec conflicts intelligently by checking the codebase to determine what's actually implemented.
 
 **Store selection:** If the user names a store (a store is a standalone OpenSpec repo registered on this machine) or the work lives in one, run `openspec store list --json` to discover registered store ids, then pass `--store <id>` on the commands that read or write specs and changes (`new change`, `status`, `instructions`, `list`, `show`, `validate`, `archive`, `doctor`, `context`, `schemas`, `view`). Once selected, treat `--store <id>` as sticky for the rest of the workflow. Every unscoped example of those commands below is shorthand: before running it, append the flag. For example, run `openspec status --change "<name>" --json --store "<id>"`, not the unscoped form shown below. Other commands do not take the flag. Hints printed by commands already carry the flag; keep it on follow-ups. Without a store, commands act on the nearest local `openspec/` root.
+
+**Project check:** These steps expect a project that already uses OpenSpec. Before the first step that writes anything (`new change`, `archive`, `sync specs`, or authoring an artifact file), confirm the project has a root: run `openspec list --json` (with `--store <id>` when a store is selected, since the store is then the root) and read `root`. A root object means the project is set up. `"root": null` means it is not - there is no `openspec/` directory here, and a write such as `openspec new change` would create one as a side effect. The command also exits non-zero, which is that answer rather than a broken CLI, so read the JSON instead of retrying or working around it.
+
+One `"root": null` is not about setup: when a `status` error message starts with `Declared in` or `Invalid store declaration in` and names this project's `openspec/config.yaml` (or `config.yml`), the project does use OpenSpec through a store it declares, which this machine cannot resolve (the store is not registered, or the `store:` line is malformed). Do not treat it as uninitialized and skip the branches below: stop before writing and show the user that error's `message` and `fix`.
+
+Otherwise, with no root, what happens next depends on how this workflow was reached:
+
+- **Auto-selected**: you chose this workflow yourself, without the user naming OpenSpec, naming this skill, or running its slash command. Stop using OpenSpec and answer the request normally, as you would with no OpenSpec installed. Do not ask them to set anything up and do not mention OpenSpec setup.
+- **Explicit OpenSpec request**: the user named OpenSpec, named this skill, or ran its slash command. Stop before writing and ask how to proceed: set this project up (`openspec init`), target a store they already have (`--store <id>`), or continue without OpenSpec for this request. Wait for their answer.
+
+In both branches, never create the root as a side effect: do not run `openspec init` until the user asks for it, do not hand-create `openspec/` files, and do not let a command create it.
 
 `<capability-path>` is the spec directory relative to `specs/` (for example, `user-auth` or `identity/user-auth`). Preserve the full path from each delta spec when resolving its main spec.
 
@@ -71,7 +81,9 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
       - Note which artifacts are `done` vs other states
 
    b. **Task completion** - Read `artifactPaths.tasks.existingOutputPaths` from status JSON
-      - Count `- [ ]` (incomplete) vs `- [x]` (complete)
+      - Complete means the checkbox holds only `x`/`X`, ignoring spacing
+        (`- [ x]` is complete); every other marker is incomplete (`- [ ]`,
+        `- []`, and unfamiliar ones such as `- [~]` or `- [-]`)
       - If no tasks file exists, note as "No tasks"
 
    c. **Delta specs** - Check `artifactPaths.specs.existingOutputPaths` from status JSON
@@ -82,6 +94,14 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
         lookup for that change; do not infer deltas from unrelated artifacts.
       - Evaluate this independently for every change, including mixed-schema
         batches where some schemas have no `specs` artifact.
+
+   d. **Archive target** - Compute each change's target name once and record it as that change's `<target-name>`
+      - Use the change name as-is when it already starts with a `YYYY-MM-DD-` prefix; otherwise prepend the current date as `YYYY-MM-DD-<name>` (same rule as `openspec archive`)
+      - Check whether `<planningHome.changesDir>/archive/<target-name>` already exists
+      - If it exists, or another selected change resolves to the same target name, mark every such change `Blocked` with `Archive directory already exists`
+      - A blocked change is never synced or moved: show it as `Blocked` in the step 6 table, leave it out of conflict resolution (resolve its conflicts using only the other changes), and record it as Failed in step 8d
+      - Checking here, before any main spec is written, matches `openspec archive`: a collision found after sync would leave main specs rewritten for an archive that never happened
+
 4. **Detect spec conflicts**
 
    Build a map keyed by `<capability-path>`, the exact path relative to `specs/`:
@@ -154,8 +174,8 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
    Route on the answer by intent, not by exact label — you wrote these labels,
    so match what the user picked rather than the wording above:
    - "Cancel" — stop, do not archive. Report that nothing was archived and skip the remaining steps.
-   - The archive-everything option — proceed with every selected change
-   - The ready-only option — proceed with only the changes the step 6 table marks `Ready` or `Ready*`, and record the rest as Skipped in step 8d. If a `Ready*` change's conflict partner is skipped, re-derive that conflict's resolution using only the changes being archived.
+   - The archive-everything option — proceed with every selected change that is not `Blocked`
+   - The ready-only option — proceed with only the changes the step 6 table marks `Ready` or `Ready*`, and record the rest as Skipped in step 8d, except `Blocked` changes, which stay Failed with `Archive directory already exists`. If a `Ready*` change's conflict partner is skipped, re-derive that conflict's resolution using only the changes being archived.
    - Anything else — ask again rather than archiving
 
    Before step 8 writes the first main spec or moves any change, fetch every
@@ -200,11 +220,11 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
 
    c. **Perform the archive**:
 
-      Target name: use the change name as-is when it already starts with a `YYYY-MM-DD-` prefix; otherwise prepend the current date as `YYYY-MM-DD-<name>` (same rule as `openspec archive`).
+      Target name: use the `<target-name>` recorded in step 3d unchanged, even if the batch crosses midnight.
 
       Resolve the absolute source and destination paths and confirm they stay
       within the selected `planningHome.changesDir` and its `archive` directory,
-      respectively. If the target already exists, fail this change and continue
+      respectively. Recheck the target immediately before moving. If it now exists, fail this change, leave `changeRoot` in place, report any specs already synced for it, and continue
       with the remaining changes. Use the commands for the current shell.
 
       In PowerShell:
@@ -218,6 +238,8 @@ This skill allows you to batch-archive changes, handling spec conflicts intellig
       mkdir -p "<planningHome.changesDir>/archive"
       mv "<changeRoot>" "<planningHome.changesDir>/archive/<target-name>"
       ```
+
+      Confirm the move did not nest the source inside an existing target. If it did, resolve and verify both paths within the selected changes root, restore the nested source to `changeRoot` using the current shell, and report failure rather than success.
 
    d. **Track outcome** for each change:
       - Success: archived successfully
@@ -333,8 +355,9 @@ No active changes found. Create a new change to get started.
 - Never archive after the user cancels the confirmation — a cancelled batch archives nothing
 - Track and report all outcomes (success/skip/fail)
 - Preserve .openspec.yaml when moving to archive
-- Archive directory target uses current date: YYYY-MM-DD-<name>; a name that already starts with a `YYYY-MM-DD-` prefix is used as-is (never stack a second date)
+- Archive directory target uses the current date, computed once in step 3d and reused at the move: YYYY-MM-DD-<name>; a name that already starts with a `YYYY-MM-DD-` prefix is used as-is (never stack a second date)
 - If archive target exists, fail that change but continue with others
+- Check every archive target in step 3, before the first main-spec write; a change whose target exists is never synced or moved
 - If sync is requested, run the `openspec-sync-specs` workflow inline (agent-driven) for each change with included delta specs
 - Carry the per-delta `includedDeltas` and `excludedDeltas` decisions into execution; sync and verify only included deltas
 - Report every excluded delta as `sync skipped` without treating the archive itself as skipped
@@ -349,3 +372,5 @@ No active changes found. Create a new change to get started.
 - Keep runtime inputs, conflict analysis, CLI-derived values, and artifact rules separate
 - Artifact rules constrain only written specs
 - Never copy runtime input or artifact-rule text verbatim into output files
+
+Task parsing follows OpenSpec 1.13.1: count checkboxes under `-`, `*`, `+`, `1.`, and `1)` list markers, excluding fenced examples. A tracking file with no checkboxes is not evidence of completed implementation; surface the CLI warning or blocked state.

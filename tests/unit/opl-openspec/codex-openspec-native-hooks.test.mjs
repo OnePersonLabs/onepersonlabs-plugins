@@ -44,6 +44,14 @@ test('archive parser ignores text that only describes a move', () => {
   assert.equal(archiveChangeFromCommand('Move-Item openspec/changes/current-change backup/current-change'), null)
 })
 
+test('dated changes still pass through archive quality enforcement', () => {
+  const command = 'mv openspec/changes/2026-09-09-current-change openspec/changes/archive/2026-09-09-current-change'
+  assert.equal(archiveChangeFromCommand(command), '2026-09-09-current-change')
+  const result = runHook('codex-openspec-archive-quality-gate', { tool_input: { cmd: command } }, { PNPM_BIN: 'does-not-exist-pnpm' })
+  assert.equal(result.status, 2, result.stderr)
+  assert.match(result.stderr, /Cannot run validation/u)
+})
+
 test('quality hook invokes native validation in the project directory and surfaces its failure', () => {
   const project = mkdtempSync(join(tmpdir(), 'openspec native $ quality '))
   try {
@@ -187,4 +195,15 @@ test('stock guard recognizes native Windows paths', () => {
   assert.equal(result.status, 2, result.stderr)
   assert.match(result.stderr, /stock openspec-\* skill/u)
   assert.equal(runHook('codex-stock-openspec-guard', { tool_input: { file_path: 'C:\\project\\src\\index.py' } }).status, 0)
+})
+
+test('stock guard covers skills-only installs and patches without blocking extensions or plugin sources', () => {
+  for (const target of ['.agents/skills/openspec-update-change/SKILL.md', '.codex/skills/openspec-apply-change/SKILL.md']) {
+    for (const tool_input of [{ file_path: target }, { input: `*** Begin Patch\n*** Update File: ${target}\n@@\n+changed\n*** End Patch` }]) {
+      assert.equal(runHook('codex-stock-openspec-guard', { tool_input }).status, 2)
+    }
+  }
+  for (const file_path of ['.agents/skills/openspec-x-audit/SKILL.md', 'plugins/opl-openspec/skills/openspec-propose/SKILL.md']) {
+    assert.equal(runHook('codex-stock-openspec-guard', { tool_input: { file_path } }).status, 0)
+  }
 })

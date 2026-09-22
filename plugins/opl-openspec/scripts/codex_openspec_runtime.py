@@ -76,6 +76,6 @@ def archive_change(raw, payload):
     if result.returncode == 3:
         return None
     change = result.stdout.strip()
-    if result.returncode or not re.fullmatch(r"[a-z][a-z0-9-]*", change):
+    if result.returncode or not re.fullmatch(r"(?:\d{4}-\d{2}-\d{2}-)?[a-z][a-z0-9-]*", change):
         block("BLOCKED: OpenSpec archive command parsing failed or returned a malformed change name.")
     return change

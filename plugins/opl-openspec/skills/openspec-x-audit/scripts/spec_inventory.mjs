@@ -51,10 +51,11 @@ const parseSpec = (capability) => {
   const file = path.join(specsRoot, capability, 'spec.md')
   const content = readFileSync(file, 'utf8')
   const lines = content.split(/\r?\n/)
-  const { frontmatter } = parseFrontmatter(lines)
+  const { frontmatter, bodyStart } = parseFrontmatter(lines)
   const requirements = []
   let currentRequirement = null
   let currentScenario = null
+  let fence = null
 
   const pushNormative = (lineNumber, text) => {
     if (!normativePattern.test(text)) return
@@ -64,8 +65,19 @@ const parseSpec = (capability) => {
   }
 
   lines.forEach((line, index) => {
+    if (index < bodyStart) return
     const lineNumber = index + 1
-    const requirementMatch = /^### Requirement:\s*(.+?)\s*$/.exec(line)
+    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line)
+    if (fence) {
+      if (fenceMatch && fenceMatch[1][0] === fence[0] && fenceMatch[1].length >= fence.length && !fenceMatch[2].trim()) fence = null
+      return
+    }
+    if (fenceMatch) {
+      fence = fenceMatch[1]
+      return
+    }
+    const heading = line.replace(/\s+#+\s*$/, '').trimEnd()
+    const requirementMatch = /^ {0,3}### Requirement:\s*(.+?)\s*$/.exec(heading)
     if (requirementMatch) {
       currentRequirement = {
         name: requirementMatch[1],
@@ -78,7 +90,7 @@ const parseSpec = (capability) => {
       return
     }
 
-    const scenarioMatch = /^#### Scenario:\s*(.+?)\s*$/.exec(line)
+    const scenarioMatch = /^ {0,3}#### Scenario:\s*(.+?)\s*$/.exec(heading)
     if (scenarioMatch && currentRequirement) {
       currentScenario = {
         name: scenarioMatch[1],
@@ -87,6 +99,13 @@ const parseSpec = (capability) => {
       }
       currentRequirement.scenarios.push(currentScenario)
       return
+    }
+
+    if (/^ {0,3}#{1,3}\s/.test(heading)) {
+      currentRequirement = null
+      currentScenario = null
+    } else if (/^ {0,3}####\s/.test(heading)) {
+      currentScenario = null
     }
 
     pushNormative(lineNumber, line.trim())
@@ -100,13 +119,23 @@ const parseSpec = (capability) => {
   }
 }
 
-const capabilities = readdirSync(specsRoot, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
+// Preserve the entire relative capability path, including duplicate leaf names.
+// Dirent checks deliberately avoid following directory symlinks or junctions.
+const discoverCapabilities = (directory, prefix = '') => {
+  const entries = readdirSync(directory, { withFileTypes: true }).filter((entry) => !entry.name.startsWith('.'))
+  const found = prefix && entries.some((entry) => entry.name === 'spec.md' && entry.isFile())
+    ? [prefix]
+    : []
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      found.push(...discoverCapabilities(path.join(directory, entry.name), prefix ? `${prefix}/${entry.name}` : entry.name))
+    }
+  }
+  return found
+}
+
+const capabilities = discoverCapabilities(specsRoot)
   .filter((capability) => !capabilityFilter || capability === capabilityFilter)
-  .filter((capability) =>
-    existsSync(path.join(specsRoot, capability, 'spec.md')),
-  )
   .sort()
 
 if (capabilityFilter && capabilities.length === 0) {

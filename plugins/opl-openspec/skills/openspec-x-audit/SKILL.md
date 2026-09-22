@@ -17,10 +17,12 @@ Active change specs are otherwise out of scope. If a requested name could be eit
 
 ## Establish Structural Context
 
+Resolve the planning root with `openspec context --json`; keep an explicitly selected `--store <id>` on all supported CLI commands. Pass the returned `root.path` to the inventory as `--root <root.path>` so store-backed specs are audited instead of an unrelated checkout. Stop on resolution errors.
+
 Run the CLI checks in the current shell:
 
 ```text
-openspec validate --specs --strict --no-interactive
+openspec validate --specs --strict --no-interactive --report findings
 openspec doctor --json
 ```
 
@@ -41,7 +43,15 @@ AUDIT_SKILL_DIR="<absolute path of the directory containing this SKILL.md>"
 node "${AUDIT_SKILL_DIR}/scripts/spec_inventory.mjs" --markdown
 ```
 
-Use `--capability <slug>` for a focused inventory and `--json` for machine-readable output. Structural validation does not replace the semantic audit.
+Use `--capability <capability-path>` (for example `identity/user-auth`, preserving the full path relative to `specs/`) for a focused inventory and `--json` for machine-readable output. Structural validation does not replace the semantic audit.
+
+The helper recursively inventories ordinary `spec.md` files, skipping hidden
+directories and directory links. It indexes headings and normative keyword lines;
+it does not validate schemas or prove implementation coverage. Compare its full
+capability paths with `openspec list --specs --json` from the same root. If a
+linked spec is omitted, read that CLI-listed spec directly and disclose any
+remaining coverage gap. Read relevant specs in full, including scenarios and
+non-English requirements, before making semantic findings.
 
 For a named change, also run:
 
@@ -127,10 +137,10 @@ Do not mutate code, main specs, or change artifacts during an audit-only request
 When remediation was separately requested:
 
 1. Resolve every `AMBIGUOUS` finding and every proposed normative weakening/removal with the user before editing.
-2. For findings already owned by a named active change, refresh the relevant artifact instructions, revise that change's proposal/spec/design/tasks under their normal ownership, and use `$openspec-apply-change` for implementation work.
+2. For findings already owned by a named active change, use `$openspec-update-change` to revise the existing artifacts with refreshed instructions, and use `$openspec-apply-change` for implementation work.
 3. For accepted committed implementation not owned by an active change, use `$openspec-propose` with the audit evidence to create the delta change.
-4. For accepted uncommitted implementation, use `$openspec-x-reverse` so the dirty-worktree boundary and normal proposal workflow are preserved.
+4. For accepted uncommitted implementation, use `$openspec-x-reverse-uncommitted` so the dirty-worktree boundary and normal proposal workflow are preserved.
 5. For authoritative specs that need code changes and have no suitable active change, use `$openspec-propose`, then `$openspec-apply-change`.
 6. After remediation, rerun the affected audit scope. Use `$openspec-verify-change` and `$openspec-sync-specs` on the owning change as appropriate.
 
-Do not hand-author a new OpenSpec change inside this skill or duplicate task reconciliation owned by `$openspec-x-reverse-apply`.
+Do not hand-author a new OpenSpec change inside this skill or duplicate task reconciliation owned by `$openspec-x-reverse-tasks`.

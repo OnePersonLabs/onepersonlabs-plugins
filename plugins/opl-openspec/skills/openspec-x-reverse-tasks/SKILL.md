@@ -13,7 +13,7 @@ This skill exists because OpenSpec changes accumulate silent completion drift: w
 
 ## Input
 
-The argument after $openspec-x-reverse-apply is the change name (kebab-case). If omitted, ask the user after listing changes via `openspec list --json`.
+The argument after $openspec-x-reverse-tasks is the change name (kebab-case). If omitted, ask the user after listing changes via `openspec list --json`.
 
 Optional second argument: `--dry-run` (report only, don't update tasks.md).
 
@@ -48,7 +48,7 @@ Optional second argument: `--dry-run` (report only, don't update tasks.md).
    - Recommended action (mark `[x]`, reword, delete, or no action)
 
 6. **If `--dry-run` was not supplied**: for every task classified plain `done-silently` (NOT the `-with-drift` or `-with-semantic-drift` sub-variants), edit tasks.md to:
-   - Change `- [ ]` to `- [x]`
+   - Change the checkbox marker to `[x]`, preserving its list prefix (`-`, `*`, `+`, `1.`, or `1)`). Only `x`/`X` with optional bracket spacing is complete; empty and unfamiliar markers are pending until verified. Ignore fenced examples.
    - Append `(landed silently)` parenthetical at the end of the task line
    - DO NOT touch stale, pending, or drift-sub-variant tasks unless the user explicitly asked -- drift variants are reported for human review, never auto-checked
    - Prepend a "VALIDATION UPDATE YYYY-MM-DD" note at the top of tasks.md naming this skill's run
@@ -112,7 +112,7 @@ Optional second argument: `--dry-run` (report only, don't update tasks.md).
 
 ## Integration with other commands
 
-- **Before $openspec-apply-change <change>**: run $openspec-x-reverse-apply first to avoid re-doing landed work.
+- **Before $openspec-apply-change <change>**: run $openspec-x-reverse-tasks first to avoid re-doing landed work.
 - **Before $openspec-verify-change <change>**: run this to feed accurate completion state into verify's checks.
 - **During close-down hygiene** (a session where you're shrinking the open-changes count): run this against every open change with no recent activity. Silent drift is highest after multi-week gaps.
 

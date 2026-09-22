@@ -7,7 +7,7 @@ import re
 from codex_openspec_runtime import read_input
 
 SLUG = r"[a-z0-9][a-z0-9-]*"
-ARTIFACT = re.compile(rf"openspec/changes/({SLUG})/(?:(?:proposal|design|tasks)\.md|specs/{SLUG}(?:/{SLUG})*/spec\.md)")
+ARTIFACT = re.compile(rf"openspec/changes/({SLUG})/(?:(?:proposal|design|tasks)\.md|\.openspec\.yaml|specs/{SLUG}(?:/{SLUG})*/spec\.md)")
 
 
 def commands(record):

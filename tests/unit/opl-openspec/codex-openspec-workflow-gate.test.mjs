@@ -91,6 +91,16 @@ test('workflow gate blocks nested capability spec edits without workflow entry',
   assert.match(decision.reason, /identity\/user-auth\/spec\.md/u)
 })
 
+test('workflow gate protects skip_specs metadata and accepts update workflow entry for nested specs', () => {
+  assert.equal(runGate([patch('openspec/changes/add-example/.openspec.yaml')]).decision, 'block')
+  const decision = runGate([
+    skillRead('C:\\plugins\\opl-openspec\\skills\\openspec-update-change\\SKILL.md'),
+    patch('openspec/changes/add-example/.openspec.yaml'),
+    patch('C:\\store\\openspec\\changes\\add-example\\specs\\identity\\auth\\tokens\\spec.md'),
+  ])
+  assert.equal(decision.continue, true)
+})
+
 test('workflow gate ignores placeholder artifact paths', () => {
   const decision = runGate([
     patch('docs/open-spec-example.md'),

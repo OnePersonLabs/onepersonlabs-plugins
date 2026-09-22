@@ -167,7 +167,7 @@ function archiveFromTokens(tokens, powershell, depth) {
   if (!values || values.length < 2) return null
   const source = values[0].replaceAll('\\', '/').replace(/\/$/u, '')
   const destination = values[1].replaceAll('\\', '/').replace(/\/$/u, '')
-  const match = /(?:^|\/)openspec\/changes\/([a-z][a-z0-9-]*)$/u.exec(source)
+  const match = /(?:^|\/)openspec\/changes\/((?:\d{4}-\d{2}-\d{2}-)?[a-z][a-z0-9-]*)$/u.exec(source)
   return match && /(?:^|\/)openspec\/changes\/archive(?:\/|$)/u.test(destination) ? match[1] : null
 }
 

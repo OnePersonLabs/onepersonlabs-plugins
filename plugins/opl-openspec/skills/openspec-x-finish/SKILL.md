@@ -26,13 +26,13 @@ Run the complete finish pipeline for an OpenSpec change. Execute the steps in se
 
 2. **Fast-forward artifact creation**
 
-   Run ``$openspec-ff-change <name>`.
+   Run `$openspec-ff-change <name>`.
 
 3. **Reconcile tasks**
 
    If `newChange` is `true`, skip this step: a new change has no historical task drift.
 
-   Otherwise, run `$openspec-x-reverse-apply <name>`.
+   Otherwise, run `$openspec-x-reverse-tasks <name>`.
 
 4. **Apply**
 
@@ -48,7 +48,7 @@ Run the complete finish pipeline for an OpenSpec change. Execute the steps in se
 
 6. **Review**
 
-   Run `$adversarial-review` on the change artifacts (`proposal.md`, `design.md`, `tasks.md`, and `specs/*/spec.md`if found) and files modified during `openspec-apply-change`.
+   Run `$adversarial-review` on the change artifacts (`proposal.md`, `design.md`, `tasks.md`, and every concrete spec path in `artifactPaths.specs.existingOutputPaths` from `openspec status --change "<name>" --json`, including nested capabilities) and files modified during `openspec-apply-change`.
 
    **You MUST fix all FAIL and WARN findings before continuing.**
 
@@ -62,7 +62,7 @@ Run the complete finish pipeline for an OpenSpec change. Execute the steps in se
 
    **Gate**: If verification reports any issues, fix it and repeat step 7.
 
-8. **Sync specs** -- if the change dir contains `specs/*/spec.md` files, sync the change's delta specs to main; otherwise, skip this step.
+8. **Sync specs** -- refresh `openspec status --change "<name>" --json` and sync every delta in `artifactPaths.specs.existingOutputPaths`, preserving full capability paths such as `identity/user-auth`. If the schema has no specs artifact or explicitly skips specs, skip this step. Unexpectedly missing specs require repair; do not silently skip them.
 
    Use `$openspec-sync-specs <name>`.
 
