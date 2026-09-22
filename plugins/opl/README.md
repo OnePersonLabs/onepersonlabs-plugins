@@ -9,6 +9,42 @@ GitHub issue verification requires `gh`. Shell commands and paths in the
 session tools follow the active runtime. The curated research engine requires
 Python 3.12 or newer.
 
+## Getting Started
+
+Install the command-line tools used by OPL's browser automation and research
+workflows. The commands below assume Node.js and npm are already installed.
+
+### Windows (PowerShell)
+
+```powershell
+# Install GitHub CLI
+winget install --id GitHub.cli
+
+# Install remaining npm tools
+npm i -g agent-browser chrome-devtools-cli fetch-cli
+
+# Download agent-browser Chromium binaries
+agent-browser install
+```
+
+### Linux
+
+```bash
+# 1. Install GitHub CLI via official apt repository
+type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+&& sudo apt update \
+&& sudo apt install gh -y
+
+# 2. Install npm global utilities
+npm i -g agent-browser chrome-devtools-cli fetch-cli
+
+# 3. Download Chromium and Linux system dependencies
+agent-browser install --with-deps
+```
+
 This plugin owns the repository-independent, last-resort rejection of unhandled ephemeral deferrals and TODO-shaped placeholders. Before rejecting a line, it asks enabled providers whether one recognizes and verifies the line through a durable work-item sink. OPL includes a generic GitHub Issues provider: a deferral that names one or more issues is accepted only when every referenced issue exists and remains open.
 
 Other workflow-specific handlers and lifecycle rules remain in their workflow plugins. In particular, `opl-openspec` owns OpenSpec deferral resolution, active-artifact workflow entry, archive-time discipline and quality, and stock-artifact protection. Work queues, priority, blocking relationships, and multi-change scheduling remain outside the OpenSpec plugin.

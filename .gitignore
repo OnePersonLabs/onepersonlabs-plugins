@@ -4,3 +4,5 @@
 .work/
 /.borg/
 *Zone.Identifier
+
+__azurite_db_blob_*
