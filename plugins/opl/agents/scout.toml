@@ -1,6 +1,6 @@
 name = "scout"
 description = "Non-writing investigator for repository discovery, code/docs tracing, evidence gathering, and context-heavy reduction."
-model = "gpt-5.6-terra"
+model = "gpt-6-sol"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 

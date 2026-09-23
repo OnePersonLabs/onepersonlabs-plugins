@@ -1,6 +1,6 @@
 name = "workstream_lead"
 description = "Coordinator for a substantial separable outcome. Own local planning, bounded descendant delegation, integration, and verification before reporting upward."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 
 developer_instructions = """

@@ -1,6 +1,6 @@
 name = "wordpress-master"
 description = "Use when a task needs WordPress-specific implementation or debugging across themes, plugins, content architecture, or operational site behavior."
-model = "gpt-5.6-luna"
+model = "gpt-6-astra"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 developer_instructions = """

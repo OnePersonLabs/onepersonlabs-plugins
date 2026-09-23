@@ -191,10 +191,15 @@ A lead owns its outcome end to end and may create descendants within an explicit
 descendant budget. Ordinary workers do not gain coordination authority merely
 because their task becomes complicated.
 
-Role model/effort settings are intentional defaults. Use a generic native child
-with an explicit model and effort when a different configuration better fits the
-task. Optimize for the total cost of a verified result, including retries and
-repair; do not require a cheaper or lower-effort attempt to fail first.
+Role model/effort settings are intentional defaults. Agent model selections are
+limited to `gpt-6-luna`, `gpt-6-sol`, and `gpt-6-astra`. Route focused,
+high-volume work to Luna, general coding and orchestration to Sol, and the
+hardest reasoning or review work to Astra. Use a generic native child with an
+explicit model and effort when a different configuration within those tiers
+better fits the task. Preserve the role's configured reasoning effort when the
+selected model supports it. Optimize for the total cost of a verified result,
+including retries and repair; do not require a cheaper or lower-effort attempt
+to fail first.
 
 Choose inherited context deliberately. Use a focused handoff when the child can
 work independently, limited history when recent conversation state matters, and

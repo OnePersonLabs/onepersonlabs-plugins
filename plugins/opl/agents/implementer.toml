@@ -1,6 +1,6 @@
 name = "implementer"
 description = "Implementation worker for a well-specified separable change with explicit ownership and acceptance checks."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "medium"
 
 developer_instructions = """

@@ -1,6 +1,6 @@
 name = "csharp-developer"
 description = "Use when a task needs C# or .NET application work involving services, APIs, async flows, or application architecture."
-model = "gpt-5.6-luna"
+model = "gpt-6-astra"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 developer_instructions = """

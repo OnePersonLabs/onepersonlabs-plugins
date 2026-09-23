@@ -56,8 +56,9 @@ Avoid:
 
 ## Model and Sandbox Guidance
 
-- Prefer `gpt-5.6-luna` for complex reasoning/review roles.
-- Prefer `gpt-5.3-codex-spark` for lighter search/synthesis roles.
+- Prefer `gpt-6-astra` for complex reasoning/review roles.
+- Prefer `gpt-6-sol` for general coding, implementation, and orchestration roles.
+- Prefer `gpt-6-luna` for lighter search/synthesis roles.
 - Use `read-only` by default for review/research agents.
 - Use `workspace-write` only when the agent must implement changes.
 
