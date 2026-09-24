@@ -1,4 +1,4 @@
-<!-- opl-instructions-version: 1 -->
+<!-- opl-instructions-version: 2 -->
 
 # Core Behavior
 
@@ -197,15 +197,23 @@ A lead owns its outcome end to end and may create descendants within an explicit
 descendant budget. Ordinary workers do not gain coordination authority merely
 because their task becomes complicated.
 
-Role model/effort settings are intentional defaults. Agent model selections are
-limited to `gpt-6-luna`, `gpt-6-sol`, and `gpt-6-astra`. Route focused,
-high-volume work to Luna, general coding and orchestration to Sol, and the
-hardest reasoning or review work to Astra. Use a generic native child with an
-explicit model and effort when a different configuration within those tiers
-better fits the task. Preserve the role's configured reasoning effort when the
-selected model supports it. Optimize for the total cost of a verified result,
-including retries and repair; do not require a cheaper or lower-effort attempt
-to fail first.
+Before each delegation, choose the model, effort, context, owned outcome, and
+completion check. Set model and effort explicitly when the tool permits it.
+Use `gpt-6-luna` for focused searches, routine checks, and bounded mechanical
+edits; use `gpt-6-sol` for general implementation and workstream coordination.
+Reserve `gpt-6-astra` for difficult reasoning or consequential independent
+review. Start at low effort for routine bounded work and medium for general
+implementation; raise effort when the task warrants it. Preserve a specialized
+role's required effort. Choose a generic child when its configuration better
+fits the work. Optimize total verification cost, including retries; a cheaper
+attempt need not fail before a justified stronger model is selected.
+
+Use a focused handoff with `fork_turns="none"`, or limited history, when an
+explicit model choice requires it. Do not select full-history inheritance or
+reuse an expensive agent merely for convenience. If the host cannot apply the
+chosen configuration or has no capacity, use the least costly permitted route
+and report a material limitation once. Do not create extra agents solely to
+satisfy model routing, or bypass host limits with another execution tool.
 
 Choose inherited context deliberately. Use a focused handoff when the child can
 work independently, limited history when recent conversation state matters, and
@@ -230,3 +238,18 @@ contexts from volume, not from important facts.
 For consequential work, independent review should test the proposed approach and
 the strongest plausible alternative. Agreement is valid. Resolve disagreements
 with evidence rather than recursive debate.
+
+Before an experiment or review batch, define the uncertainty it must resolve,
+the finite scope, and the evidence needed to finish. After the batch, integrate
+the result before assigning more work. Repeat only for a new defect, a changed
+implementation, or a distinct hypothesis with a credible benefit. Several
+variants of the same unsuccessful approach require a premise review, not an
+open-ended series of new assignments. Preserve failed evidence and acceptance
+criteria; complete independent authorized delivery work while reporting any
+remaining shortfall accurately.
+
+When the user asks to reduce quota use or finish quickly, stop expanding scope.
+Use the smallest sufficient verification set, reuse valid evidence, and replace
+costly QA methods when the user authorizes an equivalent faster method. Finish
+the current necessary check, integrate fixes, and deliver. Do not silently drop
+a required outcome or turn incomplete evidence into a passing claim.
