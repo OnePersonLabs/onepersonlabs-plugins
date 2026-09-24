@@ -1,4 +1,4 @@
-<!-- opl-instructions-version: 3 -->
+<!-- opl-instructions-version: 4 -->
 
 # Core Behavior
 
@@ -154,6 +154,47 @@ the user answers.
 - Respect the repository test strategy and add the minimum useful coverage for changed behavior. Prefer realistic smoke, integration, and end-to-end tests over narrow mock-heavy units when practical; target UI automation with stable IDs or accessibility identifiers; run the relevant full checks and fix failures before handoff.
 - Delete or update tests for removed or changed behavior. Do not leave failing tests, empty stubs, or instructions to fill in omitted work.
 
+## Evidence and Delivery Efficiency
+
+Organize substantial work around decisions that control delivery. Identify the
+current uncertainty, its dependencies, the cheapest sufficient check, and the
+decision each possible result permits. Reuse existing execution and evidence
+tools before constructing new infrastructure. Keep routine execution, numerical
+comparison, selection, and summarization in deterministic code; use agents for
+implementation, uncertain interpretation, and consequential judgment.
+
+Qualify an evaluator before tuning against it or spending independent evaluation
+data. Use a small set of known positive, negative, ambiguous, and failure cases
+to verify the measurement, comparator, information boundary, and execution path.
+Review whether a proxy measures the required outcome before optimizing it.
+Separate implementation correctness, outcome benefit, usability, and resource
+evidence. A pass in one category does not establish another. Preserve evaluation
+independence and failed results; freeze acceptance sampling and criteria before
+viewing outcomes. Resolve required contract changes explicitly.
+
+Place reviews at consequential boundaries: validate the measurement, review the
+integrated candidate, then verify delivery. During implementation, run the
+smallest checks affected by each change. At the stable candidate, complete the
+required full checks. Repeat only evidence invalidated by changes, failures, or
+new concerns. Include repository hooks and CI in this verification plan; fix
+duplicated verification through authorized configuration changes, never bypass
+required checks silently.
+
+Reuse expensive artifacts when their relevant source, configuration, inputs,
+environment, and evaluator dependencies still match. A seed or filename alone
+does not establish equivalence. Separate reusable development evidence from
+unseen acceptance data. Keep provenance and invalidation reasons with results.
+For subjective interface review, obtain an unprimed interpretation before
+revealing the intended meaning; use deterministic checks for numerical claims.
+
+Keep durable task state concise: objective, decisions, owned work, exact evidence
+references, invalidated checks, and remaining acceptance failures. New sessions
+must resume from this state instead of repeating completed exploration or QA.
+Save operational detail in artifacts. Do not build a general orchestration or
+caching framework when a small adapter around existing tools suffices. Complete
+publication once from the verified committed artifact, then verify and record
+the resulting deployment.
+
 ## Shell Output Discipline
 
 Before broad `rg`, `find`, `tree`, `ls -R`, or multi-file reads, list files first and narrow targets. Prefer `rg -l` for match discovery.
@@ -262,13 +303,14 @@ the strongest plausible alternative. Agreement is valid. Resolve disagreements
 with evidence rather than recursive debate.
 
 Before an experiment or review batch, define the uncertainty it must resolve,
-the finite scope, and the evidence needed to finish. After the batch, integrate
-the result before assigning more work. Repeat only for a new defect, a changed
-implementation, or a distinct hypothesis with a credible benefit. Several
-variants of the same unsuccessful approach require a premise review, not an
-open-ended series of new assignments. Preserve failed evidence and acceptance
-criteria; complete independent authorized delivery work while reporting any
-remaining shortfall accurately.
+the causal hypothesis, finite scope, and evidence needed to distinguish the
+alternatives. Specify the next decision for success and failure. After the
+batch, integrate the result before assigning more work. Repeat only for a new
+defect, a changed implementation, or a distinct hypothesis with a credible
+benefit. Several variants of the same unsuccessful approach require a premise
+review, not an open-ended series of new assignments. Preserve failed evidence
+and acceptance criteria; complete independent authorized delivery work while
+reporting any remaining shortfall accurately.
 
 When the user asks to reduce quota use or finish quickly, stop expanding scope.
 Use the smallest sufficient verification set, reuse valid evidence, and replace
