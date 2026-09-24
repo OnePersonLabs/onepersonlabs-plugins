@@ -20,7 +20,6 @@
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "hooks": "./hooks/hooks.json",
-  "agents": "./agents/",
   "interface": {
     "displayName": "OPL",
     "shortDescription": "One-Person Labs shared developer tooling",

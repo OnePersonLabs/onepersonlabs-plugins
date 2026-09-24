@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { counterpartInvocation } from '../../../plugins/opl/skills/refresh-local-plugins/scripts/install-local.mjs'
 
 const scripts = fileURLToPath(new URL('../../../plugins/opl/skills/refresh-local-plugins/scripts', import.meta.url))
+const oplScripts = fileURLToPath(new URL('../../../plugins/opl/scripts', import.meta.url))
 
 function writeJson(path, value) {
   mkdirSync(dirname(path), { recursive: true })
@@ -95,6 +96,150 @@ writeFileSync('components/alpha/.codex-plugin/plugin.json', JSON.stringify({ nam
 writeFileSync('components/alpha/content.txt', readFileSync('input.txt'))
 `)
 }
+
+function writeAgentRole(root, name) {
+  mkdirSync(join(root, 'agents'), { recursive: true })
+  writeFileSync(join(root, 'agents', `${name}.toml`), [
+    `description = "${name} fixture role"`,
+    'developer_instructions = "Perform the assigned fixture work."',
+    'model = "gpt-6-luna"',
+    'model_reasoning_effort = "medium"',
+  ].join('\n'))
+}
+
+function configFileLine(path) {
+  const tomlValue = path.replaceAll('\\', '\\\\').replaceAll('"', '\\"')
+  return `config_file = "${tomlValue}"`
+}
+
+function configFilePattern(path) {
+  const tomlValue = configFileLine(path)
+  const literal = tomlValue.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  return new RegExp(literal, 'u')
+}
+
+function oplFixture(t) {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'refresh-opl-agent-test-')))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const repo = join(root, 'marketplace')
+  const source = join(repo, 'plugins', 'opl')
+  const home = join(root, 'consumer home')
+  const versionOne = join(home, 'plugins', 'cache', 'example-market', 'opl', '0.2.0')
+  const helper = join(versionOne, 'skills', 'refresh-local-plugins', 'scripts', 'install-local.mjs')
+  const config = join(home, 'config.toml')
+  const registration = join(root, 'marketplaces.json')
+  const log = join(root, 'commands.jsonl')
+  const marketplacePath = join(repo, '.agents', 'plugins', 'marketplace.json')
+  mkdirSync(home, { recursive: true })
+  mkdirSync(join(source, 'scripts'), { recursive: true })
+  cpSync(scripts, dirname(helper), { recursive: true })
+  cpSync(scripts, dirname(helper.replace(versionOne, source)), { recursive: true })
+  cpSync(join(oplScripts, 'codex-config-check.py'), join(source, 'scripts', 'codex-config-check.py'))
+  cpSync(join(oplScripts, '..', 'skills', 'configure-harness', 'scripts', 'application.py'), join(source, 'skills', 'configure-harness', 'scripts', 'application.py'))
+  writeFileSync(join(source, 'config.defaults.toml'), [
+    '[features]',
+    'hooks = true',
+    'plugins = true',
+    'multi_agent = true',
+    '',
+    '[agents]',
+    'enabled = true',
+    'default_subagent_model = "gpt-6-luna"',
+    'default_subagent_reasoning_effort = "medium"',
+    '',
+  ].join('\n'))
+  writeJson(join(source, '.codex-plugin', 'plugin.json'), { name: 'opl', version: '0.2.0' })
+  writeAgentRole(source, 'task')
+  writeAgentRole(source, 'scout')
+  writeJson(marketplacePath, {
+    name: 'example-market',
+    plugins: [{ name: 'opl', source: { source: 'local', path: './plugins/opl' } }],
+  })
+  writeFileSync(config, [
+    'model = "keep-me"',
+    '# opl:ignore-config-check version=0.2.0',
+    '',
+    '[agents.personal]',
+    'config_file = "personal.toml"',
+    '',
+    '[agents.opl-task]',
+    'config_file = "stale-task.toml"',
+    '',
+    '[agents.opl-retired]',
+    'config_file = "retired.toml"',
+    '',
+  ].join('\n'))
+  writeJson(registration, [])
+  const fakeCodex = join(root, 'codex.mjs')
+  writeFileSync(fakeCodex, `
+import { appendFileSync, cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import readline from 'node:readline'
+const args = process.argv.slice(2)
+const env = process.env
+appendFileSync(env.COMMAND_LOG, JSON.stringify({ args, home: env.CODEX_HOME }) + '\\n')
+const out = (value) => process.stdout.write(JSON.stringify(value))
+if (JSON.stringify(args) === JSON.stringify(['app-server', '--stdio'])) {
+  readline.createInterface({ input: process.stdin }).on('line', (line) => {
+    const message = JSON.parse(line)
+    if (message.method === 'initialize') out({ id: message.id, result: {} }), process.stdout.write('\\n')
+    else if (message.method === 'hooks/list') out({ id: message.id, result: { data: [{ cwd: process.cwd(), errors: [], warnings: [], hooks: [] }] } }), process.stdout.write('\\n')
+    else if (message.method !== 'initialized') process.exit(93)
+  })
+} else if (JSON.stringify(args) === JSON.stringify(['plugin', 'marketplace', 'list', '--json'])) {
+  out({ marketplaces: JSON.parse(readFileSync(env.REGISTRATION, 'utf8')) })
+} else if (args.length === 5 && args.slice(0, 3).join(' ') === 'plugin marketplace add' && args[4] === '--json') {
+  writeFileSync(env.REGISTRATION, JSON.stringify([{ name: 'example-market', root: args[3] }]))
+  out({})
+} else if (JSON.stringify(args.slice(0, 2)) === JSON.stringify(['plugin', 'add']) && args[3] === '--json') {
+  if (args[2] !== 'opl@example-market') process.exit(91)
+  const source = join(env.MARKETPLACE_ROOT, 'plugins', 'opl')
+  const version = JSON.parse(readFileSync(join(source, '.codex-plugin', 'plugin.json'), 'utf8')).version
+  const target = join(env.CODEX_HOME, 'plugins', 'cache', 'example-market', 'opl', version)
+  if (existsSync(target)) rmSync(target, { recursive: true, force: true })
+  cpSync(source, target, { recursive: true })
+  out({ installedPath: target })
+} else {
+  process.stderr.write('unexpected command: ' + JSON.stringify(args))
+  process.exit(91)
+}
+`)
+  const invoke = () => spawnSync(process.execPath, [helper, '--repo', repo, '--plugin', 'opl', '--target-home', home], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, CODEX_BIN: fakeCodex, COMMAND_LOG: log, REGISTRATION: registration, MARKETPLACE_ROOT: repo },
+  })
+  const rolePath = (version, name) => join(home, 'plugins', 'cache', 'example-market', 'opl', version, 'agents', `${name}.toml`)
+  return { source, home, config, helper, invoke, rolePath }
+}
+
+test('an explicit OPL refresh dynamically reconciles added, removed, and rebound installed agent roles', (t) => {
+  const f = oplFixture(t)
+  let result = f.invoke()
+  assert.equal(result.status, 0, result.stderr)
+  let contents = readFileSync(f.config, 'utf8')
+  assert.match(contents, /model = "keep-me"/u)
+  assert.match(contents, /\[agents\.personal\]/u)
+  assert.match(contents, configFilePattern(f.rolePath('0.2.0', 'task')))
+  assert.match(contents, configFilePattern(f.rolePath('0.2.0', 'scout')))
+  assert.doesNotMatch(contents, /\[agents\.opl-retired\]/u)
+
+  writeFileSync(f.config, contents.replace(configFileLine(f.rolePath('0.2.0', 'task')), 'config_file = "manually-stale.toml"'))
+  result = f.invoke()
+  assert.equal(result.status, 0, result.stderr)
+  contents = readFileSync(f.config, 'utf8')
+  assert.match(contents, configFilePattern(f.rolePath('0.2.0', 'task')))
+
+  rmSync(join(f.source, 'agents', 'scout.toml'))
+  writeAgentRole(f.source, 'review')
+  writeJson(join(f.source, '.codex-plugin', 'plugin.json'), { name: 'opl', version: '0.2.1' })
+  result = f.invoke()
+  assert.equal(result.status, 0, result.stderr)
+  contents = readFileSync(f.config, 'utf8')
+  assert.match(contents, configFilePattern(f.rolePath('0.2.1', 'task')))
+  assert.match(contents, configFilePattern(f.rolePath('0.2.1', 'review')))
+  assert.doesNotMatch(contents, /\[agents\.opl-scout\]/u)
+})
 
 test('modified selection prepares source before comparing an unchanged old bundle', (t) => {
   const f = fixture(t)

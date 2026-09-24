@@ -105,6 +105,18 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-config-check.py\" hook",
+            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-config-check.py\" hook",
+            "timeout": 20,
+            "additionalContextLimit": 8192
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
             "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-agents-context-hook.py\"",
             "timeout": 20,
             "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-agents-context-hook.py\"",

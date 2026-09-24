@@ -38,6 +38,21 @@ For instruction routing, keep a compact always-loaded core in the managed sectio
 
 Keep candidate files separate from live targets. The `prepare` input is a JSON list of objects with `target` and `candidate` paths. Check that each candidate is complete, that its target is intended, and that the preview includes the full change. A section headed `Harness Policies (managed by $opl:configure-harness)` has exactly one owner in the global file. On first setup, its absence is normal; review the insertion point and create exactly one section. Duplicate headings or ambiguous ownership are stop conditions. Personal global instructions outside that section belong to `$opl:update-instructions` reconciliation.
 
+For `config.toml`, the transaction accepts ordinary enablement changes and the
+narrow OPL startup baseline only. The plugin-root `config.defaults.toml` file
+is the versioned source for that baseline. It contains the required feature and
+agent defaults. The transaction also reconciles `opl-` role registrations that
+point to the discovered OPL role directory. It can add, remove, or rebind those
+registrations while it preserves every non-OPL registration and unrelated
+configuration. Reject any other configuration change.
+
+Add an ignore marker only after the user chooses to ignore future checks. It
+must be `# opl:ignore-config-check version=<plugin version>` near the top of
+`config.toml`, after its schema header. A marker for the installed plugin
+version short-circuits the startup audit before parsing. OPL removes a stale
+marker before it evaluates configuration after an update. The marker does not
+disable explicit role reconciliation or `fix`.
+
 Apply only the reviewed plan and retain its receipt. If a concurrent edit invalidates the plan, refresh the candidate and review the affected content. After application, check the effective files and behavior. Use the receipt for a targeted rollback if application fails or the user rejects the result. Do not treat a successful file write as proof that a skill selects correctly in a new session.
 
 Mark a category `applied` only after that verification. After rollback, rediscover

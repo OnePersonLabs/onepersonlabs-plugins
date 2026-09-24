@@ -147,6 +147,31 @@ function command(executable, args) {
   return result
 }
 
+function pythonBin(environment) {
+  return environment.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3')
+}
+
+export function reconcileOplAgents({ name, installedPath, home, env = process.env }) {
+  if (name !== 'opl') return { reconciled: false }
+  const pluginRoot = realpathSync(installedPath)
+  const script = join(pluginRoot, 'scripts', 'codex-config-check.py')
+  if (!existsSync(script)) throw new Error(`opl: installed configuration reconciler is missing: ${script}`)
+  const result = spawnSync(pythonBin(env), ['-B', '-X', 'utf8', script, 'reconcile', '--home', home, '--plugin-root', pluginRoot], {
+    cwd: pluginRoot,
+    env,
+    encoding: 'utf8',
+    windowsHide: true,
+  })
+  if (result.error) throw new Error(`opl: agent configuration reconciliation could not run: ${result.error.message}`, { cause: result.error })
+  if (result.status !== 0) {
+    const detail = result.stderr.trim() || result.stdout.trim() || 'no diagnostic output'
+    throw new Error(`opl: agent configuration reconciliation failed (${result.status ?? result.signal}): ${detail}`)
+  }
+  if (result.stderr.trim()) process.stderr.write(result.stderr)
+  if (result.stdout.trim()) process.stdout.write(result.stdout)
+  return { reconciled: true, pluginRoot, home }
+}
+
 function wslPath(path) {
   const result = command('wsl.exe', ['--exec', 'wslpath', '-u', path])
   if (result.status !== 0) throw new Error(`WSL could not access ${path}: ${result.stderr.trim() || result.stdout.trim()}`)
@@ -294,6 +319,10 @@ export async function installLocal(options) {
     }
     plugin.installedPath = realpathSync(result.installedPath)
     console.log(`${plugin.name}: installed and enabled at ${plugin.installedPath}`)
+    const reconciliation = reconcileOplAgents({
+      name: plugin.name, installedPath: plugin.installedPath, home: plan.home, env,
+    })
+    if (reconciliation.reconciled) console.log('opl: reconciled agent registrations from the installed plugin.')
     const manifest = ['.codex-plugin/plugin.json']
       .map((path) => join(plugin.installedPath, path)).find(existsSync)
     const required = existsSync(join(plugin.installedPath, 'hooks', 'hooks.json')) || Boolean(manifest && readJson(manifest).hooks)

@@ -61,7 +61,7 @@ class HarnessApplication(unittest.TestCase):
         good = self.candidate("good.toml", b'''model = "gpt-6-sol"\n[plugins."opl"]\nsource = "marketplace"\nenabled = false\n[plugins."other"]\nenabled = true\n[mcp_servers.docs]\ncommand = "docs"\nenabled = false\n[features]\nsandbox = true\n[[skills.config]]\npath = "C:/skills/example"\nenabled = false\n''')
         application.prepare(self.home, [{"target": str(config), "candidate": str(good)}])
         bad = self.candidate("bad.toml", good.read_bytes().replace(b"sandbox = true", b"sandbox = false"))
-        with self.assertRaisesRegex(ValueError, "outside enablement"):
+        with self.assertRaisesRegex(ValueError, "outside allowed OPL"):
             application.prepare(self.home, [{"target": str(config), "candidate": str(bad)}])
         new_server = self.candidate("new-server.toml", original + b"\n[mcp_servers.unknown]\ncommand = 'evil'\nenabled = true\n")
         with self.assertRaisesRegex(ValueError, "new MCP"):
@@ -112,6 +112,44 @@ class HarnessApplication(unittest.TestCase):
         application.prepare(self.home, [{"target": str(config), "candidate": str(candidate)}])
         changed = self.candidate("skills-changed.toml", b'[[skills.config]]\npath = "C:/skills/one"\nenabled = true\n')
         application.prepare(self.home, [{"target": str(config), "candidate": str(changed)}])
+
+    def test_config_checker_policy_allows_only_its_features_defaults_and_opl_roles(self):
+        config = self.home / "config.toml"
+        config.write_bytes(b'''[features]\nhooks = false\nplugins = false\nmulti_agent = false\nother = true\n\n[agents]\nenabled = false\ndefault_subagent_model = "gpt-5.6-terra"\ndefault_subagent_reasoning_effort = "xhigh"\ninterrupt_message = true\n\n[agents.personal]\nconfig_file = "C:/personal.toml"\n\n[agents.opl-stale]\nconfig_file = "C:/old.toml"\n''')
+        repaired = self.candidate("repaired.toml", b'''[features]\nhooks = true\nplugins = true\nmulti_agent = true\nother = true\n\n[agents]\nenabled = true\ndefault_subagent_model = "gpt-6-luna"\ndefault_subagent_reasoning_effort = "medium"\ninterrupt_message = true\n\n[agents.personal]\nconfig_file = "C:/personal.toml"\n\n[agents.opl-current]\nconfig_file = "C:/plugin/agents/current.toml"\n''')
+        application.prepare(self.home, [{"target": str(config), "candidate": str(repaired)}])
+        personal_change = self.candidate("personal-change.toml", repaired.read_bytes().replace(b"C:/personal.toml", b"C:/changed.toml"))
+        with self.assertRaisesRegex(ValueError, "outside allowed OPL"):
+            application.prepare(self.home, [{"target": str(config), "candidate": str(personal_change)}])
+        extra_new_role_setting = self.candidate("extra-role.toml", repaired.read_bytes().replace(
+            b'config_file = "C:/plugin/agents/current.toml"', b'config_file = "C:/plugin/agents/current.toml"\ndescription = "not allowed"'))
+        with self.assertRaisesRegex(ValueError, "may only set config_file"):
+            application.prepare(self.home, [{"target": str(config), "candidate": str(extra_new_role_setting)}])
+
+    def test_config_checker_policy_requires_exact_scalar_types(self):
+        config = self.home / "config.toml"
+        config.write_bytes(b"[agents]\nenabled = false\nmax_depth = 1\n")
+        wrong_boolean = self.candidate("wrong-boolean.toml", b"[agents]\nenabled = 1\nmax_depth = 1\n")
+        with self.assertRaisesRegex(ValueError, "agents.enabled"):
+            application.prepare(self.home, [{"target": str(config), "candidate": str(wrong_boolean)}])
+        wrong_integer = self.candidate("wrong-integer.toml", b"[agents]\nenabled = false\nmax_depth = false\n")
+        with patch.object(application, "_load_config_defaults", return_value={
+            "features": {}, "agents": {"max_depth": 0},
+        }):
+            with self.assertRaisesRegex(ValueError, "agents.max_depth"):
+                application.prepare(self.home, [{"target": str(config), "candidate": str(wrong_integer)}])
+
+    def test_config_checker_ignore_marker_is_a_versioned_top_insertion_or_removal_even_when_toml_is_invalid(self):
+        config = self.home / "config.toml"
+        config.write_bytes(b"[broken")
+        allowed = self.candidate("ignored.toml", b"# opl:ignore-config-check version=0.2.0\n[broken")
+        application.prepare(self.home, [{"target": str(config), "candidate": str(allowed)}])
+        config.write_bytes(allowed.read_bytes())
+        removed = self.candidate("removed.toml", b"[broken")
+        application.prepare(self.home, [{"target": str(config), "candidate": str(removed)}])
+        changed = self.candidate("changed.toml", b"[broken\n# another comment\n# opl:ignore-config-check version=0.2.0\n")
+        with self.assertRaisesRegex(ValueError, "valid UTF-8 TOML"):
+            application.prepare(self.home, [{"target": str(config), "candidate": str(changed)}])
 
     def test_rollback_refuses_later_user_edit_and_outside_receipt_target(self):
         target = self.home / "opl" / "harness" / "policies" / "one.md"

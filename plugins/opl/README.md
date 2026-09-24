@@ -71,6 +71,63 @@ the hook does not perform migration automatically. Start a fresh Codex session
 after applying the merge. The [native runtime record](../../docs/native-plugin-runtime.md)
 distinguishes current behavior from historical full-file injection checks.
 
+## OPL Subagents and Startup Configuration
+
+OPL ships role TOML files in its `agents/` directory. The configuration check
+registers every valid immediate TOML file as an `opl-` prefixed role in their
+`config.toml`. A newly added role file receives a registration, a
+deleted file removes its OPL registration, and a changed installed plugin path
+updates the registration. The check preserves roles that do not use the `opl-`
+prefix. It does not copy role files into the Codex home. The plugin-root
+`config.defaults.toml` file is the versioned source of the feature and agent
+settings that OPL manages.
+
+Each immediate role TOML needs a nonempty `description` and
+`developer_instructions`. Its inner `name` is optional because Codex uses the
+filename-derived registration name. If present, it must match the `opl-`
+prefixed name derived from the filename. `config.defaults.toml` accepts string,
+boolean, and integer
+values in its `[features]` and `[agents]` tables only. It controls values, not
+code, and it does not contain role tables.
+
+The initial OPL roles are task worker, grunt worker, reviewer, QA, explorer,
+and documentation researcher. Root instructions can route work to these roles
+by responsibility. Extra valid role files are available without changing that
+routing list.
+
+At session start, the OPL configuration check compares the required hooks,
+plugins, multi-agent, and agent defaults with the installed OPL role inventory.
+It is silent when they match. When it finds drift, it shows the proposed change,
+asks whether to fix the configuration or ignore future checks, and waits before
+the original task continues. The hook provides context to the root agent. It
+cannot repair configuration or force the host to pause. If hooks are disabled,
+the OPL root instructions run the same check before substantial work. `fix`
+overwrites the OPL-managed settings from `config.defaults.toml` and reconciles
+the OPL role registrations.
+
+Run the installed script directly when needed:
+
+```powershell
+python <plugin-root>/scripts/codex-config-check.py check --home C:\Users\you\.codex
+python <plugin-root>/scripts/codex-config-check.py fix --home C:\Users\you\.codex
+python <plugin-root>/scripts/codex-config-check.py ignore --home C:\Users\you\.codex
+```
+
+When the user chooses Ignore, OPL writes
+`# opl:ignore-config-check version=<plugin version>` in the top header slot of
+`config.toml`, after leading `#:schema` lines. OPL recognizes the marker only
+there, which prevents a matching string inside TOML content from suppressing
+the audit. A marker for the installed plugin version skips the startup audit
+before parsing. After a plugin update, OPL removes the stale marker and
+evaluates the configuration again. The marker does not disable other OPL
+checks. Explicit installation reconciliation and `fix` still maintain the OPL
+role registrations.
+
+`model_instructions_file` replaces Codex built-in instructions for the selected
+model. `developer_instructions` in a role TOML adds instructions to the
+developer message for that role. OPL uses role developer instructions and does
+not set `model_instructions_file`.
+
 ## Harness Curation
 
 Use [$opl:configure-harness](skills/configure-harness/SKILL.md) to inventory
@@ -82,9 +139,10 @@ tested separately; unsupported conclusions remain inconclusive.
 
 Its helpers keep resumable decisions and experiment records in the selected
 Codex home's `opl/harness/` directory. Reviewed changes can update capability
-enablement, a managed instruction section, and conditional policy references.
-Application preserves backups and transaction receipts for targeted rollback.
-Discovery does not install plugins, start MCP servers, or change enablement.
+enablement, OPL startup settings and registrations, a managed instruction
+section, and conditional policy references. Application preserves backups and
+transaction receipts for targeted rollback. Discovery does not install plugins,
+start MCP servers, or change configuration.
 
 ## Codex Compatibility
 

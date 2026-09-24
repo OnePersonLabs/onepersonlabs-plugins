@@ -18,6 +18,8 @@ MISSING = "missing"
 MANAGED_HEADING = "## Harness Policies (managed by $opl:configure-harness)"
 _HEADING = re.compile(r"^#{1,2} (?!#)", re.MULTILINE)
 _DIGEST = re.compile(r"^[a-f0-9]{64}$")
+_IGNORE_CONFIG_MARKER = re.compile(r"[ \t]*#[ \t]*opl:ignore-config-check(?:[ \t]+version=[^\s#]+)?[ \t]*(?:\r?\n)?")
+_SCHEMA_COMMENT = re.compile(r"^[ \t]*#:[ \t]*schema\b")
 
 
 def _hash(data: bytes | None) -> str:
@@ -120,6 +122,11 @@ def _validate_instructions(before: bytes | None, after: bytes) -> None:
 
 
 def _validate_config(before: bytes | None, after: bytes) -> None:
+    # The config checker must be able to acknowledge itself even when an
+    # unrelated malformed TOML file prevents normal configuration validation.
+    # This is deliberately an append-only byte transition.
+    if _is_ignore_config_marker_change(before, after):
+        return
     try:
         old = tomllib.loads((before or b"").decode("utf-8-sig"))
         new = tomllib.loads(after.decode("utf-8-sig"))
@@ -191,8 +198,144 @@ def _validate_config(before: bytes | None, after: bytes) -> None:
         new_rest["skills"].pop("config", None)
         if not new_rest["skills"] and "skills" not in old_rest:
             del new_rest["skills"]
+
+    _validate_config_checker_policy(old, new, old_rest, new_rest)
     if old_rest != new_rest:
-        raise ValueError("config.toml changes outside enablement settings")
+        raise ValueError("config.toml changes outside allowed OPL configuration settings")
+
+
+def _is_ignore_config_marker_change(before: bytes | None, after: bytes) -> bool:
+    """Allow only a top insertion or removal of standalone config-check markers."""
+    try:
+        original = (before or b"").decode("utf-8-sig")
+        candidate = after.decode("utf-8-sig")
+    except UnicodeError:
+        return False
+    marker = _top_ignore_config_marker(original)
+    if marker is not None and candidate == original[:marker[0]] + original[marker[1]:]:
+        return True
+    if marker is not None:
+        return False
+    marker = _top_ignore_config_marker(candidate)
+    if marker is None:
+        return False
+    line = candidate[marker[0]:marker[1]]
+    if "version=" not in line:
+        return False
+    return candidate[:marker[0]] + candidate[marker[1]:] == original
+
+
+def _top_ignore_config_marker(text: str) -> tuple[int, int] | None:
+    lines = text.splitlines(keepends=True)
+    offset = 0
+    index = 0
+    while index < len(lines) and _SCHEMA_COMMENT.match(lines[index]):
+        offset += len(lines[index])
+        index += 1
+    if index >= len(lines) or _IGNORE_CONFIG_MARKER.fullmatch(lines[index]) is None:
+        return None
+    return offset, offset + len(lines[index])
+
+
+def _insert_ignore_config_marker(text: str, marker: str) -> str:
+    lines = text.splitlines(keepends=True)
+    offset = 0
+    for line in lines:
+        if not _SCHEMA_COMMENT.match(line):
+            break
+        offset += len(line)
+    line_ending = "\r\n" if "\r\n" in text else "\n"
+    prefix = text[:offset]
+    if prefix and not prefix.endswith(("\n", "\r")):
+        prefix += line_ending
+    return prefix + marker.rstrip("\r\n") + line_ending + text[offset:]
+
+
+def _validate_config_checker_policy(old: dict, new: dict, old_rest: dict, new_rest: dict) -> None:
+    """Permit the narrow policy managed by OPL's configuration checker."""
+    defaults = _load_config_defaults()
+    _validate_policy_section("features", old, new, old_rest, new_rest, defaults["features"])
+    _validate_policy_section("agents", old, new, old_rest, new_rest, defaults["agents"])
+
+
+def _table(value, name: str) -> dict:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(f"{name} must be a table")
+    return value
+
+
+def _discard(rest: dict, section: str, key: str) -> None:
+    table = rest.get(section)
+    if isinstance(table, dict):
+        table.pop(key, None)
+        if not table:
+            rest.pop(section, None)
+
+
+def _same_scalar(left, right) -> bool:
+    """Return true only when TOML scalar values have the same type and value."""
+    return type(left) is type(right) and left == right
+
+
+def _validate_policy_section(section: str, old: dict, new: dict, old_rest: dict, new_rest: dict,
+                             defaults: dict) -> None:
+    original = _table(old.get(section), section)
+    proposed = _table(new.get(section), section)
+    for key, expected in defaults.items():
+        prior = original.get(key)
+        value = proposed.get(key)
+        if not _same_scalar(value, prior) and not _same_scalar(value, expected):
+            raise ValueError(f"{section}.{key} must be {expected!r} when changed")
+        _discard(old_rest, section, key)
+        _discard(new_rest, section, key)
+
+    if section != "agents":
+        return
+
+    names = {key for key in original if isinstance(key, str) and key.startswith("opl-")}
+    names.update(key for key in proposed if isinstance(key, str) and key.startswith("opl-"))
+    for name in names:
+        prior = original.get(name)
+        value = proposed.get(name)
+        if value is not None:
+            if not isinstance(value, dict) or not isinstance(value.get("config_file"), str):
+                raise ValueError(f"agents.{name} requires a string config_file")
+            if prior is None and set(value) != {"config_file"}:
+                raise ValueError(f"new agents.{name} entries may only set config_file")
+            if prior is not None:
+                if not isinstance(prior, dict):
+                    raise ValueError(f"agents.{name} must be a table")
+                old_extra = {key: item for key, item in prior.items() if key != "config_file"}
+                new_extra = {key: item for key, item in value.items() if key != "config_file"}
+                if old_extra != new_extra:
+                    raise ValueError(f"agents.{name} settings other than config_file cannot change")
+        _discard(old_rest, "agents", name)
+        _discard(new_rest, "agents", name)
+
+
+def _load_config_defaults() -> dict[str, dict]:
+    path = Path(__file__).resolve().parents[3] / "config.defaults.toml"
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        raise ValueError(f"OPL config defaults are invalid: {exc}") from exc
+    result = {}
+    for section in ("features", "agents"):
+        values = data.get(section, {})
+        if not isinstance(values, dict):
+            raise ValueError(f"OPL config defaults {section} must be a table")
+        checked = {}
+        for key, value in values.items():
+            if not isinstance(key, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", key):
+                raise ValueError(f"OPL config defaults {section} has an invalid setting name")
+            if isinstance(value, bool) or isinstance(value, (str, int)):
+                checked[key] = value
+            else:
+                raise ValueError(f"OPL config defaults {section}.{key} must be a string, boolean, or integer")
+        result[section] = checked
+    return result
 
 
 def _validate(kind: str, before: bytes | None, after: bytes) -> None:

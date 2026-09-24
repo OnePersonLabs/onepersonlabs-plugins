@@ -32,4 +32,10 @@ Use fresh context for each unaided production-route test. Repeat only when the c
 
 Show the concrete proposed state, ownership of each change, evidence, remaining uncertainty, and expected effects. Use `prepare --home PATH --files PATH --output PATH` with a JSON list of reviewed `target` and `candidate` files to prepare file changes. Use `apply --home PATH --plan PATH` only after the reviewed change is authorized. Retain the returned receipt before proceeding to another change; use `rollback --home PATH --receipt PATH` for a failed or rejected application. The managed section may be absent on first setup: review its placement, then create exactly one. Stop on duplicate headings or ambiguous ownership rather than guessing where text belongs.
 
+For OPL startup configuration, present the discovered OPL roles and each
+required setting from the plugin-root `config.defaults.toml` file before
+preparing a transaction. Reconcile only OPL-prefixed role registrations and
+that documented startup baseline. Preserve non-OPL registrations and unrelated
+configuration.
+
 For a global instruction change outside the harness-owned `Harness Policies (managed by $opl:configure-harness)` section, reconcile the whole user-owned file through `$opl:update-instructions`; do not overwrite personal edits. Put essential, unmeasured constraints inline. Add compact conditional pointers to category policies and procedures only when their targets resolve and their route can be verified; avoid circular pointers. Add a runtime recovery hook only after measured failures show a hook is needed; no hook is part of the default setup. Verify the root route, a relevant documentation event, and subagent behavior separately in fresh contexts. Give the user the durable run location and any remaining uncertainty.

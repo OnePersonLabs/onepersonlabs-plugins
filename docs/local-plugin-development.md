@@ -116,6 +116,10 @@ trust the selected plugins' current hooks through the same app-server API and
 verify the result. Start a new Codex session after installation to load updates;
 there is no manual hook-review step.
 
+When OPL is selected, the installer also reconciles OPL-prefixed agent
+registrations in that destination's `config.toml` from the roles shipped in the
+installed OPL bundle. This installation step does not run tests or evaluations.
+
 The command shares its installer with OPL's
 [$refresh-local-plugins](../plugins/opl/skills/refresh-local-plugins/SKILL.md).
 Once OPL is installed, the skill can refresh changed plugins from another local

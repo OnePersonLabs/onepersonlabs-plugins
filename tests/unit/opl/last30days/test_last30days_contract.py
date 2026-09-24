@@ -22,12 +22,11 @@ class Last30DaysNamespaceContractTest(unittest.TestCase):
         self.assertIn("name: last30days\n", skill_text)
         self.assertTrue(SCRIPT.is_file())
 
-    def test_skill_uses_codex_interaction_and_tool_agnostic_web_wording(self) -> None:
+    def test_skill_uses_host_neutral_web_wording(self) -> None:
         skill_text = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
         planning_text = (SKILL_ROOT / "references" / "search-planning.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("request_user_input", skill_text)
         self.assertIn("search the web for", skill_text)
         self.assertIn("Get-Command", skill_text)
         self.assertIn("command -v", skill_text)

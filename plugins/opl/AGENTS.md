@@ -1,4 +1,4 @@
-<!-- opl-instructions-version: 5 -->
+<!-- opl-instructions-version: 7 -->
 
 # Core Behavior
 
@@ -237,6 +237,9 @@ full output can override this default, with secrets still protected.
 
 Write file contents with `apply_patch` or a file-writing API. Never splice file contents into shell commands.
 
+Use `codex exec` only when a separate noninteractive process or workspace is
+required. Set `model` and `model_reasoning_effort` explicitly.
+
 ## Skill Reference Sigil
 
 Write skill references and invocations as `$skill-name` instead of `skill-name` or `/skill-name`.
@@ -259,61 +262,87 @@ Store MCP API keys in Windows user environment variables; they pass through to W
 - Use `docs-mcp-server` for local indexed docs. Use `gh` or local `git` for repository code inspection instead of GitMCP.
 - Retrieve only minimal version-specific slices necessary for the current task; do not pull full document sets unless requested.
 
-## Agent Orchestration
+## Subagent Delegation
 
-The main agent, also called the root agent, is the agent handling the user's
-request. A subagent is an agent assigned part of that work. Its parent is the
-agent that assigned it. These terms describe responsibility, not model size.
+A subagent may assign further work only when its immediate parent explicitly
+authorizes that responsibility and specifies the permitted number of
+descendants. This constraint also applies to unnamed generic subagents.
 
-The main agent owns the overall task, priorities, shared constraints, combining
-changes, communication with the user, and final delivery. Keep a short list of
-decisions that still prevent completion. Assign substantial, separable work to
-native Codex subagents when that reduces total effort or improves verification.
-Do small tasks directly when explaining and reviewing them would cost more.
-Do not create agents merely because capacity is available.
+## Root Agent Control Plane
 
-For each assignment, state the question or result needed, owned files, limits,
-and the check that establishes completion. Give the subagent only the relevant
-context and evidence paths. The assigned subagent owns detailed inspection,
-implementation, and verification for that assignment. It must preserve others'
-changes. Its reply must give the conclusion, checks actually run, evidence
-locations, important limitations, and any decision needed from its parent.
+This section applies only to the root agent. Role TOML files define the
+instructions for delegated agents. Shared constraints remain in the sections
+above.
 
-The main agent checks whether the returned evidence supports combining the
-result with the rest of the work. It must not routinely repeat the subagent's
-investigation. Inspect further when evidence is missing, results conflict, or
-changes interact. For consequential decisions, use independent review of the
-proposed approach and the strongest plausible alternative. Resolve disagreement
-with a targeted check instead of repeated debate.
+The root agent owns task scope, priorities, shared constraints, consequential
+reasoning, integration, communication with the user, and final delivery.
 
-Choose model and effort before assigning work; set them explicitly when the
-tool permits. Use `gpt-6-luna` for focused searches, routine checks, and bounded
-mechanical edits. Use `gpt-6-sol` for general implementation and coordination.
-Use `gpt-6-astra` for difficult reasoning or consequential independent review.
-Start at low effort for routine work and medium for general implementation;
-increase it when the task warrants it. Preserve a specialized role's required
-effort, or choose a generic agent when its configuration fits better. A cheaper
-attempt need not fail before choosing a justified stronger model.
+### Decide direct work or delegation
 
-Use `fork_turns="none"` with a focused assignment, or limited history, when
-needed to select a model explicitly. Share full history only when continuity
-outweighs its cost. Do not reuse an expensive agent merely for convenience.
-Shared conversation history does not isolate files, browser state, processes,
-or permissions. Run assignments concurrently only when they can safely proceed
-independently. Sequential delegation can still keep detailed execution out of
-the main conversation.
+Choose direct work or delegation at each task boundary. Account for the current
+model and reasoning effort, whether outcomes are separable, the need for
+independent evidence, coordination cost, available capacity, and review cost.
+Keep tiny coordination and trivial bounded steps local when assignment would
+cost more than the work.
 
-A subagent may assign further work only when its parent explicitly authorizes
-that responsibility and specifies the permitted number of additional agents.
-If the host has no capacity or cannot apply the chosen configuration, use the
-least costly permitted alternative and report a material limitation once.
-Do not bypass host limits with another execution tool. Use `codex exec` only
-when a separate noninteractive process or workspace is actually needed; set
-its model and `model_reasoning_effort` explicitly.
+When the root uses `gpt-6-astra`, delegate substantive routine implementation,
+focused investigation, QA, and documentation research by default. Retain work
+that needs complex broad cross-file reasoning, consequential decisions,
+cross-workstream integration, or direct user communication. Do not delegate
+merely because capacity is available.
 
-After each bounded assignment, use its result before assigning more work:
-combine a verified change, repair a demonstrated defect, test one materially
-different explanation, or record the unresolved requirement and continue
-independent work. Do not expand an assignment merely because more questions
-can be asked. Optimize the total cost of a verified result, including setup,
-duplicated context, review, retries, and repairs.
+Select a registered OPL role when its responsibility fits the assignment:
+
+- `opl-task-worker`: a substantial separable implementation outcome under a
+  root plan.
+- `opl-grunt-worker`: a bounded, well-specified implementation task.
+- `opl-reviewer`: independent review of consequential plans, diagnoses,
+  architecture, or patches.
+- `opl-qa`: acceptance checks and evidence reporting without product-source
+  edits.
+- `opl-explorer`: bounded repository investigation and execution tracing.
+- `opl-docs-researcher`: authoritative documentation and API verification.
+
+The OPL role directory can contain additional registered roles. Select them
+when their descriptions fit the work. The named roles define the routing
+baseline; they do not limit discovery.
+
+Preserve the configured model and effort for a specialized role. For an unnamed
+generic agent, use the configured global defaults unless the task needs a
+stronger setting.
+
+### Assign, reuse, and integrate work
+
+For each assignment, state the requested result, owned files or scope, limits,
+and the check that establishes completion. Give the agent only relevant context
+and evidence paths. Group compatible bounded outcomes in one assignment when
+shared context reduces coordination. Run separate assignments concurrently only
+when their files, state, and external effects are independent.
+
+Reuse a suitable worker when its context remains focused and its role and model
+fit the next assignment. Start a fresh worker when its context is contaminated
+or overloaded. Also start one when its role or model is unsuitable, independent
+review or fresh evidence is needed, or the worker is unavailable.
+
+Check that returned evidence supports integration. Do not routinely repeat a
+worker investigation. Inspect further when evidence is missing, results
+conflict, or changes interact. For consequential decisions, obtain independent
+review of the proposed approach and the strongest plausible alternative.
+Resolve disagreement with a targeted check.
+
+Use `fork_turns="none"` or limited history for a focused assignment when it
+reduces irrelevant context. Use full history only when continuity outweighs its
+cost. Do not reuse an expensive agent merely for convenience. Shared history
+does not isolate files, browser state, processes, or permissions.
+
+If the host has no capacity or cannot apply the selected configuration, use the
+least costly permitted alternative and report a material limitation once. Do
+not bypass host limits with another execution tool.
+
+### Check OPL startup configuration
+
+When no session-start OPL configuration result is available, run the installed
+`scripts/codex-config-check.py check --home <Codex home>` before substantial
+work. If it reports drift, show the proposed changes, ask whether to fix the
+configuration or ignore future checks, and pause before the original task
+continues. Run `fix` or `ignore` only after the user makes that choice.

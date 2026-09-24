@@ -19,7 +19,7 @@ import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { codexCommand, pythonBin } from './runtime.mjs'
-import { runInstallLocal } from '../plugins/opl/skills/refresh-local-plugins/scripts/install-local.mjs'
+import { reconcileOplAgents, runInstallLocal } from '../plugins/opl/skills/refresh-local-plugins/scripts/install-local.mjs'
 import { ensurePluginHookTrust } from '../plugins/opl/skills/refresh-local-plugins/scripts/codex-hooks.mjs'
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url))
@@ -498,6 +498,7 @@ async function runInstalled(entries = selectedPlugins()) {
   const blackboxHome = join(stateRoot(), 'blackbox', entry.name)
   const installed = installCandidate(entry, blackboxHome)
   compareInventory(pluginRoot(entry), installed.installedPath, entry.name)
+  reconcileOplAgents({ name: entry.name, installedPath: installed.installedPath, home: blackboxHome, env: installed.env })
   const manifest = manifestFor(entry)
   if (typeof manifest.hooks === 'string') {
     try {

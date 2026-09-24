@@ -1,0 +1,9 @@
+[features]
+hooks = true
+plugins = true
+multi_agent = true
+
+[agents]
+enabled = true
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "medium"

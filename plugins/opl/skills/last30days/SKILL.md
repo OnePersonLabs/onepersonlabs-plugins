@@ -47,9 +47,9 @@ this keeps instructions, scripts, and references from the same installation.
   search the web for the current identity and query-planning facts it calls
   for. Do not name or require a particular search tool, MCP server, connector,
   or callable interface.
-- For a blocking choice, call Codex's native `request_user_input` when it is
-  listed for the current interactive session. In noninteractive Codex, or when
-  the tool is not listed, ask one concise question in the response and stop.
+- For a blocking choice, ask the user one concise question and wait. Use a
+  structured question interface when the host provides one, but do not require
+  a particular tool.
 
 ## Resolve Python
 
