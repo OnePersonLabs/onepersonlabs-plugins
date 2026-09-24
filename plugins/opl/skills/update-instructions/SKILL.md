@@ -65,7 +65,7 @@ complete candidate in a separate temporary file:
 - For overlapping behavioral changes, propose a thoughtful combination informed
   by the user's customization. Explain uncertain intent or incompatible outcomes
   with a small before/after example and resolve one topic at a time.
-- Preserve the personal `Routing Policies (managed by $opl:configure-routing)`
+- Preserve the personal `Harness Policies (managed by $opl:configure-harness)`
   section if present. Consider upstream overlaps without regenerating that
   section or duplicating contradictory routing elsewhere.
 - For initial reconciliation, distinguish new proposed defaults from existing

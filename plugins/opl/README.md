@@ -71,6 +71,21 @@ the hook does not perform migration automatically. Start a fresh Codex session
 after applying the merge. The [native runtime record](../../docs/native-plugin-runtime.md)
 distinguishes current behavior from historical full-file injection checks.
 
+## Harness Curation
+
+Use [$opl:configure-harness](skills/configure-harness/SKILL.md) to inventory
+enabled and disabled capabilities, compare eligible alternatives, and build
+one deliberate default setup. The workflow interviews one category at a time,
+keeps evidence outside the always-loaded instructions, and uses bounded Luna
+experiments with independent Sol review. Selection, routing, and recovery are
+tested separately; unsupported conclusions remain inconclusive.
+
+Its helpers keep resumable decisions and experiment records in the selected
+Codex home's `opl/harness/` directory. Reviewed changes can update capability
+enablement, a managed instruction section, and conditional policy references.
+Application preserves backups and transaction receipts for targeted rollback.
+Discovery does not install plugins, start MCP servers, or change enablement.
+
 ## Codex Compatibility
 
 OPL checks enabled plugins, skills, and MCP servers against shipped conflict
