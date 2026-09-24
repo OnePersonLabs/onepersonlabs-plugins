@@ -27,20 +27,39 @@ unified execution on Windows. See the [official hook documentation](https://lear
 
 ## Instruction context
 
-OPL's `codex-agents-context-hook.py` reads the `AGENTS.md` bundled with the
-active installed plugin, using `PLUGIN_ROOT`, and returns its full text in
-`hookSpecificOutput.additionalContext`. The manifest runs it for `SessionStart`
-with `startup|resume|clear|compact`, and for `SubagentStart`. Each registration
-sets `additionalContextLimit: 0` so Codex receives the full instructions directly.
+OPL's `codex-agents-context-hook.py` compares the instruction version bundled
+with the active plugin against the marker in the effective global instruction
+file. It uses `CODEX_HOME` or the default Codex home and honors a nonempty
+`AGENTS.override.md` before `AGENTS.md`. The manifest runs the check for
+`SessionStart` with `startup|resume|clear|compact`. Matching versions produce no
+context; mismatches or missing/invalid metadata produce a short notice naming
+$opl:update-instructions. Startup does not retrieve Git history, call a model,
+or write instructions. There is no stock instruction injection on subagent start.
 
-The former bootstrap writer has been removed. It inserted an `@` path into
-global `AGENTS.md`, but that text did not load the referenced file. The context
-hook does not modify global `AGENTS.md` or depend on include expansion. Global
-instructions remain independently owned by the user. If a previous installation
-left an OPL reference, migration can remove only the exact legacy OPL reference
-line after inspecting the selected home; this cleanup is not a recurring hook.
+The [$opl:update-instructions](../plugins/opl/skills/update-instructions/SKILL.md)
+workflow retrieves the historical baseline only when reconciling an update. It
+preserves personal modifications and deletions, reviews overlapping changes,
+and applies an approved candidate with backup and concurrent-change checks.
+Codex's native global instruction loading delivers the reconciled file. Start
+a fresh session after applying it; an already-running session retains its
+loaded context.
+
+This replaces the earlier full-file injection hook. Existing users explicitly
+reconcile their global file through the skill; missing metadata never triggers
+an automatic overwrite or fallback injection. The still earlier bootstrap writer
+inserted an `@` path that did not load the referenced file. If an installation
+retains that reference, inspect the selected home and include its exact removal
+in the reviewed reconciliation; cleanup is not a recurring hook.
 
 ## Requirements and verification
+
+The phase-zero update passed OPL contracts, deterministic unit checks, and the
+isolated installed-copy checkpoint with 22 hooks trusted. Its scoped skill
+smoke evaluation could not execute because the configured `gpt-6-sol` model
+was rejected by the CLI's ChatGPT account. Independent scenario review covered
+initial adoption and preservation of modified/deleted routing. Native root and
+subagent instruction delivery still needs an end-to-end model-backed check;
+the installed-copy checkpoint does not establish that behavior.
 
 Repository checks require Node.js 24 or newer. OPL and Superpowers Lite hooks
 require Python 3.11 or newer; the curated research engine requires 3.12. OpenSpec
@@ -61,11 +80,11 @@ hooks, approves only the selected plugin's current hook hashes through Codex's
 app-server API, and verifies trusted status. It runs without a terminal,
 sign-in, sandbox onboarding, or a manual `/hooks` step.
 
-The native deterministic checkpoint passes 149 tests: 14 driver tests,
+The historical native deterministic checkpoint passed 149 tests: 14 driver tests,
 68 OPL Node tests, 23 OPL Python tests, 37 OpenSpec tests, and 7 Superpowers Lite
-tests. Contracts pass for all four affected plugins. The new context hook's
+tests. Contracts passed for all four affected plugins. The then-current full-file context hook's
 12 focused tests passed after a regression failed against the old writer;
-OPL's contract and full deterministic suites then passed. Coverage includes
+OPL's contract and full deterministic suites then passed. That historical coverage included
 full instruction text, session and subagent events, unchanged global files,
 updated bundled instructions, and the Windows manifest command with a spaced
 installed path.

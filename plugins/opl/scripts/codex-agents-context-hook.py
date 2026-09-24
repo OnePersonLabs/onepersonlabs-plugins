@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Deliver bundled OPL instructions as model context without editing global files."""
+"""Report local OPL instruction updates without injecting stock instructions."""
 
 import json
 import os
 from pathlib import Path
 import sys
+
+sys.dont_write_bytecode = True
+ROOT = Path(os.environ.get("PLUGIN_ROOT") or Path(__file__).resolve().parent.parent).resolve()
+sys.path.insert(0, str(ROOT / "skills" / "update-instructions" / "scripts"))
+from instructions import home_path, snapshot
 
 
 def main():
@@ -16,21 +21,24 @@ def main():
     if not isinstance(payload, dict):
         raise ValueError("hook input must be a JSON object")
     event = payload.get("hook_event_name", "SessionStart")
-    if event not in ("SessionStart", "SubagentStart"):
+    if event != "SessionStart":
         raise ValueError(f"unsupported hook event: {event}")
 
-    root = Path(os.environ.get("PLUGIN_ROOT") or Path(__file__).resolve().parent.parent).resolve()
-    agents = root / "AGENTS.md"
-    instructions = agents.read_text(encoding="utf-8-sig")
-    if not instructions.strip():
-        raise ValueError(f"OPL instructions are empty: {agents}")
-
-    print(json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": event,
-            "additionalContext": f"OPL instructions from {agents}:\n\n{instructions}",
-        },
-    }))
+    state = snapshot(home_path(), ROOT)
+    if state["status"] == "current":
+        print("{}")
+        return
+    messages = {
+        "setup": "OPL instructions are not set up in your active global instructions. Run $opl:update-instructions to reconcile them.",
+        "update": f"OPL instructions version {state['bundled_version']} is available (your baseline: {state['user_version']}). Run $opl:update-instructions to review the update.",
+        "newer": f"Your OPL instructions baseline ({state['user_version']}) is newer than installed OPL ({state['bundled_version']}). Keep your instructions; update the installed plugin rather than downgrade them.",
+        "invalid": "Your OPL instructions version marker is invalid. Run $opl:update-instructions to reconcile the metadata.",
+    }
+    message = messages[state["status"]] + f" File: {state['target']}"
+    print(json.dumps({"systemMessage": message, "hookSpecificOutput": {
+        "hookEventName": event,
+        "additionalContext": message + " Notify the user briefly; do not update instructions automatically.",
+    }}))
 
 
 if __name__ == "__main__":

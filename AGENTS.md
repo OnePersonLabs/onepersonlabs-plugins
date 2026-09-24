@@ -7,6 +7,12 @@ This repository uses the source-first, two-loop workflow in
 shipping files. Tests live under `tests/`, product source lives under
 `packages/`, and repository drivers live under `tools/`.
 
+OPL's `plugins/opl/AGENTS.md` has an independent positive integer instruction
+revision in its `opl-instructions-version` marker. Increment and stage that
+revision whenever changing instruction content. The pre-commit hook compares
+the staged file with `HEAD` and rejects changed content without a staged bump;
+an unstaged bump does not satisfy the check. Initial version adoption uses 1.
+
 After each executable behavior edit, run the smallest finite focused test that
 can prove the behavior. After it passes, run the deterministic suite for only
 the affected plugin:

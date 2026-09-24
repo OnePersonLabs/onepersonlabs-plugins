@@ -108,7 +108,7 @@
             "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-agents-context-hook.py\"",
             "timeout": 20,
             "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-agents-context-hook.py\"",
-            "additionalContextLimit": 0
+            "additionalContextLimit": 2048
           }
         ]
       },
@@ -150,17 +150,6 @@
             "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-task-watch.py\" hook",
             "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-task-watch.py\" hook",
             "timeout": 3
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-agents-context-hook.py\"",
-            "commandWindows": "python -B -X utf8 \"${PLUGIN_ROOT}/scripts/codex-agents-context-hook.py\"",
-            "timeout": 20,
-            "additionalContextLimit": 0
           }
         ]
       }

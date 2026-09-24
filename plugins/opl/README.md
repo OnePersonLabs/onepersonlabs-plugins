@@ -51,19 +51,25 @@ Other workflow-specific handlers and lifecycle rules remain in their workflow pl
 
 ## Instruction Context
 
-The context hook loads this plugin's installed `AGENTS.md` directly into Codex
-on session startup, resume, clear, compact, and subagent start. It reads the
-active plugin through `PLUGIN_ROOT` and returns the complete file as hook
-`additionalContext`, with `additionalContextLimit: 0`.
+The context hook compares the version stamped in OPL's bundled `AGENTS.md`
+with the baseline recorded in the effective global instructions on session
+startup, resume, clear, and compaction. Matching versions are silent; missing,
+invalid, newer, or older baselines produce a brief local notice. It makes no
+network or model calls and never modifies the user's file or injects the stock
+instructions. Instruction delivery now relies on Codex's native global
+instruction discovery rather than a separate OPL injection path.
 
-The hook preserves the user's global `AGENTS.md`. The old bootstrap mechanism
-that inserted an `@` reference into that file has been removed; instruction
-loading no longer depends on path text being expanded as an include.
+Use [$opl:update-instructions](skills/update-instructions/SKILL.md) to adopt or
+update OPL defaults. The skill recovers the previous baseline from repository
+history, compares it with your customized file and the installed defaults, and
+prepares a concrete merge for review. Your additions, edits, and deletions are
+preserved. Approved application checks for changed inputs, backs up the existing
+file, and atomically writes the reviewed result with its baseline version.
 
-Twelve native tests cover complete instruction delivery, lifecycle events,
-global-file preservation, refreshed bundled content, and Windows launch paths.
-The [native runtime record](../../docs/native-plugin-runtime.md) distinguishes
-this deterministic coverage from the installed-copy checkpoint.
+Existing installations must run the skill to reconcile their personal file;
+the hook does not perform migration automatically. Start a fresh Codex session
+after applying the merge. The [native runtime record](../../docs/native-plugin-runtime.md)
+distinguishes current behavior from historical full-file injection checks.
 
 ## Codex Compatibility
 

@@ -1,146 +1,76 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { spawnSync } from 'node:child_process'
 import { pythonBin } from '../../../tools/runtime.mjs'
 
-const pluginRoot = fileURLToPath(new URL('../../../plugins/opl/', import.meta.url))
-const hookPath = join(pluginRoot, 'scripts', 'codex-agents-context-hook.py')
-const instructions = '# OPL instructions\n\nPreserve café names and 🚀 symbols.\n'
-
-function fixture(run) {
-  const root = mkdtempSync(join(tmpdir(), 'OPL context é '))
-  const codexHome = join(root, '.codex')
-  const installed = join(codexHome, 'plugins', 'cache', 'onepersonlabs-plugins', 'opl', 'test')
-  mkdirSync(installed, { recursive: true })
-  writeFileSync(join(installed, 'AGENTS.md'), instructions)
-  const globalAgents = join(codexHome, 'AGENTS.md')
-  const original = '\ufeff# My global instructions\r\nKeep my preferences.\r\n'
-  writeFileSync(globalAgents, original)
-  try { return run({ root, codexHome, installed, globalAgents, original }) }
-  finally { rmSync(root, { recursive: true, force: true }) }
+const plugin = fileURLToPath(new URL('../../../plugins/opl/', import.meta.url))
+const text = (n) => `<!-- opl-instructions-version: ${n} -->\n\nKeep café and 🚀.\n`
+function fixture(t) {
+  const root = mkdtempSync(join(tmpdir(), 'OPL notice é '))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const home = join(root, 'home')
+  const installed = join(root, 'installed')
+  mkdirSync(home)
+  mkdirSync(join(installed, 'scripts'), { recursive: true })
+  cpSync(join(plugin, 'scripts/codex-agents-context-hook.py'), join(installed, 'scripts/codex-agents-context-hook.py'))
+  cpSync(join(plugin, 'skills/update-instructions/scripts'), join(installed, 'skills/update-instructions/scripts'), { recursive: true })
+  writeFileSync(join(installed, 'AGENTS.md'), text(3))
+  const target = join(home, 'AGENTS.md')
+  const env = { ...process.env, CODEX_HOME: home, PLUGIN_ROOT: installed }
+  const run = (payload = {}, customEnv = env) => spawnSync(pythonBin(), ['-B', '-X', 'utf8', join(installed, 'scripts/codex-agents-context-hook.py')], { env: customEnv, input: JSON.stringify(payload), encoding: 'utf8', windowsHide: true })
+  return { root, home, installed, target, env, run }
 }
-
-function runHook({ codexHome, installed }, event = 'SessionStart', extra = {}) {
-  return spawnSync(pythonBin(), ['-B', '-X', 'utf8', hookPath], {
-    env: { ...process.env, CODEX_HOME: codexHome, PLUGIN_ROOT: installed },
-    input: JSON.stringify({ hook_event_name: event, ...extra }), encoding: 'utf8', windowsHide: true,
-  })
-}
-
-test('context hook delivers actual instructions and leaves global AGENTS untouched', () => {
-  fixture((state) => {
-    const result = runHook(state)
-    assert.equal(result.status, 0, result.stderr)
-    const output = JSON.parse(result.stdout)
-    assert.equal(output.hookSpecificOutput.hookEventName, 'SessionStart')
-    assert.ok(output.hookSpecificOutput.additionalContext.endsWith(instructions))
-    assert.ok(output.hookSpecificOutput.additionalContext.includes(join(state.installed, 'AGENTS.md')))
-    assert.equal(readFileSync(state.globalAgents, 'utf8'), state.original)
-    assert.equal(output.systemMessage, undefined)
-  })
-})
 
 for (const source of ['startup', 'resume', 'clear', 'compact']) {
-  test(`context hook supplies instructions for ${source}`, () => {
-    fixture((state) => {
-      const result = runHook(state, 'SessionStart', { source })
-      assert.equal(result.status, 0, result.stderr)
-      assert.ok(JSON.parse(result.stdout).hookSpecificOutput.additionalContext.endsWith(instructions))
-    })
+  test(`local update notice for ${source} preserves user instructions`, (t) => {
+    const f = fixture(t)
+    const original = '\ufeff' + text(1).replaceAll('\n', '\r\n')
+    writeFileSync(f.target, original)
+    const result = f.run({ hook_event_name: 'SessionStart', source })
+    assert.equal(result.status, 0, result.stderr)
+    const output = JSON.parse(result.stdout)
+    assert.match(output.systemMessage, /version 3.*baseline: 1/u)
+    assert.match(output.hookSpecificOutput.additionalContext, /\$opl:update-instructions/u)
+    assert.ok(!output.hookSpecificOutput.additionalContext.includes('Keep café'))
+    assert.equal(readFileSync(f.target, 'utf8'), original)
   })
 }
 
-test('context hook supplies instructions to subagents', () => {
-  fixture((state) => {
-    const result = runHook(state, 'SubagentStart')
-    assert.equal(result.status, 0, result.stderr)
-    const output = JSON.parse(result.stdout).hookSpecificOutput
-    assert.equal(output.hookEventName, 'SubagentStart')
-    assert.ok(output.additionalContext.endsWith(instructions))
-  })
+test('matching version stays silent and newer version does not suggest downgrade', (t) => {
+  const f = fixture(t)
+  writeFileSync(f.target, text(3))
+  assert.deepEqual(JSON.parse(f.run().stdout), {})
+  writeFileSync(f.target, text(4))
+  assert.match(JSON.parse(f.run().stdout).systemMessage, /newer.*rather than downgrade/u)
 })
 
-test('context hook reads updated instructions on every invocation without writing Codex home', () => {
-  fixture((state) => {
-    const before = runHook(state)
-    assert.equal(before.status, 0, before.stderr)
-    const updated = '# Revised instructions\n' + 'Keep this policy.\n'.repeat(1500) + 'END_OF_OPL_CONTEXT\n'
-    writeFileSync(join(state.installed, 'AGENTS.md'), '\ufeff' + updated)
-    const nonexistentHome = join(state.root, 'unused Codex home')
-    const after = runHook({ ...state, codexHome: nonexistentHome })
-    assert.equal(after.status, 0, after.stderr)
-    assert.ok(JSON.parse(after.stdout).hookSpecificOutput.additionalContext.endsWith(updated))
-    assert.equal(existsSync(nonexistentHome), false)
-    assert.equal(readFileSync(state.globalAgents, 'utf8'), state.original)
-  })
+test('missing and malformed markers are actionable; override takes precedence', (t) => {
+  const f = fixture(t)
+  assert.match(JSON.parse(f.run().stdout).systemMessage, /not set up/u)
+  writeFileSync(f.target, text(1) + text(2))
+  assert.match(JSON.parse(f.run().stdout).systemMessage, /invalid/u)
+  writeFileSync(join(f.home, 'AGENTS.override.md'), text(3))
+  assert.deepEqual(JSON.parse(f.run().stdout), {})
 })
 
-test('context hook resolves its bundled instructions without PLUGIN_ROOT', () => {
-  fixture((state) => {
-    mkdirSync(join(state.installed, 'scripts'))
-    const copied = join(state.installed, 'scripts', 'codex-agents-context-hook.py')
-    copyFileSync(hookPath, copied)
-    const env = { ...process.env }
-    delete env.PLUGIN_ROOT
-    const result = spawnSync(pythonBin(), ['-B', '-X', 'utf8', copied], { env, input: '{}', encoding: 'utf8' })
-    assert.equal(result.status, 0, result.stderr)
-    assert.ok(JSON.parse(result.stdout).hookSpecificOutput.additionalContext.endsWith(instructions))
-  })
+test('installed helper resolves without PLUGIN_ROOT and rejects invalid stock', (t) => {
+  const f = fixture(t)
+  const env = { ...f.env }
+  delete env.PLUGIN_ROOT
+  assert.equal(f.run({}, env).status, 0)
+  writeFileSync(join(f.installed, 'AGENTS.md'), 'No version')
+  assert.notEqual(f.run().status, 0)
+  assert.notEqual(f.run({ hook_event_name: 'SubagentStart' }).status, 0)
 })
 
-test('context hook fails clearly for missing or empty instructions', () => {
-  fixture((state) => {
-    const path = join(state.installed, 'AGENTS.md')
-    for (const content of [null, ' \n']) {
-      if (content === null) rmSync(path)
-      else writeFileSync(path, content)
-      const result = runHook(state)
-      assert.notEqual(result.status, 0)
-      assert.equal(result.stdout, '')
-      assert.match(result.stderr, /AGENTS.md/u)
-    }
-  })
-})
-
-test('context hook rejects invalid payloads or unsupported event types', () => {
-  fixture((state) => {
-    assert.notEqual(runHook(state, 'PostToolUse').status, 0)
-    const result = spawnSync(pythonBin(), ['-B', '-X', 'utf8', hookPath], {
-      env: { ...process.env, PLUGIN_ROOT: state.installed }, input: '{invalid', encoding: 'utf8',
-    })
-    assert.notEqual(result.status, 0)
-    assert.match(result.stderr, /hook input/u)
-  })
-})
-
-test('manifest delivers full context on session lifecycle and subagent start', () => {
-  const manifest = JSON.parse(readFileSync(join(pluginRoot, 'hooks', 'hooks.json'), 'utf8'))
-  for (const event of ['SessionStart', 'SubagentStart']) {
-    const group = manifest.hooks[event].find((group) => group.hooks.some((hook) => hook.command.includes('codex-agents-context-hook.py')))
-    assert.ok(group)
-    if (event === 'SessionStart') assert.equal(group.matcher, 'startup|resume|clear|compact')
-    assert.equal(group.hooks[0].additionalContextLimit, 0)
-  }
-})
-
-test('Windows manifest delivers full UTF-8 context from a spaced installed path', { skip: process.platform !== 'win32' }, () => {
-  fixture((state) => {
-    mkdirSync(join(state.installed, 'scripts'))
-    copyFileSync(hookPath, join(state.installed, 'scripts', 'codex-agents-context-hook.py'))
-    const manifest = JSON.parse(readFileSync(join(pluginRoot, 'hooks', 'hooks.json'), 'utf8'))
-    const handler = manifest.hooks.SessionStart.flatMap((group) => group.hooks).find((hook) => hook.command.includes('codex-agents-context-hook.py'))
-    const command = handler.commandWindows.replaceAll('${PLUGIN_ROOT}', state.installed)
-    const result = spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', `"${command}"`], {
-      input: JSON.stringify({ hook_event_name: 'SessionStart', source: 'startup' }),
-      env: { ...process.env, CODEX_HOME: state.codexHome, PLUGIN_ROOT: state.installed },
-      encoding: 'utf8', windowsHide: true, windowsVerbatimArguments: true,
-    })
-    assert.equal(result.status, 0, result.stderr)
-    assert.ok(JSON.parse(result.stdout).hookSpecificOutput.additionalContext.endsWith(instructions))
-    assert.equal(readFileSync(state.globalAgents, 'utf8'), state.original)
-  })
+test('manifest keeps lifecycle notices and removes subagent stock injection', () => {
+  const hooks = JSON.parse(readFileSync(join(plugin, 'hooks/hooks.json'), 'utf8')).hooks
+  const group = hooks.SessionStart.find((g) => g.hooks.some((h) => h.command.includes('codex-agents-context-hook')))
+  assert.equal(group.matcher, 'startup|resume|clear|compact')
+  assert.equal(group.hooks[0].additionalContextLimit, 2048)
+  assert.ok(!hooks.SubagentStart.some((g) => g.hooks.some((h) => h.command.includes('codex-agents-context-hook'))))
 })
