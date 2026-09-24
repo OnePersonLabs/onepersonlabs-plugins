@@ -1,6 +1,5 @@
 {
   "schemaVersion": 1,
-  "codexVersion": "0.151.0",
   "inspectorVersion": "2.4.0",
   "rootUnitRoots": ["tests/unit/plugin-dev"],
   "evaluation": {
