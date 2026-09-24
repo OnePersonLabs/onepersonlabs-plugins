@@ -109,7 +109,7 @@ test('detached command records output and queues one bounded completion message'
 
   const status = await readCompletedStatus(join(receipt.resultDir, 'status.json'))
   assert.equal(status.schemaVersion, 1)
-  assert.equal(status.state, 'success')
+  assert.equal(status.state, 'success', JSON.stringify(status))
   assert.equal(status.exitCode, 0)
   assert.equal(status.queue.state, 'submitted')
   assert.match(readFileSync(join(receipt.resultDir, 'stdout.log'), 'utf8'), /command output must not enter/u)
