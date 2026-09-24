@@ -1,6 +1,6 @@
 interface:
   display_name: "Grilling"
-  short_description: "Stress-test an idea through native question rounds"
+  short_description: "Stress-test an idea through question rounds"
 
 policy:
   allow_implicit_invocation: true
