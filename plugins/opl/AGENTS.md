@@ -1,4 +1,4 @@
-<!-- opl-instructions-version: 2 -->
+<!-- opl-instructions-version: 3 -->
 
 # Core Behavior
 
@@ -157,6 +157,28 @@ the user answers.
 ## Shell Output Discipline
 
 Before broad `rg`, `find`, `tree`, `ls -R`, or multi-file reads, list files first and narrow targets. Prefer `rg -l` for match discovery.
+
+For structural code questions, prefer available language-aware symbol or AST
+tools over broad text searches. Use text search for prose, literal strings,
+configuration, and file discovery, or when structural tools are unavailable.
+Do not install new tooling for a small lookup when a bounded existing tool
+answers it reliably.
+
+Treat tool output as a context budget. When programmatic tool calling is
+available, capture results in code and select the needed fields or bounded
+excerpts before returning them to the conversation. Never forward an entire
+result object when only its status, a path, a count, or a short diagnostic is
+needed. Set a small output limit appropriate to the decision before execution;
+do not rely on truncation after a large result has already entered context.
+
+Save verbose test, build, search, and evaluation output to a local artifact.
+Return exit status, a concise summary, and the artifact path; on failure, add
+only the relevant error excerpt. For large files or structured data, inspect
+headings, keys, or match locations first, then retrieve the necessary ranges or
+fields. Batch independent calls in code, but summarize each result separately
+instead of concatenating full outputs. Preserve raw evidence in the artifact;
+retrieve more only when the next decision requires it. An explicit request for
+full output can override this default, with secrets still protected.
 
 Write file contents with `apply_patch` or a file-writing API. Never splice file contents into shell commands.
 
