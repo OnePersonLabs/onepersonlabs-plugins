@@ -118,10 +118,10 @@ tooling into the target repository or repeatedly waking the model to poll.
 ## Refresh Local Plugins
 
 [$refresh-local-plugins](skills/refresh-local-plugins/SKILL.md) installs or
-refreshes selected plugins from any local Codex marketplace checkout into an
-authorized Codex home. It is available through normal skill discovery and
-explicit invocation. For example: "Use $refresh-local-plugins to refresh
-`my-plugin` from `/work/my-marketplace` into `/absolute/codex/home`."
+refreshes changed plugins from any local Codex marketplace checkout into the
+current user's existing Windows and WSL Codex homes. It is available through
+normal skill discovery and explicit invocation. Name an absolute home when the
+request targets one profile or an isolated test.
 
 Its bundled Node.js 22+ helper also powers this repository's `install:local`
 command. Native `codex plugin add` atomically refreshes and enables selected

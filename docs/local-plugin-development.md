@@ -118,8 +118,10 @@ there is no manual hook-review step.
 
 The command shares its installer with OPL's
 [$refresh-local-plugins](../plugins/opl/skills/refresh-local-plugins/SKILL.md).
-Once OPL is installed, the skill can refresh plugins from another local
-marketplace without adding this repository's npm tooling to that checkout:
+Once OPL is installed, the skill can refresh changed plugins from another local
+marketplace into the current user's existing Windows and WSL Codex homes without
+adding this repository's npm tooling to that checkout. An explicit home is useful
+when the request targets one profile or an isolated test:
 
 ```text
 Use $refresh-local-plugins to refresh my-plugin from /work/my-marketplace into /absolute/codex/home.
@@ -127,8 +129,11 @@ Use $refresh-local-plugins to refresh my-plugin from /work/my-marketplace into /
 
 The standalone helper is `scripts/install-local.mjs` under the loaded skill's
 directory. It accepts `--repo <checkout>` (defaulting to the current directory),
-`--plugin <name>` selections, a required absolute `--target-home`, `--dry-run`,
-and `--help`. It needs Node.js 22 or newer and Codex, and uses only Node built-ins.
+`--plugin <name>` selections, optional absolute `--target-home`, `--dry-run`, and
+`--help`. Without `--target-home`, it refreshes existing user-level Windows and
+WSL Codex homes. The repository's `npm run install:local` entrypoint uses the
+same destination selection. The helper needs Node.js 22 or newer and Codex,
+and uses only Node built-ins.
 The repository's development commands retain the Node.js 24 requirement.
 
 Manifest discovery follows Codex's precedence: `.agents/plugins/marketplace.json`,

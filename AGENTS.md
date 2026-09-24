@@ -39,14 +39,16 @@ their trusted status. This is an automated checkpoint: do not open a terminal
 or require sign-in, sandbox onboarding, or a manual `/hooks` confirmation.
 Surface discovery or trust failures instead of skipping them.
 
-`npm run install:local -- --plugin <plugin-name> --target-home <path>` is an
+`npm run install:local -- --plugin <plugin-name>` is an
 installation-only consumer operation. It never runs unit tests, contract
 checks, installed checks, or skill evaluations. An authorized local refresh
 also trusts the selected installed plugins' current hooks through the shared
 installer; leave unrelated hooks and sandbox settings unchanged. Use
 `--plugin all` only when the user explicitly asks to install every marketplace
-plugin. Never choose a
-user's default `~/.codex` implicitly; require the target home.
+plugin. For a normal `$opl:refresh-local-plugins` invocation, use the current
+user's existing default Codex home or homes without asking for a path. Use an
+explicit `--target-home` when the user names a home or the task clearly targets
+one, including isolated tests.
 
 The full skill corpus is not a routine update check. Only the explicit
 `npm run release:verify` release gate runs clean installed checks for every
